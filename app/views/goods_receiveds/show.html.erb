@@ -1,0 +1,10 @@
+<p style="color: green"><%= notice %></p>
+
+<%= render @goods_received %>
+
+<div>
+  <%= link_to "Edit this goods received", edit_goods_received_path(@goods_received) %> |
+  <%= link_to "Back to goods receiveds", goods_receiveds_path %>
+
+  <%= button_to "Destroy this goods received", @goods_received, method: :delete %>
+</div>

@@ -1,0 +1,60 @@
+<h1 class="h2 mb-3 text-gray-800"><%= @client.name.upcase %> BRANCHES</h1>
+<h6>All fields marked with <span class="required_field"></span> are mandatory</h6>
+<label>Import from Excel</label>
+<%= form_tag upload_branches_clients_path(client_id: @client), multipart: true do %>
+
+<%= file_field_tag :file %>
+<%= submit_tag "Upload", class: "btn btn-success" %>
+<% end %>
+
+<%= form_with(model: @client) do |form| %>
+  <% if @client.errors.any? %>
+    <div style="color: red">
+      <h2><%= pluralize(@client.errors.count, "error") %> prohibited this client from being saved:</h2>
+
+      <ul>
+        <% @client.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+  <br/>
+
+  <div class="row">
+    <div class="col-sm-4">
+        <strong class="required_field">Street Address</strong>
+    </div>
+    <div class="col-sm-4">
+        <strong class="required_field">Location</strong>
+    </div>
+    <div class="col-sm-4">
+        <strong class="required_field">City</strong>
+    </div>
+  </div>
+  <%= form.fields_for :branches do |f| %>
+  <%= f.hidden_field :license_category_id %>
+  <%= f.hidden_field :license_option_id %>
+  <%= f.hidden_field :tenant_id %>
+  <div class="row">
+    <div class="col-sm-4">
+      <div class="form-group">
+        <%= f.text_field :address_1, class: "form-control form-control-sm"  %>
+      </div>
+    </div>
+    <div class="col-sm-4">
+      <div class="form-group">
+        <%= f.text_field :location, class: "form-control form-control-sm"  %>
+      </div>
+    </div>
+    <div class="col-sm-4">
+      <div class="form-group">
+        <%= f.text_field :city, class: "form-control form-control-sm"  %>
+      </div>
+    </div>
+  </div>
+  <% end %>
+  <div class="text-left">
+    <%= form.submit "Save Branches", class:'btn btn-lg btn-success' %>
+  </div>
+<% end %>

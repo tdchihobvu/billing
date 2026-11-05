@@ -1,0 +1,18 @@
+<p style="color: green"><%= notice %></p>
+
+<h1>Product categories</h1>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @product_categories.each do |product_category| %>
+    <tr>
+      <td><%= product_category.description %></td>
+      <td><%= link_to "Details", product_category %></td>
+    </tr>
+    <% end %>
+  </tbody>
+</table>

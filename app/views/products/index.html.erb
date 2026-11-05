@@ -1,0 +1,40 @@
+<!-- Page Heading -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Products</h1>
+    <div class="float-end">
+      <%= link_to new_product_path, class: "d-none d-sm-inline-block btn btn-sm btn-outline text-dark" do %>
+      <i class="fas fa-plus fa-sm text-dark"></i> New Product
+      <% end %> |
+      <%= link_to :back, class: "btn btn-outline btn-sm rounded-0" do %><i class="fas fa-backward text-dark"></i> Back <% end %> 
+    </div>
+</div>
+
+<div id="products">
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Name</th>
+      <th>Barcode</th>
+      <th>Category</th>
+      <th>Brand</th>
+      <th>Measure</th>
+      <th>Type</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @products.each_with_index do |product,i| %>
+    <tr>
+      <td><%= product.code %></td>
+      <td><%= product.name %></td>
+      <td><%= product.barcode %></td>
+      <td><%= product.product_category.name %></td>
+      <td><%= product.brand.name %></td>
+      <td><%= product.measuring_unit.name %></td>
+      <td><%= product.product_type.name %></td>
+      <td><%= link_to "Details", product %></td>
+    </tr>
+    <% end %>
+  </tbody>
+</table>

@@ -1,0 +1,37 @@
+<div id="<%= dom_id bank %>">
+
+  <h4>
+    <%= "#{bank.description} (#{bank.status})" %>
+  </h4>
+  <hr/>
+  <p>
+    <strong>Bank:</strong>
+    <%= bank.bank_name %>
+  </p>
+
+  <p>
+    <strong>Account Name:</strong>
+    <%= bank.account_name %>
+  </p>
+
+  <p>
+    <strong>Account Number:</strong>
+    <%= bank.account_number %>
+  </p>
+
+  <p>
+    <strong>Branch:</strong>
+    <%= bank.branch %>
+  </p>
+
+  <p>
+    <strong>Swift Code:</strong>
+    <%= bank.swift_code %>
+  </p>
+
+  <p>
+    <strong>Currency:</strong>
+    <%= bank.currency.name %>
+  </p>
+
+</div>

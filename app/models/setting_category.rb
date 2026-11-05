@@ -1,0 +1,2 @@
+class SettingCategory < ApplicationRecord
+end

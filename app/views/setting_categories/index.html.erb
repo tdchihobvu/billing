@@ -1,0 +1,14 @@
+<p style="color: green"><%= notice %></p>
+
+<h1>Setting categories</h1>
+
+<div id="setting_categories">
+  <% @setting_categories.each do |setting_category| %>
+    <%= render setting_category %>
+    <p>
+      <%= link_to "Show this setting category", setting_category %>
+    </p>
+  <% end %>
+</div>
+
+<%= link_to "New setting category", new_setting_category_path %>

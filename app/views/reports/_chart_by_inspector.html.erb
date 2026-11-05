@@ -1,0 +1,2 @@
+<h5>Sales for the Period <%= "#{@start_date.to_date.strftime("%d/%m/%Y")} To #{@end_date.to_date.strftime("%d/%m/%Y")}" %></h5>
+<%= column_chart Invoice.active.where(invoice_date: @start_date.to_date..@end_date.to_date).group(:user_fullname).sum(:invoice_total), xtitle: "#{pluralize("", default_user_title)}", ytitle: "Total Sales" %>

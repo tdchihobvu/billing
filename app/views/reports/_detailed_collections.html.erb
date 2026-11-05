@@ -1,0 +1,40 @@
+  	<% unless @receipts.empty? %>
+      <div class="table-responsive">
+        <table class="table table-striped small" id="dataTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Date</th>
+              <th>Reference Number</th>
+              <th>Client Name</th>
+              <th>Payment Form</th>
+              <th><%= default_user_title %></th>
+              <th>Currency</th>
+              <th>Amount</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+              <% @receipts.each_with_index do |r,i| %>
+              <tr>
+                <td><%= i+=1 %></td>
+                <td><%= r.transaction_date.strftime("%d/%m/%Y") %></td>
+                <td><%= r.reference_number %></td>
+                <td><%= r.client.name unless r.client.nil? %></td>
+                <td><%= r.payment_form.name %></td>
+                <td><%= r.user.user_fullname %></td>
+                <td><%= r.currency.name %></td>
+                <td><%= number_to_currency(r.amount, unit: "#{r.currency.symbol}") %></td>
+                <td>
+                  <%= link_to r, class: "btn btn-outline text-dark small", title: "Print Receipt" do %>
+                    <i class="fas fa-print fa-sm text-dark"></i>
+                  <% end %>
+                </td>
+              </tr>
+              <% end %>
+          </tbody>
+        </table>
+      </div>  
+  	<% else %>
+  		<div class="alert alert-warning text-center border-0" role="alert">There is nothing to display.</div>
+  	<% end %>   

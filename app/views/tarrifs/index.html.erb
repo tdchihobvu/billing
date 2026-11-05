@@ -1,0 +1,14 @@
+<p style="color: green"><%= notice %></p>
+
+<h1>Tarrifs</h1>
+
+<div id="tarrifs">
+  <% @tarrifs.each do |tarrif| %>
+    <%= render tarrif %>
+    <p>
+      <%= link_to "Show this tarrif", tarrif %>
+    </p>
+  <% end %>
+</div>
+
+<%= link_to "New tarrif", new_tarrif_path %>

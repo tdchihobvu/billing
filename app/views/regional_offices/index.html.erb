@@ -1,0 +1,14 @@
+<p style="color: green"><%= notice %></p>
+
+<h1>Regional offices</h1>
+
+<div id="regional_offices">
+  <% @regional_offices.each do |regional_office| %>
+    <%= render regional_office %>
+    <p>
+      <%= link_to "Show this regional office", regional_office %>
+    </p>
+  <% end %>
+</div>
+
+<%= link_to "New regional office", new_regional_office_path %>

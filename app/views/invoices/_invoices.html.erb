@@ -1,0 +1,38 @@
+<% unless @invoices.empty? %>
+<table id="dataTable" class="table table-striped small" width="100%" cellspacing="0">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Date</th>
+      <th>Invoice No.</th>
+      <th>Document Type</th>
+      <th>Customer</th>
+      <th>Currency</th>
+      <th>Total</th>
+      <th>Status</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @invoices.each_with_index do |invoice,i| %>
+    <tr id="invoices">
+      <td><%= i+=1 %></td>
+      <td><%= invoice.invoice_date.strftime("%d/%m/%Y") %></td>
+      <td><%= invoice.invoice_number %></td>
+      <td><%= invoice.document %></td>
+      <td><%= invoice.client.name %></td>
+      <td><%= invoice.currency.name %></td>
+      <td><%= number_to_currency(invoice.invoice_total, unit: "") %></td>
+      <td><strong><%= invoice.status %></strong></td>
+      <td>
+        <%= link_to invoice, class: "btn btn-outline text-dark small", title: "Print Invoice" do %>
+          <i class="fas fa-print fa-sm text-dark"></i>
+        <% end %>
+      </td>
+    </tr>
+    <% end %>
+  </tbody>
+</table>
+<% else %>
+<div class="alert alert-warning text-center border-0" role="alert">There is nothing to display.</div>
+<% end %>

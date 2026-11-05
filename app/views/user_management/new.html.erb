@@ -1,0 +1,57 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">User Management</h1>
+    <div class="float-end">
+      <%= link_to :back, class: "btn btn-outline btn-sm rounded-0" do %><i class="d-none d-sm-inline-block btn  btn-sm btn-outline text-dark"></i> Back <% end %> 
+    </div>
+</div>
+
+<p style="color: green"><%= notice %></p>
+
+<div class="card border-0">
+  <div class="card-body">
+<h2>Sign up</h2>
+
+	<%= form_for @user, url: save_user_management_index_path do |f| %>
+
+	  <%= f.hidden_field :role, value: 'cashier' %>
+	  <%= f.hidden_field :tenant_id %>
+	  <div class="form-group">
+	    <%= f.label :firstname %><br />
+	    <%= f.text_field :firstname, autofocus: true, class: "form-control" %>
+	  </div>
+
+	  <div class="form-group">
+	    <%= f.label :lastname %><br />
+	    <%= f.text_field :lastname, class: "form-control" %>
+	  </div>
+
+	  <div class="form-group">
+	    <%= f.label :username %><br />
+	    <%= f.text_field :username, class: "form-control" %>
+	  </div>
+
+	  <div class="form-group">
+	    <%= f.label :email %><br />
+	    <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "form-control" %>
+	  </div>
+
+	  <div class="form-group">
+	    <%= f.label :password %>
+	    <% if @minimum_password_length %>
+	    <em>(<%= @minimum_password_length %> characters minimum)</em>
+	    <% end %><br />
+	    <%= f.password_field :password, autocomplete: "new-password", class: "form-control" %>
+	  </div>
+
+	  <div class="form-group">
+	    <%= f.label :password_confirmation %><br />
+	    <%= f.password_field :password_confirmation, autocomplete: "new-password", class: "form-control" %>
+	  </div>
+
+	  <div class="actions">
+	    <%= f.submit "Save User", class: "btn btn-sm" %>
+	  </div>
+	<% end %>
+
+  </div>
+</div>

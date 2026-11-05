@@ -1,0 +1,35 @@
+<div class="d-sm-flex justify-content-between mt-3 mb-2">
+  <div class="float-end ">
+    <%= link_to add_branches_clients_path(id: @client), class: "d-none d-sm-inline-block btn btn-sm btn-outline text-dark" do %>
+      <i class="fas fa-edit fa-sm text-dark"></i> Add/Edit Branches
+    <% end %>
+  </div>
+</div>
+<div class="card border-0">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-striped small" id="dataTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Branch Name</th>
+            <th>Address</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <div id="clients">
+            <% @client.branches.active.each_with_index do |branch,i| %>
+              <tr>
+                <td><%= i+=1 %></td>
+                <td><%= branch.name %></td>
+                <td><%= branch.full_address %></td>
+                <td><%= button_to delete_branch_clients_path(client_id: @client, branch_id: branch), data: { confirm: "Are you sure?", turbo_confirm: "Are you sure? You want to delete." }, method: :delete, class: "d-none d-sm-inline-block btn btn-sm btn-outline" do %><i class="fas fa-trash fa-sm"></i><% end %></td>
+              </tr>
+            <% end %>
+          </div>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,36 @@
+<div class="row">
+  <div class="card border-0">
+    <div class="card-body">
+    <p>
+      <strong>Client type:</strong>
+      <%= client.client_type.name %>
+    </p>
+
+    <p>
+      <strong>Industry:</strong>
+      <%= client.industry.name unless client.industry.nil? %>
+    </p>
+
+    <p>
+      <strong>Name:</strong>
+      <%= client.name %>
+    </p>
+
+    <p>
+      <strong>Trading name:</strong>
+      <%= client.trading_name %>
+    </p>
+
+    <p>
+      <strong>Bp number:</strong>
+      <%= client.bp_number %>
+    </p>
+
+    <p>
+      <strong>Vat number:</strong>
+      <%= client.vat_number %>
+    </p>
+    </div>
+  </div>
+</div>
+

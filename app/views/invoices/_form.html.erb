@@ -1,0 +1,84 @@
+<h6>All fields marked with <span class="required_field"></span> are mandatory</h6>
+<%= form_with(model: invoice) do |form| %>
+  <% if invoice.errors.any? %>
+    <div style="color: red">
+      <h2><%= pluralize(invoice.errors.count, "error") %> prohibited this invoice from being saved:</h2>
+
+      <ul>
+        <% invoice.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <%= form.hidden_field :is_proforma %>
+  <div class="row">
+    <div class="col-sm-4">
+     <div class="form-group">
+        <%= form.label :invoice_date, "Invoice Date", style: "display: block", class: "required_field" %>
+        <%= form.date_field :invoice_date, class: "form-control form-control-sm" %>
+      </div>
+    </div>
+    <div class="col-sm-4">
+      <div class="form-group">
+        <%= form.label :invoice_number, "Invoice Number", style: "display: block", class: "required_field" %>
+        <%= form.text_field :invoice_number, readonly: false, class: "form-control form-control-sm" %>
+      </div>
+    </div>
+    <div class="col-sm-4">
+      <div class="form-group">
+        <%= form.label :invoice_category_id, "Invoice Type", style: "display: block", class: "required_field" %>
+        <%= form.select :invoice_category_id, InvoiceCategory.pluck(:name, :id), {prompt: "Select Type"}, class: "form-select form-control-sm" %>
+      </div>
+    </div>
+  </div>
+  <div class="form-group">
+    <%= form.label :client_id, style: "display: block", class: "required_field" %>
+    <%#= form.select :client_id, current_user.tenant.clients.order('name Asc').pluck(:name, :id), {include_blank: true}, {data: {controller: 'slim'}, class: "small"} %>
+      <%= form.select :client_id, current_user.tenant.clients.order('name Asc').pluck(:name, :id), {prompt: 'Select Client'},class: "form-select form-control-sm" %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :currency_id, style: "display: block", class: "required_field" %>
+    <%= form.select :currency_id, Currency.pluck(:name, :id), {prompt: "Select Currency"},class: "form-select form-control-sm" %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :bank_id, style: "display: block", class: "required_field" %>
+    <%= form.select :bank_id, tenant.banks.order('bank_name Asc').collect {|b| [b.description, b.id]}, {prompt: "Select Bank"},class: "form-select form-control-sm" %>
+  </div>
+
+  <div class="form-group">
+    <strong><%= form.label :product_pricing, "Define Item Pricing", style: "display: block" %></strong>
+    <%= form.radio_button :product_pricing, 'inclusive' %> Unit Price Includes VAT &nbsp;&nbsp; <%= form.radio_button :product_pricing, 'exclusive' %> Unit Price Excludes VAT &nbsp;&nbsp; <%= form.radio_button :product_pricing, 'none' %> No VAT
+  </div>
+
+  <div class="form-group">
+    <%= form.label :description, "Invoice Description (appears on the statement)", style: "display: block", class: "required_field" %>
+    <%= form.text_field :description, class: "form-control form-control-sm" %>
+  </div>
+
+  <h6 class="required_field"><strong>Invoice Items</strong></h6>
+  <p></p>
+  <!-- Nested attributes - Invoice Items -->
+  <div class="row">
+      <div class="col-sm-2 small fw-bold">HS Code</div>
+      <div class="col-sm-4 small fw-bold">Description</div>
+      <div class="col-sm-2 small fw-bold">Quantity</div>
+      <div class="col-sm-2 small fw-bold">Unit Price</div>
+      <div class="col-sm-2 small fw-bold">VAT Type</div>
+  </div>
+  <div class="row">
+    <%= form.fields_for :invoice_items do |f| %>
+      <div class="col-sm-2"><div class="form-group"><%= f.text_field :item_code, class: 'form-control form-control-sm' %></div></div>
+      <div class="col-sm-4"><div class="form-group"><%= f.text_area :description, rows: 2, placeholder: "Item Description", class: 'form-control form-control-sm' %></div></div>
+      <div class="col-sm-2"><div class="form-group"><%= f.number_field :quantity, class: 'form-control form-control-sm' %></div></div>
+      <div class="col-sm-2"><div class="form-group"><%= f.text_field :unit_price, class: 'form-control form-control-sm' %></div></div>
+      <div class="col-sm-2"><div class="form-group"><%= f.select :vat_type_id, VatType.all.collect {|v| [v.description, v.id]}, {prompt: "Select Type"}, class: 'form-control form-control-sm' %></div></div>
+    <% end %>
+  </div>
+  <div class="text-center">
+    <%= form.submit "Save Invoice", class:'btn btn-lg btn-success' %>
+  </div>
+<% end %>

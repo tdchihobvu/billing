@@ -1,0 +1,2 @@
+class DeviceSetting < ApplicationRecord
+end

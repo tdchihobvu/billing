@@ -1,0 +1,43 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  client_type: one
+  industry: one
+  name: MyString
+  trading_name: MyString
+  bp_number: MyString
+  vat_number: MyString
+  address_1: MyString
+  address_2: MyString
+  location: MyString
+  city: MyString
+  country: MyString
+  website: MyString
+  mobile: MyString
+  phone: MyString
+  email: MyString
+  cp_name: MyString
+  cp_mobile: MyString
+  cp_email: MyString
+  active: false
+
+two:
+  client_type: two
+  industry: two
+  name: MyString
+  trading_name: MyString
+  bp_number: MyString
+  vat_number: MyString
+  address_1: MyString
+  address_2: MyString
+  location: MyString
+  city: MyString
+  country: MyString
+  website: MyString
+  mobile: MyString
+  phone: MyString
+  email: MyString
+  cp_name: MyString
+  cp_mobile: MyString
+  cp_email: MyString
+  active: false

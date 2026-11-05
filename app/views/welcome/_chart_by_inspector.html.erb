@@ -1,0 +1,6 @@
+<%#= column_chart Invoice.active.where(invoice_date: @start_date.to_date..@end_date.to_date).group(:user_fullname).sum(:invoice_total), xtitle: "Inspectors", ytitle: "Total Sales" %>
+
+<%= column_chart [
+	{name: "Sales", data: Invoice.active.where(invoice_date: @start_date.to_date..@end_date.to_date).group(:user_fullname).sum(:invoice_total), thousands: ","},
+	{name: "Collections", data: Receipt.active.where(transaction_date: @start_date.to_date..@end_date.to_date).group(:user_fullname).sum(:actual_paid), thousands: ","}
+	] %>

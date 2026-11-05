@@ -1,0 +1,49 @@
+<!-- Page Heading -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Stock Count</h1>
+    <div class="float-end">
+      <%= link_to :back, class: "btn btn-outline btn-sm rounded-0" do %><i class="fas fa-backward text-dark"></i> Back <% end %> 
+    </div>
+</div>
+
+<p style="color: green"><%= notice %></p>
+<div class="card border-0">
+  <div class="card-body">
+    <%= render "form", stock_count: @stock_count %>
+  </div>
+</div>
+
+<div class="card border-0 mt-2">
+  <div class="card-body">
+    <div class="table-responsive">
+      <% unless @stock_counts.empty? %>
+      <table id="dataTable" class="table table-striped small" width="100%" cellspacing="0">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Date</th>
+            <th>Product Name</th>
+            <th>Barcode</th>
+            <th>Quantity</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @stock_counts.each_with_index do |stock_count,i| %>
+          <tr id="stock_count">
+            <td><%= i+=1 %></td>
+            <td><%= stock_count.transaction_date.strftime("%d/%m/%Y") %></td>
+            <td><%= stock_count.product_name %></td>
+            <td><%= stock_count.barcode %></td>
+            <td><%= stock_count.quantity %></td>
+            <td><%= link_to "View", stock_count %></td>
+          </tr>
+          <% end %>
+        </tbody>
+      </table>
+      <% else %>
+      <div class="alert alert-warning text-center border-0" role="alert">There is nothing to display.</div>
+      <% end %>
+    </div>
+  </div>
+</div>

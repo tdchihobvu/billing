@@ -1,0 +1,153 @@
+<!-- Sidebar - Brand -->
+
+<%= link_to root_path, class: "sidebar-brand d-flex align-items-center" do %>
+    <div class="sidebar-brand-icon rotate-n-15">
+        <i class="fas fa-clock"></i>
+    </div>
+    <div class="sidebar-brand-text mx-3">Billing System</div>
+<% end %>
+
+<!-- Divider -->
+<hr class="sidebar-divider my-0">
+
+<!-- Nav Item - Dashboard -->
+<li class="nav-item active">
+    <%= link_to root_path, class: "nav-link" do %>
+        <i class="fas fa-fw fa-tachometer-alt"></i>
+        <span>Dashboard</span>
+    <% end %>
+</li>
+
+<!-- Divider -->
+<hr class="sidebar-divider">
+
+<!-- Heading -->
+<div class="sidebar-heading">
+    Interface
+</div>
+
+<!-- Nav Item - Charts -->
+<li class="nav-item">
+    <%= link_to receipts_path, class: "nav-link", "data-bs-toggle": "collapse", "data-bs-target": "#receipts", "aria-expanded": "true", "aria-controls": "collapseUtilities" do %>
+        <i class="fas fa-fw fa-user-tie"></i>
+        <span>Receipting</span>
+    <% end %>
+    <div id="receipts" class="collapse" aria-labelledby="headingUtilities"
+        data-parent="#accordionSidebar">
+        <div class="bg-white py-2 collapse-inner rounded">
+            <%= link_to "License Receipt", new_receipt_path, class: "collapse-item" %>
+            <%= link_to "General Receipt", new_receipt_path, class: "collapse-item" %>
+            <%= link_to "Daily Receipts", receipts_path, class: "collapse-item" %>
+        </div>
+    </div>
+</li>
+
+<!-- Nav Item - Charts -->
+<li class="nav-item">
+    <%= link_to quotations_path, class: "nav-link", "data-bs-toggle": "collapse", "data-bs-target": "#Employees", "aria-expanded": "true", "aria-controls": "collapseUtilities" do %>
+        <i class="fas fa-fw fa-user-tie"></i>
+        <span>Quotations</span>
+    <% end %>
+    <div id="Employees" class="collapse" aria-labelledby="headingUtilities"
+        data-parent="#accordionSidebar">
+        <div class="bg-white py-2 collapse-inner rounded">
+            <%= link_to "New Quotation", new_quotation_path, class: "collapse-item" %>
+            <%= link_to "View Quotations", quotations_path, class: "collapse-item" %>
+        </div>
+    </div>
+</li>
+
+<!-- Heading -->
+<div class="sidebar-heading">
+    Admin
+</div>
+
+<!-- Nav Item - Pages Collapse Menu -->
+<li class="nav-item">
+    <%= link_to clients_path, class: "nav-link", "data-bs-toggle": "collapse", "data-bs-target": "#collapseClients", "aria-expanded": "true", "aria-controls": "collapseUtilities" do %>
+        <i class="fas fa-fw fa-users"></i>
+        <span>Clients</span>
+    <% end %>
+
+    <div id="collapseClients" class="collapse" aria-labelledby="headingUtilities"
+        data-parent="#accordionSidebar">
+        <div class="bg-white py-2 collapse-inner rounded">
+            <%= link_to "View Clients", clients_path, class: "collapse-item" %>
+            <%= link_to "New Client", new_client_path, class: "collapse-item" %>
+        </div>
+    </div>
+</li>
+
+<!-- Nav Item - Charts -->
+<li class="nav-item">
+    <%= link_to licenses_path, class: "nav-link", "data-bs-toggle": "collapse", "data-bs-target": "#Licenses", "aria-expanded": "true", "aria-controls": "collapseUtilities" do %>
+        <i class="fas fa-fw fa-user-tie"></i>
+        <span>Licensing</span>
+    <% end %>
+    <div id="Licenses" class="collapse" aria-labelledby="headingUtilities"
+        data-parent="#accordionSidebar">
+        <div class="bg-white py-2 collapse-inner rounded">
+            <%= link_to "New License", new_license_path, class: "collapse-item" %>
+            <%= link_to "View Licenses", licenses_path, class: "collapse-item" %>
+            <%= link_to "Auto Renewal", licenses_path, class: "collapse-item" %>
+        </div>
+    </div>
+</li>
+
+<!-- Nav Item - Charts -->
+<li class="nav-item">
+    <%= link_to invoices_path, class: "nav-link", "data-bs-toggle": "collapse", "data-bs-target": "#Invoices", "aria-expanded": "true", "aria-controls": "collapseUtilities" do %>
+        <i class="fas fa-fw fa-user-tie"></i>
+        <span>Invoices</span>
+    <% end %>
+    <div id="Invoices" class="collapse" aria-labelledby="headingUtilities"
+        data-parent="#accordionSidebar">
+        <div class="bg-white py-2 collapse-inner rounded">
+            <%= link_to "New Invoice", new_invoice_path, class: "collapse-item" %>
+            <%= link_to "View Invoices", invoices_path, class: "collapse-item" %>
+        </div>
+    </div>
+</li>
+
+<li class="nav-item">
+  <%= link_to root_path, class: "nav-link" do %>
+    <i class="fas fa-fw fa-chart-area"></i>
+        <span>Reports</span>
+  <% end %>
+</li>
+
+<li class="nav-item">
+    <%= link_to "", class: "nav-link", "data-bs-toggle": "collapse", "data-bs-target": "#Users", "aria-expanded": "true", "aria-controls": "collapseUtilities" do %>
+        <i class="fas fa-fw fa-users"></i>
+        <span>Users</span>
+    <% end %>
+    <div id="Users" class="collapse" aria-labelledby="headingUtilities"
+        data-parent="#accordionSidebar">
+        <div class="bg-white py-2 collapse-inner rounded">
+            <%= link_to "System Users", system_settings_path, class: "collapse-item" %>
+        </div>
+    </div>
+</li>
+
+<!-- Divider -->
+<hr class="sidebar-divider d-none d-md-block">
+
+<!-- Nav Item - Utilities Collapse Menu -->
+
+<li class="nav-item">
+    <%= link_to "", class: "nav-link", "data-bs-toggle": "collapse", "data-bs-target": "#Settings", "aria-expanded": "true", "aria-controls": "collapseUtilities" do %>
+        <i class="fas fa-fw fa-cogs"></i>
+        <span>System Settings</span>
+    <% end %>
+    <div id="Settings" class="collapse" aria-labelledby="headingUtilities"
+        data-parent="#accordionSidebar">
+        <div class="bg-white py-2 collapse-inner rounded">
+            <%= link_to "General", settings_tenants_path(id: current_user.tenant_id), class: "collapse-item" %>
+        </div>
+    </div>
+</li>
+
+<!-- Sidebar Toggler (Sidebar) -->
+<div class="text-center d-none d-md-inline">
+    <button class="rounded-circle border-0" id="sidebarToggle"></button>
+</div>

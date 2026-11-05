@@ -1,0 +1,62 @@
+<!-- Page Heading -->
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Invoice <small>#<%= @invoice.invoice_number %></small></h1>
+    <div class="float-end">
+      <% unless @invoice.deleted? %>
+        <%= link_to edit_invoice_path(@invoice), class: "d-none d-sm-inline-block btn btn-sm btn-outline text-dark" do %>
+        <i class="fas fa-edit fa-sm text-dark"></i> Edit 
+        <% end %> |
+        <% unless @invoice.client.branches.empty? %>
+          <%= link_to assign_branches_invoices_path(id: @invoice), class: "d-none d-sm-inline-block btn btn-sm btn-outline text-dark" do %>
+          <i class="fas fa-edit fa-sm text-dark"></i> Assign Branches
+          <% end %>
+        <% end %>
+        <% unless @invoice.deleted? || @invoice.invoice_balance.to_d <= 0 %>
+          <%= link_to setoff_invoice_path(@invoice),
+                      class: "btn btn-sm btn-outline text-dark" do %>
+            <i class="fas fa-exchange-alt"></i> Setoff
+          <% end %>
+           |
+        <% end %>
+
+        <%= button_to @invoice, method: :delete, data: { confirm: "Are you sure?", turbo_confirm: "Are you sure? You want to delete." }, class: "d-none d-sm-inline-block btn btn-sm btn-outline text-dark" do %>
+        <i class="fas fa-trash fa-sm text-dark"></i> Trash
+        <% end %>
+        <%= link_to :back, class: "btn btn-outline btn-sm rounded-0" do %><i class="fas fa-backward text-dark"></i> Back <% end %> 
+      <% end %>
+    </div>
+</div>
+
+<p style="color: green"><%= notice %></p>
+
+<div class="card border-0">
+  <div class="card-body">
+    <%= render @invoice %>
+
+    <%# unless @invoice.deleted? %>
+    <!-- this row will not appear when printing -->
+    <div class="row no-print">
+      <div class="col-xs-12 text-end">
+        <%= link_to duplicate_invoices_path(id: @invoice), class: "btn btn-default" do %>
+        <i class="fas fa-plus fa-sm text-dark"></i> New 
+        <% end %>
+        <%= link_to delivery_note_invoices_path(id: @invoice, format: :pdf), class: "btn btn-default", target: "_blank" do %>
+          <i class="fa fa-print"></i> Delivery Note
+        <% end %>
+        <%= link_to print_invoices_path(id: @invoice, format: :pdf), class: "btn btn-default", target: "_blank" do %>
+          <i class="fa fa-print"></i> Print Invoice
+        <% end %>
+        <%= link_to receipt_invoices_path(id: @invoice, format: :txt), class: "btn btn-default", target: "_blank" do %>
+          <i class="fa fa-print"></i> Print Receipt
+        <% end %>
+        <% if @invoice.is_proforma? %>
+          <%= link_to fiscalise_invoices_path(id: @invoice), class: "btn btn-default" do %>
+            <i class="fa fa-print"></i> Fiscalise Invoice
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+    <%# end %>
+  </div>
+</div>

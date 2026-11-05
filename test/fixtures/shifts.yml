@@ -1,0 +1,39 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  shift_id: MyString
+  username: MyString
+  region_id: 1
+  device: one
+  start_time: 2024-09-10 11:26:41
+  end_time: 2024-09-10 11:26:41
+  active: false
+  start_shift_synced: false
+  close_shift_synced: false
+  declared_amount: 9.99
+  cash_collected: 9.99
+  total-collected: 9.99
+  total_cashed: 9.99
+  epayments: 9.99
+  usd_epayments: 9.99
+  total_prepaid: 9.99
+  shift_supervisor: MyString
+
+two:
+  shift_id: MyString
+  username: MyString
+  region_id: 1
+  device: two
+  start_time: 2024-09-10 11:26:41
+  end_time: 2024-09-10 11:26:41
+  active: false
+  start_shift_synced: false
+  close_shift_synced: false
+  declared_amount: 9.99
+  cash_collected: 9.99
+  total-collected: 9.99
+  total_cashed: 9.99
+  epayments: 9.99
+  usd_epayments: 9.99
+  total_prepaid: 9.99
+  shift_supervisor: MyString

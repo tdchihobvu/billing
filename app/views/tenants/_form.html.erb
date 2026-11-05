@@ -1,0 +1,117 @@
+<%= form_with(model: tenant) do |form| %>
+  <% if tenant.errors.any? %>
+    <div style="color: red">
+      <h2><%= pluralize(tenant.errors.count, "error") %> prohibited this tenant from being saved:</h2>
+
+      <ul>
+        <% tenant.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= form.label :tenant_category_id, style: "display: block" %>
+    <%= form.select :tenant_category_id, TenantCategory.pluck(:name, :id) %>
+  </div>
+
+  <div>
+    <%= form.label :company_name, style: "display: block" %>
+    <%= form.text_field :company_name %>
+  </div>
+
+  <div>
+    <%= form.label :trading_name, style: "display: block" %>
+    <%= form.text_field :trading_name %>
+  </div>
+
+  <div>
+    <%= form.label :registration_number, style: "display: block" %>
+    <%= form.text_field :registration_number %>
+  </div>
+
+  <div>
+    <%= form.label :bp_number, style: "display: block" %>
+    <%= form.text_field :bp_number %>
+  </div>
+
+  <div>
+    <%= form.label :vat_number, style: "display: block" %>
+    <%= form.text_field :vat_number %>
+  </div>
+
+  <div>
+    <%= form.label :address_1, style: "display: block" %>
+    <%= form.text_field :address_1 %>
+  </div>
+
+  <div>
+    <%= form.label :address_2, style: "display: block" %>
+    <%= form.text_field :address_2 %>
+  </div>
+
+  <div>
+    <%= form.label :location, style: "display: block" %>
+    <%= form.text_field :location %>
+  </div>
+
+  <div>
+    <%= form.label :city, style: "display: block" %>
+    <%= form.text_field :city %>
+  </div>
+
+  <div>
+    <%= form.label :country, style: "display: block" %>
+    <%= form.text_field :country %>
+  </div>
+
+  <div>
+    <%= form.label :website, style: "display: block" %>
+    <%= form.text_field :website %>
+  </div>
+
+  <div>
+    <%= form.label :info_email, style: "display: block" %>
+    <%= form.text_field :info_email %>
+  </div>
+
+  <div>
+    <%= form.label :sales_email, style: "display: block" %>
+    <%= form.text_field :sales_email %>
+  </div>
+
+  <div>
+    <%= form.label :mobile_1, style: "display: block" %>
+    <%= form.text_field :mobile_1 %>
+  </div>
+
+  <div>
+    <%= form.label :mobile_2, style: "display: block" %>
+    <%= form.text_field :mobile_2 %>
+  </div>
+
+  <div>
+    <%= form.label :phone_1, style: "display: block" %>
+    <%= form.text_field :phone_1 %>
+  </div>
+
+  <div>
+    <%= form.label :phone_2, style: "display: block" %>
+    <%= form.text_field :phone_2 %>
+  </div>
+
+  <div>
+    <%= form.label :fax_number, style: "display: block" %>
+    <%= form.text_field :fax_number %>
+  </div>
+
+  <div>
+    <%= form.label :active, style: "display: block" %>
+    <%= form.check_box :active %>
+  </div>
+
+  <div>
+    <%= form.submit %>
+  </div>
+<% end %>

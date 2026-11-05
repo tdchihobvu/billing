@@ -1,0 +1,28 @@
+<!-- Page Heading -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Industries</h1>
+    <div class="float-end">
+      <%= link_to new_industry_path, class: "d-none d-sm-inline-block btn btn-sm btn-outline text-dark" do %>
+      <i class="fas fa-file fa-sm text-dark"></i> Add Industry
+      <% end %> |
+      <%= link_to :back, class: "btn btn-outline btn-sm rounded-0" do %><i class="fas fa-backward text-dark"></i> Back <% end %> 
+    </div>
+</div>
+
+<p style="color: green"><%= notice %></p>
+
+<div class="card border-0">
+  <div class="card-body">
+    <div class="table-responsive">
+      <% unless @industries.empty? %>
+      <ul>
+        <% @industries.order('name Asc').each_with_index do |industry,i| %>
+        <li><%=link_to "#{industry.name} - #{number_to_currency(industry.amount, unit: '')}", edit_industry_path(industry) %></li>
+        <% end %>
+      </ul>
+      <% else %>
+        <div class="alert alert-warning text-center border-0" role="alert">There is nothing to display.</div>
+      <% end %>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,21 @@
+<!-- Page Heading -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Edit Bank</h1>
+    <div class="float-end">
+      <%= link_to :back, class: "btn btn-outline btn-sm rounded-0" do %><i class="fas fa-backward text-dark"></i> Back <% end %> 
+    </div>
+</div>
+
+<div class="card border-0">
+  <div class="card-body">
+    <%= render "form", bank: @bank %>
+
+    <br>
+
+    <div>
+      <%= link_to "Show this bank", @bank %> |
+      <%= link_to "Back to banks", banks_path %>
+    </div>
+  </div>
+</div>
+

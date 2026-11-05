@@ -1,0 +1,237 @@
+<!-- Sidebar -->
+<% unless theme_background_color.nil? %>
+    <ul class="navbar-nav sidebar sidebar-dark accordion" style="background-color: <%= theme_background_color %>;" id="accordionSidebar">
+<% else %>
+    <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
+<% end %>
+    <!-- Sidebar - Brand -->
+
+    <%= link_to root_path, class: "sidebar-brand d-flex align-items-center" do %>
+        <div class="sidebar-brand-icon rotate-n-15">
+            <i class="fas fa-clock"></i>
+        </div>
+        <div class="sidebar-brand-text mx-3">Billing System</div>
+    <% end %>
+
+    <!-- Divider -->
+    <hr class="sidebar-divider my-0">
+
+    <!-- Nav Item - Dashboard -->
+    <li class="nav-item active">
+        <%= link_to root_path, class: "nav-link" do %>
+            <i class="fas fa-fw fa-tachometer-alt"></i>
+            <span>Dashboard</span>
+        <% end %>
+    </li>
+
+    <!-- Divider -->
+    <hr class="sidebar-divider">
+
+    <!-- Heading -->
+    <div class="sidebar-heading">
+        Interface
+    </div>
+
+    <!-- Nav Item - Pages Collapse Menu -->
+    <li class="nav-item">
+        <%= link_to clients_path, class: "nav-link", "data-bs-toggle": "collapse", "data-bs-target": "#collapseClients", "aria-expanded": "true", "aria-controls": "collapseUtilities" do %>
+            <i class="fas fa-fw fa-users"></i>
+            <span>Clients</span>
+        <% end %>
+
+        <div id="collapseClients" class="collapse" aria-labelledby="headingUtilities"
+            data-parent="#accordionSidebar">
+            <div class="bg-white py-2 collapse-inner rounded">
+                <%= link_to "View Clients", clients_path, class: "collapse-item" %>
+                <%= link_to "New Client", new_client_path, class: "collapse-item" %>
+                <%= link_to "Industries/Tariffs", industries_path, class: "collapse-item" %>
+            </div>
+        </div>
+    </li>
+
+    <!-- Check if the modules are available -->
+    <% if receipting %>
+    <!-- Nav Item - Charts -->
+    <li class="nav-item">
+        <%= link_to receipts_path, class: "nav-link", "data-bs-toggle": "collapse", "data-bs-target": "#receipts", "aria-expanded": "true", "aria-controls": "collapseUtilities" do %>
+            <i class="fas fa-fw fa-receipt"></i>
+            <span>Receipting</span>
+        <% end %>
+        <div id="receipts" class="collapse" aria-labelledby="headingUtilities"
+            data-parent="#accordionSidebar">
+            <div class="bg-white py-2 collapse-inner rounded">
+                <%= link_to "New Receipt", new_receipt_path, class: "collapse-item" if default_module == 'licensing'  %>
+                <%= link_to "General Receipt", new_receipt_path, class: "collapse-item" unless default_module == 'licensing' %>
+                <%= link_to "View Receipts", receipts_path, class: "collapse-item" %>
+                <%= link_to "Shifts", shifts_receipts_path, class: "collapse-item" %>
+            </div>
+        </div>
+    </li>
+    <% end %>
+
+    <!-- Heading -->
+    <div class="sidebar-heading">
+        Admin
+    </div>
+
+    <% unless default_module == 'licensing' %>
+        <% if quotations %>
+        <!-- Nav Item - Charts -->
+        <li class="nav-item">
+            <%= link_to quotations_path, class: "nav-link", "data-bs-toggle": "collapse", "data-bs-target": "#Employees", "aria-expanded": "true", "aria-controls": "collapseUtilities" do %>
+                <i class="fas fa-fw fa-user-tie"></i>
+                <span>Quotations</span>
+            <% end %>
+            <div id="Employees" class="collapse" aria-labelledby="headingUtilities"
+                data-parent="#accordionSidebar">
+                <div class="bg-white py-2 collapse-inner rounded">
+                    <%= link_to "New Quotation", new_quotation_path, class: "collapse-item" %>
+                    <%= link_to "View Quotations", quotations_path, class: "collapse-item" %>
+                </div>
+            </div>
+        </li>
+        <% end %>
+    <% end %>
+
+    <% if licensing %>
+    <!-- Nav Item - Charts -->
+    <li class="nav-item">
+        <%= link_to licenses_path, class: "nav-link", "data-bs-toggle": "collapse", "data-bs-target": "#Licenses", "aria-expanded": "true", "aria-controls": "collapseUtilities" do %>
+            <i class="fas fa-fw fa-folder"></i>
+            <span>Licensing</span>
+        <% end %>
+        <div id="Licenses" class="collapse" aria-labelledby="headingUtilities"
+            data-parent="#accordionSidebar">
+            <div class="bg-white py-2 collapse-inner rounded">
+                <%#= link_to "New License", new_license_path, class: "collapse-item" %>
+                <%= link_to "View Licenses", licenses_path, class: "collapse-item" %>
+                <%= link_to "Auto Renewal", licenses_path, class: "collapse-item" %>
+                <%= link_to "Upcoming Renewals", upcoming_renewals_reports_path, class: "collapse-item" %>
+            </div>
+        </div>
+    </li>
+    <% end %>
+
+    <% if invoicing %>
+    <!-- Nav Item - Charts -->
+    <li class="nav-item">
+        <%= link_to invoices_path, class: "nav-link", "data-bs-toggle": "collapse", "data-bs-target": "#Invoices", "aria-expanded": "true", "aria-controls": "collapseUtilities" do %>
+            <i class="fas fa-fw fa-copy"></i>
+            <span>Invoices</span>
+        <% end %>
+        <div id="Invoices" class="collapse" aria-labelledby="headingUtilities"
+            data-parent="#accordionSidebar">
+            <div class="bg-white py-2 collapse-inner rounded">
+                <% if default_module == 'licensing' %>
+                    <%= link_to "New Invoice", license_invoices_path, class: "collapse-item" %>
+                <% else %>
+                    <%= link_to "New Invoice", proforma_invoices_path, class: "collapse-item" %>
+                <% end %>
+                <%= link_to "View Invoices", invoices_path, class: "collapse-item" %>
+                <%= link_to "Credit Notes", credit_notes_invoices_path, class: "collapse-item" unless default_module == 'licensing'  %>
+            </div>
+        </div>
+    </li>
+    <% end %>
+
+    <% if inventory %>
+    <!-- Nav Item - Charts -->
+    <li class="nav-item">
+        <%= link_to products_path, class: "nav-link", "data-bs-toggle": "collapse", "data-bs-target": "#inventory", "aria-expanded": "true", "aria-controls": "collapseUtilities" do %>
+            <i class="fas fa-fw fa-warehouse"></i>
+            <span>Inventory</span>
+        <% end %>
+        <div id="inventory" class="collapse" aria-labelledby="headingUtilities"
+            data-parent="#accordionSidebar">
+            <div class="bg-white py-2 collapse-inner rounded">
+                <%= link_to "Stock Sheet", products_path, class: "collapse-item" %>
+                <%= link_to "Receive Stock", new_goods_received_path, class: "collapse-item" %>
+                <%= link_to "Product Lines", products_path, class: "collapse-item" %>
+                <%= link_to "Stock Count", stock_counts_path, class: "collapse-item" %>
+            </div>
+        </div>
+    </li>
+    <% end %>
+
+    <li class="nav-item">
+        <%= link_to root_path, class: "nav-link", "data-bs-toggle": "collapse", "data-bs-target": "#reports", "aria-expanded": "true", "aria-controls": "collapseUtilities" do %>
+            <i class="fas fa-chart-line"></i>
+            <span>Reports</span>
+        <% end %>
+        <div id="reports" class="collapse" aria-labelledby="headingUtilities"
+            data-parent="#accordionSidebar">
+            <div class="bg-white py-2 collapse-inner rounded">
+                <%= link_to "Sales", sales_reports_path, class: "collapse-item" %>
+                <%= link_to "Collections", collections_reports_path, class: "collapse-item" %>
+                <%= link_to "Overdue Invoices", overdue_invoices_reports_path, class: "collapse-item" %>
+            </div>
+        </div>
+    </li>
+
+    <li class="nav-item">
+        <%= link_to user_management_index_path, class: "nav-link", "data-bs-toggle": "collapse", "data-bs-target": "#Users", "aria-expanded": "true", "aria-controls": "collapseUtilities" do %>
+            <i class="fas fa-fw fa-users"></i>
+            <span>Users</span>
+        <% end %>
+        <div id="Users" class="collapse" aria-labelledby="headingUtilities"
+            data-parent="#accordionSidebar">
+            <div class="bg-white py-2 collapse-inner rounded">
+                <%= link_to "System Users", user_management_index_path, class: "collapse-item" %>
+            </div>
+        </div>
+    </li>
+
+    <!-- Divider -->
+    <hr class="sidebar-divider d-none d-md-block">
+
+    <!-- Nav Item - Utilities Collapse Menu -->
+
+    <li class="nav-item">
+        <%= link_to "", class: "nav-link", "data-bs-toggle": "collapse", "data-bs-target": "#Settings", "aria-expanded": "true", "aria-controls": "collapseUtilities" do %>
+            <i class="fas fa-fw fa-cogs"></i>
+            <span>System Settings</span>
+        <% end %>
+        <div id="Settings" class="collapse" aria-labelledby="headingUtilities"
+            data-parent="#accordionSidebar">
+            <div class="bg-white py-2 collapse-inner rounded">
+                <%= link_to "General", system_settings_path, class: "collapse-item" %>
+                <% if inventory %>
+                    <%= link_to 'Inventory', inventory_index_path, class: "collapse-item" %>
+                <% end %>
+                <%= link_to "Taxes", vat_types_path, class: "collapse-item" %>
+                <%= link_to "Exchange Rates", exchange_rates_path, class: "collapse-item" %>
+                <%= link_to "Regional offices", regional_offices_path, class: "collapse-item" %>
+
+            </div>
+        </div>
+    </li>
+    <% if api %>
+    <li class="nav-item">
+        <%= link_to "", class: "nav-link", "data-bs-toggle": "collapse", "data-bs-target": "#api", "aria-expanded": "true", "aria-controls": "collapseUtilities" do %>
+            <i class="fas fa-fw fa-link"></i>
+            <span>Third Party Apps/Device</span>
+        <% end %>
+        <div id="api" class="collapse" aria-labelledby="headingUtilities"
+            data-parent="#accordionSidebar">
+            <div class="bg-white py-2 collapse-inner rounded">
+                <%= link_to "Register App/Device", new_device_path, class: "collapse-item" %>
+                <%= link_to "List Apps/Devices", devices_path, class: "collapse-item" %>
+
+            </div>
+        </div>
+    </li>
+    <% end %>
+    <!-- Nav Item - Dashboard -->
+    <li class="nav-item">
+        <%= link_to refresh_welcome_index_path, class: "nav-link" do %>
+            <i class="fa fa-refresh"></i>
+            <span>Refresh</span>
+        <% end %>
+    </li>
+    <!-- Sidebar Toggler (Sidebar) -->
+    <div class="text-center d-none d-md-inline">
+        <button class="rounded-circle border-0" id="sidebarToggle"></button>
+    </div>
+
+</ul>
+<!-- End of Sidebar -->

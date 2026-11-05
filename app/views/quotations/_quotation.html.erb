@@ -1,0 +1,89 @@
+<div id="<%= dom_id quotation %>">
+  <div class="card border-0">
+    <div class="card-body">
+      <div class="row">
+        <div class="col-6 small">
+          <h6>Bill To:</h6>
+          <%= quotation.client.name %><br/>
+          <%= quotation.client.address_1 %><br/>
+          <%= quotation.client.address_2 %><br/>
+          <%= quotation.client.location %><br/>
+          <%= quotation.client.city %><br/>
+        </div>
+        <div class="col-3 text-end small">
+          Quotation No:<br/>
+          Quotation Date:<br/>
+          Currency:<br/>
+          Sales Person:<br/>
+          Validity Period:<br/>
+        </div>
+        <div class="col-3 small">
+          <%= quotation.quotation_number %><br/>
+          <%= quotation.quotation_date %><br/>
+          <%= quotation.currency.name %><br/>
+          <%= quotation.user.user_fullname %><br/>
+          <%= pluralize(quotation.validity, 'day') %><br/>
+          
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quotation items -->
+  <table class="table table-hover">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Description</th>
+        <th>Unit Price</th>
+        <th>Qty</th>
+        <th>Line Vat</th>
+        <th>Line Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% quotation.quotation_items.each_with_index do |item,i| %>
+      <tr>
+          <td><%= i+=1 %></td>
+          <td><%= item.description %></td>
+          <td><%= sprintf("%0.03f",item.unit_price) %></td>
+          <td><%= item.quantity %></td>
+          <td><%= number_to_currency(item.line_vat, unit: "") %></td>
+          <td><%= number_to_currency(item.line_total, unit: "#{quotation.currency.symbol} ") %></td>
+      </tr>
+      <% end %>
+      <tr>
+        <th></th>
+        <th colspan= 4>Sub Total</th>
+        <th><%= number_to_currency(quotation.sub_total, unit: "#{quotation.currency.symbol} ") %></th>
+      </tr>
+      <tr>
+        <th></th>
+        <th colspan= 4>VAT</th>
+        <th><%= number_to_currency(quotation.vat, unit: "#{quotation.currency.symbol} ") %></th>
+      </tr>
+      <tr>
+        <th></th>
+        <th colspan= 4>Total</th>
+        <th><%= number_to_currency(quotation.total, unit: "#{quotation.currency.symbol} ") %></th>
+      </tr>
+  </table>
+
+  <div class="row">
+    <div class="col-4 fs-6">
+      <h6>Bank Details</h6>
+      <% unless quotation.bank_id.nil? %>
+        Bank Name: <%= quotation.bank.bank_name %><br/>
+        Account Name: <%= quotation.bank.account_name %><br/>
+        Account Number: <%= quotation.bank.account_number %><br/>
+        Branch: <%= quotation.bank.branch %><br/>
+        Swift Code: <%= quotation.bank.swift_code %><br/>
+      <% end %>
+    </div>
+    <div class="col-2"></div>
+    <div class="col-6">
+      <h6>Terms:</h6>
+      <%= quotation.quotation_terms %>
+    </div>
+  </div>
+</div>

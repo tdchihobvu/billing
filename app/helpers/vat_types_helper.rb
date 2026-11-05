@@ -1,0 +1,2 @@
+module VatTypesHelper
+end

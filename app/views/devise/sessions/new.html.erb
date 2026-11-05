@@ -1,0 +1,57 @@
+<!-- check if this device is registered -->
+<% if DeviceSetting.all.empty? and system_mode == 'client' %>
+  <div class="text-left">
+      <h1 class="h4 text-gray-900 mb-4">Enter Device ID</h1>
+  </div>
+  <%= form_tag register_device_welcome_index_path do %>
+    <div class="form-group">
+      <%= label_tag :deviceID, "Device ID" %><br />
+      <%= text_field_tag :deviceID %>
+    </div>
+    <div class="actions">
+      <%= submit_tag "Register Device", class: "btn btn-primary btn-user btn-block" %>
+    </div>
+  <% end %>
+<% else %>
+  <div class="text-left">
+      <h1 class="h4 text-gray-900 mb-4">Sign in</h1>
+  </div>
+
+  <%= form_for(resource, as: resource_name, url: session_path(resource_name), class: "user") do |f| %>
+    <div class="form-group">
+      <%= f.label :username, "Username" %><br />
+      <%= f.text_field :username, autofocus: true, class: "form-control form-control-user" %>
+    </div>
+
+    <div class="form-group">
+      <%= f.label :password %><br />
+      <%= f.password_field :password, autocomplete: "current-password", class: "form-control form-control-user" %>
+    </div>
+
+    <% if devise_mapping.rememberable? %>
+      <div class="form-group">
+        <div class="custom-control custom-checkbox small">
+          <%= f.check_box :remember_me, class: "custom-control-input" %>
+          <%= f.label :remember_me, class: "custom-control-label" %>
+        </div>
+      </div>
+    <% end %>
+
+    <div class="actions">
+      <%= f.submit "Log in", class: "btn btn-primary btn-user btn-block" %>
+    </div>
+  <% end %>
+
+  <% unless notice.nil? %>
+  <br/>
+    <p class="alert alert-info d-flex align-items-center"><%= notice %></p>
+  <% end %>
+  <% unless alert.nil? %>
+  <br/>
+    <p class="alert alert-warning d-flex align-items-center"><%= alert %></p>
+  <% end %>
+  <hr/>
+  <div class="text-left small">
+  <%= render "devise/shared/links" %>
+  </div>
+<% end %>

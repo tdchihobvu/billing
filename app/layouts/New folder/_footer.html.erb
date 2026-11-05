@@ -1,0 +1,15 @@
+<!-- Footer -->
+<footer class="sticky-footer bg-white">
+    <div class="container my-auto">
+        <div class="copyright text-center my-auto">
+          <% syear = Date.new(2024,01,01).year %>
+          <% if Date.today.year == syear %>
+            <% copyright = syear %>
+          <% else %>
+            <% copyright = "#{syear} - #{Date.today.year}" %>
+          <% end %>
+          <span>Copyright &copy; <%= copyright %> Billing Management System By <a href="#">Dapsoft Solutions</a></span>
+        </div>
+    </div>
+</footer>
+<!-- End of Footer -->

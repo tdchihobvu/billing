@@ -1,0 +1,22 @@
+wb = xlsx_package.workbook
+
+wb.add_worksheet(name: "Collections") do |sheet|
+  sheet.add_row ["#{@page_title}"]
+  sheet.add_row [""]
+  sheet.add_row ["#{default_user_title} Name","Amount"]
+  i = 0
+  total = 0
+  @receipts.each do |receipt|
+    username = ""
+    unless receipt.user_id.nil?
+      username = receipt.user.user_fullname
+    end
+    sheet.add_row [
+    username,
+    format_amount(receipt.total),
+    ]
+    total += receipt.total
+  end
+  sheet.add_row [""]
+  sheet.add_row ["Total", format_amount(total)]
+end

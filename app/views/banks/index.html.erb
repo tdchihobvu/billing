@@ -1,0 +1,41 @@
+<!-- Page Heading -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Banks</h1>
+    <div class="float-end">
+      <%= link_to new_bank_path, class: "d-none d-sm-inline-block btn btn-sm btn-outline text-dark" do %>
+      <i class="fas fa-file fa-sm text-dark"></i> New Bank
+      <% end %> |
+      <%= link_to :back, class: "btn btn-outline btn-sm rounded-0" do %><i class="fas fa-backward text-dark"></i> Back <% end %> 
+    </div>
+</div>
+
+<p style="color: green"><%= notice %></p>
+<div class="row">
+  <% @banks.each do |bank| %>
+  <div class="col-xl-4 col-lg-5">
+    <div class="card shadow mb-4 border-0">
+      <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between border-0">
+          <h6 class="m-0 font-weight-bold text-primary"><%= bank.description %></h6>
+          <div class="dropdown no-arrow">
+              <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink"
+                  data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+              </a>
+              <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
+                  aria-labelledby="dropdownMenuLink">
+                  <%= link_to 'View', bank, class: 'dropdown-item small' %>
+                  <div class="dropdown-divider"></div>
+                  <%= link_to 'Edit',edit_bank_path(bank), class: 'dropdown-item small' %>
+              </div>
+          </div>
+      </div>
+      <!-- Card Body -->
+      <div class="card-body">
+          <div class="mt-0 text-left small">
+            <strong>Account No.</strong> <%= bank.account_number%>
+          </div>
+      </div>
+    </div>
+  </div>
+  <% end %>
+</div>

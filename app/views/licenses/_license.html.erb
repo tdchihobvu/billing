@@ -1,0 +1,46 @@
+<div id="<%= dom_id license %>">
+  <p>
+    <strong>Client:</strong>
+    <%= license.invoice.client.name %>
+  </p>
+
+  <p>
+    <strong>License category:</strong>
+    <%= license.license_category.name %>
+  </p>
+
+  <p>
+    <strong>Renewal date:</strong>
+    <%= license.renewal_date %>
+  </p>
+
+  <p>
+    <strong>Expiry date:</strong>
+    <%= license.expiry_date %>
+  </p>
+
+  <p>
+    <strong>Auto renewal:</strong>
+    <%= license.auto_renewal %>
+  </p>
+
+  <p>
+    <strong>License option:</strong>
+    <%= license.license_option.name %>
+  </p>
+
+  <p>
+    <strong>Printed:</strong>
+    <%= license.printed %>
+  </p>
+
+  <p>
+    <strong>Active:</strong>
+    <%= license.active %>
+  </p>
+
+  <p>
+    <%= image_tag(license.qr_code) if license.qr_code.attached? %>
+  </p>
+
+</div>

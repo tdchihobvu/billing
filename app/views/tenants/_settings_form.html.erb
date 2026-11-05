@@ -1,0 +1,71 @@
+<%= form_with(model: tenant) do |form| %>
+  <% if tenant.errors.any? %>
+    <div style="color: red">
+      <h2>
+        <%= pluralize(tenant.errors.count, "error") %>
+        prohibited this tenant from being saved:
+      </h2>
+
+      <ul>
+        <% tenant.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <%= hidden_field_tag :return_to, params[:return_to].presence || request.referer %>
+
+  <%= form.fields_for :system_settings do |builder| %>
+    <%= builder.hidden_field :id %>
+    <%= builder.hidden_field :config_key_id %>
+
+    <% config_key = builder.object.config_key %>
+
+    <div class="form-group">
+      <%= builder.label :config_value, config_key.name %>
+
+      <% if config_key.name == "Product Pricing" %>
+
+        <%= builder.radio_button :config_value, 'exclusive' %>
+        Excludes VAT
+
+        <%= builder.radio_button :config_value, 'inclusive' %>
+        Includes VAT
+
+      <% elsif config_key.name == "Default Module" %>
+
+        <%= builder.select :config_value,
+            ['invoicing', 'licensing'] %>
+
+      <% elsif config_key.name == "Exchange Rate Update Frequency" %>
+
+        <%= builder.select :config_value,
+            ['daily', 'skip day', 'weekly', 'monthly'] %>
+
+      <% elsif config_key.name == "Attach Invoice to Receipt" %>
+
+        <%= builder.radio_button :config_value, 'NO' %>
+        NO
+
+        <%= builder.radio_button :config_value, 'YES' %>
+        YES
+
+      <% elsif config_key.name == "Base Currency" %>
+
+        <%= builder.select :config_value,
+            Currency.all.collect { |c| [c.name, c.id] },
+            { prompt: 'Select Currency' } %>
+
+      <% else %>
+
+        <%= builder.text_field :config_value %>
+
+      <% end %>
+    </div>
+  <% end %>
+
+  <div>
+    <%= form.submit "Update Settings" %>
+  </div>
+<% end %>

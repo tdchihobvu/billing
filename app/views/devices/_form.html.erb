@@ -1,0 +1,47 @@
+<%= form_with(model: device) do |form| %>
+  <% if device.errors.any? %>
+    <div style="color: red">
+      <h2><%= pluralize(device.errors.count, "error") %> prohibited this device from being saved:</h2>
+
+      <ul>
+        <% device.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= form.label :name, style: "display: block" %>
+    <%= form.text_field :name %>
+  </div>
+
+  <div>
+    <%= form.label :serial_number,"Serial No./Mac Address", style: "display: block" %>
+    <%= form.text_field :serial_number %>
+  </div>
+
+  <div>
+    <%= form.label :model, style: "display: block" %>
+    <%= form.text_field :model %>
+  </div>
+
+  <div>
+    <%= form.label :active, style: "display: block" %>
+    <%= form.check_box :active %>
+  </div>
+
+  <div>
+    <%= form.label :regional_office_id, style: "display: block" %>
+    <%= form.select :regional_office_id, tenant.regional_offices.collect {|u| [u.name, u.id]}, {prompt: "Assign office"} %>
+  </div>
+
+  <div>
+    <%= form.label :user_id, "Assign User", style: "display: block" %>
+    <%= form.select :user_id, tenant.users.collect {|u| [u.user_fullname, u.id]}, {prompt: "Assign User"} %>
+  </div>
+
+  <div>
+    <%= form.submit %>
+  </div>
+<% end %>

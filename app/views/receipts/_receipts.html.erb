@@ -1,0 +1,61 @@
+<% unless @receipts.empty? %>
+  <table id="dataTable" class="table table-striped small" width="100%" cellspacing="0">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Date</th>
+        <th>Reference Number</th>
+        <th>Client Name</th>
+        <th>Payment Form</th>
+        <th>Rate</th>
+        <th>Comment</th>
+
+        <% @currencies.each do |currency| %>
+          <th><%= currency.symbol %></th>
+        <% end %>
+
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @receipts.each_with_index do |r, i| %>
+        <tr>
+          <td><%= i + 1 %></td>
+          <td><%= r.transaction_date %></td>
+          <td><%= r.reference_number %></td>
+          <td><%= r.client.name %></td>
+          <td><%= r.payment_form.name %></td>
+          <td><%= r.rate %></td>
+          <td><%= r.description %></td>
+
+          <% @currencies.each do |currency| %>
+            <td>
+              <% if r.currency_id == currency.id %>
+                <%= number_to_currency(r.amount, unit: "") %>
+              <% end %>
+            </td>
+          <% end %>
+
+          <td>
+            <%= link_to r,
+                class: "btn btn-outline text-dark small",
+                title: "Print Receipt" do %>
+              <i class="fas fa-print fa-sm text-dark"></i>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+
+  </table>
+<% else %>
+  <div class="alert alert-warning text-center border-0" role="alert">
+    There is nothing to display.
+  </div>
+<% end %>
+
+<script>
+  $(document).ready(function() {
+    $('#dataTable').DataTable();
+  });
+</script>

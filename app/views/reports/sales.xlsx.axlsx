@@ -1,0 +1,35 @@
+wb = xlsx_package.workbook
+
+wb.add_worksheet(name: "Sales") do |sheet|
+  sheet.add_row ["","#{@page_title} #{@invoices.size}"]
+  sheet.add_row [""]
+  sheet.add_row ["#","Date", "Invoice No.", "Client Name","Category", "#{default_user_title}","Currency","Invoice Amount"]
+  i = 0
+  @invoices.each do |invoice|
+    client_name = ""
+    unless invoice.client.nil?
+      client_name = invoice.client.name
+    end
+    currency_symbol = ""
+    unless invoice.currency.nil?
+      currency_symbol = invoice.currency.symbol
+    end
+    description = invoice.description
+    if invoice.is_license
+      unless invoice.license.nil?
+        description = invoice.license.license_category.name
+      end
+    end
+
+    sheet.add_row [
+    i+=1,
+    invoice.invoice_date.strftime("%d/%m/%Y"),
+    invoice.invoice_number,
+    client_name,
+    description,
+    invoice.user.user_fullname,
+    invoice.currency.name,
+    format_amount(invoice.total)
+    ]
+  end
+end

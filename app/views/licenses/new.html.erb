@@ -1,0 +1,32 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Search Client</h1>
+    <div class="float-end">
+      <%= link_to :back, class: "btn btn-outline btn-sm rounded-0" do %><i class="fas fa-backward text-dark"></i> Back <% end %> 
+    </div>
+</div>
+
+<p style="color: green"><%= notice %></p>
+
+<div class="card border-0">
+  <div class="card-body">
+    <%= form_tag(new_license_path, method: :get) do %>
+      <div class="input-group mb-4">
+        <%= text_field_tag(:search, params[:search], placeholder: "Enter client name",  class: "form-control form-control-sm") %>
+        <div class="input-group-append">
+          <%= submit_tag "Search", class: "btn btn-primary" %>
+        </div>    
+      </div>
+    <% end %>
+
+    <% unless @clients.empty? %>
+    <ul>
+        <% @clients.each_with_index do |client,i| %>
+        <li><%= link_to "#{i+=1} - #{client.name}", generate_licenses_path(client_id: client) %></li>
+        <% end %>
+    </ul>
+    <% else %>
+    <div class="alert alert-warning text-center border-0" role="alert">There is nothing to display.</div>
+    <% end %>
+
+  </div>
+</div>

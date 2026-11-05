@@ -1,0 +1,15 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Quotation</h1>
+
+    <%= link_to :back, class: "d-none d-sm-inline-block btn btn-outline btn-sm rounded-0" do %><i class="fas fa-backward text-dark"></i> Back <% end %> 
+
+</div>
+
+<p style="color: green"><%= notice %></p>
+
+<div class="card border-0">
+  <div class="card-body">
+    <%= render "form", quotation: @quotation %>
+  </div>
+</div>
+

@@ -1,0 +1,28 @@
+wb = xlsx_package.workbook
+
+wb.add_worksheet(name: "Collections") do |sheet|
+  sheet.add_row ["","#{@page_title}"]
+  sheet.add_row [""]
+  sheet.add_row ["#","Date", "Reference No.", "Client Name","Payment Form", "#{default_user_title}","Currency","Amount"]
+  i = 0
+  @receipts.each do |receipt|
+    client_name = ""
+    unless receipt.client.nil?
+      client_name = receipt.client.name
+    end
+    currency_symbol = ""
+    unless receipt.currency.nil?
+      currency_symbol = receipt.currency.symbol
+    end
+    sheet.add_row [
+    i+=1,
+    receipt.transaction_date.strftime("%d/%m/%Y"),
+    receipt.reference_number,
+    client_name,
+    receipt.payment_form.name,
+    receipt.user.user_fullname,
+    receipt.currency.name,
+    format_amount(receipt.amount)
+    ]
+  end
+end

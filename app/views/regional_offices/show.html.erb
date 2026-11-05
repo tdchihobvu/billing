@@ -1,0 +1,10 @@
+<p style="color: green"><%= notice %></p>
+
+<%= render @regional_office %>
+
+<div>
+  <%= link_to "Edit this regional office", edit_regional_office_path(@regional_office) %> |
+  <%= link_to "Back to regional offices", regional_offices_path %>
+
+  <%= button_to "Destroy this regional office", @regional_office, method: :delete %>
+</div>

@@ -1,0 +1,66 @@
+<%= form_with(model: goods_received) do |form| %>
+  <% if goods_received.errors.any? %>
+    <div style="color: red">
+      <h2><%= pluralize(goods_received.errors.count, "error") %> prohibited this goods_received from being saved:</h2>
+
+      <ul>
+        <% goods_received.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= form.label :grv_number, style: "display: block" %>
+    <%= form.text_field :grv_number %>
+  </div>
+
+  <div>
+    <%= form.label :ext_number, style: "display: block" %>
+    <%= form.text_field :ext_number %>
+  </div>
+
+  <div>
+    <%= form.label :supplier_id, style: "display: block" %>
+    <%= form.select :supplier_id, Supplier.order('name asc').pluck(:name, :id), {include_blank: true}, {data: {controller: 'slim'}, class: "form-control small"} %>
+  </div>
+
+  <div>
+    <%= form.label :user_id, style: "display: block" %>
+    <%= form.select :user_id, User.where().pluck(:name, :id), {include_blank: true}, {data: {controller: 'slim'}, class: "form-control small"} %>
+  </div>
+
+  <div>
+    <%= form.label :date_received, style: "display: block" %>
+    <%= form.date_field :date_received %>
+  </div>
+
+  <h6 class="required_field"><strong>Received Items</strong></h6>
+  <p></p>
+  <!-- Nested attributes - Invoice Items -->
+  <div class="row">
+      <div class="col-sm-5 small fw-bold">Description</div>
+      <div class="col-sm-1 small fw-bold">Quantity</div>
+      <div class="col-sm-2 small fw-bold">Net Cost</div>
+      <div class="col-sm-1 small fw-bold">VAT</div>
+      <div class="col-sm-2 small fw-bold">Selling Price Before VAT</div>
+      <div class="col-sm-1 small fw-bold">VAT Type</div>
+  </div>
+  <div class="row">
+    <%= form.fields_for :goods_received_items do |f| %>
+      <div class="col-sm-5">
+        <div class="form-group"><%= f.select :product_id, Product.order('name asc').pluck(:description, :id), {include_blank: true}, {data: {controller: 'slim'}, class: "form-control small"} %></div>
+      </div>
+      <div class="col-sm-1"><div class="form-group"><%= f.number_field :quantity, class: 'form-control form-control-sm' %></div></div>
+      <div class="col-sm-2"><div class="form-group"><%= f.text_field :net_cost, class: 'form-control form-control-sm' %></div></div>
+      <div class="col-sm-1"><div class="form-group"><%= f.text_field :cost_vat, class: 'form-control form-control-sm' %></div></div>
+      <div class="col-sm-2"><div class="form-group"><%= f.text_field :net_selling_price, class: 'form-control form-control-sm' %></div></div>
+      <div class="col-sm-1"><div class="form-group"><%= f.select :vat_type_id, VatType.all.collect {|v| [v.name, v.id]}, {prompt: "Select"}, class: 'form-control form-control-sm' %></div></div>
+    <% end %>
+  </div>
+
+  <div>
+    <%= form.submit %>
+  </div>
+<% end %>

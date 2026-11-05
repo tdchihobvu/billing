@@ -1,0 +1,74 @@
+<div class="row">
+	<div class="card border-0">
+		<div class="card-body">
+			<div class="card-title">Account Statement
+			<div class="float-end">
+			  <%= link_to takeon_balances_clients_path(id: @client), class: "d-none d-sm-inline-block btn btn-outline btn-sm text-dark" do  %>
+			  		Takeon Balance
+			  <% end %> |
+			  <%= link_to reset_statement_clients_path(id: @client), class: "d-none d-sm-inline-block btn btn-outline btn-sm text-dark" do  %>
+			  		Refresh 
+			  <% end %> |
+		      <%= link_to account_statement_clients_path(id: @client, as_at: Date.today, format: :pdf), class: "d-none d-sm-inline-block btn btn-outline btn-sm text-dark", target: "_blank" do %>
+		      <i class="fas fa-print fa-sm text-dark"></i> Print
+		      <% end %>	|
+		      <%= link_to print_by_date_clients_path(id: @client), class: "d-none d-sm-inline-block btn btn-sm btn-outline text-dark" do %>
+		      <i class="fas fa-print fa-sm text-dark"></i> Print As At
+		      <% end %>		
+			</div>
+			</div>
+			<% if  @client.transactions.where(deleted: false).empty? %>
+					<p class="alert alert-info d-flex align-items-center" role="alert">There is nothing to display!</p>
+			<% else %>
+				<table class="table table-striped">
+					<thead>
+						<tr>
+							<th>#</th>
+							<th>Ref No</th>
+							<th>Description</th>
+							<th>Debit</th>
+							<th>Credit</th>
+							<th>Balance</th>	
+						</tr>
+					</thead>
+					
+					<tbody>
+						<% balance = 0 %>
+						 <% @client.transactions.order(transaction_date: :asc, debit: :desc).where(deleted: false).each_with_index do |transaction,i| %>
+						 
+							 <% if transaction.debit? %>
+								 <% balance += transaction.rated_amount(@target_currency) %>
+								<tr>
+									<td><%= i+=1 %></td>
+									<td><%= transaction.reference_number %></td>
+									<td><%= transaction.description %></td>							
+									<td><%= number_to_currency(transaction.rated_amount(@target_currency), unit: "") %></td>
+									<td></td>																
+									<td><%= number_to_currency(balance, unit: "") %></td>		
+									<td>
+										<% if transaction.journal? %>
+											<%= link_to "View", controller: :clients, action: :edit_journal, id: transaction, client_id: @client %>
+										<% else %>
+											<%= link_to "View", controller: "#{transaction.source.downcase}", action: :show, id: transaction.source_id %>
+										<% end %>		
+									</td>					
+								</tr>
+							<% else %>
+								
+								 <% balance -= transaction.rated_amount(@target_currency) %>
+								 <tr>
+									<td><%= i+=1 %></td>
+									<td><%= transaction.reference_number %></td>
+									<td><%= transaction.description %></td>							
+									<td></td>
+									<td><%= number_to_currency(transaction.rated_amount(@target_currency), unit: "") %></td>																
+									<td><%= number_to_currency(balance, unit: "") %></td>											
+								</tr>
+							<% end %>
+						<% end %>
+					</tbody>
+				</table>
+			<% end %>			
+		</div>
+	</div>
+</div>

@@ -1,0 +1,146 @@
+<div id="<%= dom_id invoice %>">
+  <% if @invoice.deleted? %>
+  <div class="alert alert-danger text-center" role="alert">
+    This invoice is nolonger active
+  </div>
+  <% end %>
+  <!-- info row -->
+  <div class="row invoice-info">
+    <div class="col-sm-6 invoice-col">
+      Invoice To
+      <address>
+        <strong><%= link_to invoice.client.name, invoice.client %></strong><br>
+        <%= invoice.client.address_1 %><br/>
+        <%= invoice.client.address_2 %><br/>
+        <%= invoice.client.location %><br/>
+        <%= invoice.client.city %><br/>
+      </address>
+    </div>
+    <!-- /.col -->
+    <div class="col-sm-3 text-right">
+      <br/>
+      <b>Invoice No:</b><br/>
+      <b>Invoice Date:</b><br/>
+      <b>Currency:</b><br/>
+      <b>Sales Person:</b><br/>
+    </div>
+    <div class="col-sm-3 invoice-col">
+      <br/>
+      <%= invoice.invoice_number %><br/>
+      <%= invoice.invoice_date.strftime("%d/%m/%Y") %><br/>
+      <%= invoice.currency.name %><br/>
+      <%= invoice.user.user_fullname %>
+      <br/>
+    </div>
+    <!-- /.col -->
+  </div>
+  <!-- /.row -->
+
+  <div class="row">
+    <!-- invoice items -->
+    <div class="col-xs-12 table-responsive">
+      <table class="table table-striped fw-4">
+        <thead>
+          <tr>
+            <th>HS Code</th>
+            <th>Description</th>
+            <th>Unit Price</th>
+            <th>Qty</th>
+            <th>VAT</th>
+            <th>Line Vat</th>
+            <th>Line Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if invoice.is_license %>
+              <tr>
+                <td><%= 1 %></td>
+                <td><%= invoice.license.license_category_id %></td>
+                <td><%= number_to_currency(invoice.license.unit_price, unit: "") %></td>
+                <td><%= invoice.license.quantity %></td>
+                <td><%= number_to_currency(invoice.license.vat, unit: "") %></td>
+                <td><%= number_to_currency(invoice.license.line_vat, unit: "") %></td>
+                <td><%= number_to_currency(invoice.license.amount, unit: "") %></td>
+              </tr>
+          <% else %>
+            <% invoice.invoice_items.active.each_with_index do |item,i| %>
+            <tr>
+              <td><%= item.item_code %></td>
+              <td><%= item.description %></td>
+              <td><%= number_to_currency(item.net_price, unit: "") %></td>
+              <td><%= item.quantity %></td>
+              <td><%= number_to_currency(item.vat, unit: "") %></td>
+              <td><%= number_to_currency(item.line_vat, unit: "") %></td>
+              <td><%= number_to_currency(item.line_total, unit: "") %></td>
+            </tr>
+            <% end %>
+          <% end %>
+      </table>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- accepted payments column -->
+    <% unless invoice.banks.empty? %>
+      <% invoice.banks.each do |bank| %>
+      <div class="col-sm-3">
+        <p class="lead">Bank Details:</p>
+          Bank Name: <%= bank.bank_name %><br/>
+          Account Name: <%= bank.account_name %><br/>
+          Account Number: <%= bank.account_number %><br/>
+          Branch: <%= bank.branch %><br/>
+          Swift Code: <%= bank.swift_code %><br/>
+      </div>
+      <% end %>
+    <% else %>
+      <div class="col-sm-8"></div>
+    <% end %>
+    <!-- /.col -->
+    <div class="col-sm-4">
+      <div class="table-responsive">
+        <% if invoice.is_license %>
+          <table class="table">
+            <tr>
+              <th style="width:62%">Subtotal:</th>
+              <td><%= number_to_currency(invoice.license.sub_total, unit: "") %></td>
+            </tr>
+            <tr>
+              <th>Tax</th>
+              <td><%= number_to_currency(invoice.license.vat, unit: "") %></td>
+            </tr>
+            <tr>
+              <th>Total:</th>
+              <td><%= number_to_currency(invoice.license.amount, unit: "") %></td>
+            </tr>
+            <tr>
+              <th>Balance:</th>
+              <td><%= number_to_currency(invoice.invoice_balance, unit: "") %></td>
+            </tr>
+          </table>
+        <% else %>
+          <table class="table">
+            <tr>
+              <th style="width:62%">Subtotal:</th>
+              <td><%= number_to_currency(invoice.sub_total, unit: "") %></td>
+            </tr>
+            <tr>
+              <th>Tax</th>
+              <td><%= number_to_currency(invoice.vat, unit: "") %></td>
+            </tr>
+            <tr>
+              <th>Total:</th>
+              <td><%= number_to_currency(invoice.total, unit: "") %></td>
+            </tr>
+            <tr>
+              <th>Balance:</th>
+              <td><%= number_to_currency(invoice.invoice_balance, unit: "") %></td>
+            </tr>
+          </table>
+        <% end %>
+      </div>
+    </div>
+    <!-- /.col -->
+  </div>
+  <!-- /.row -->      
+
+</div>

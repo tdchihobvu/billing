@@ -1,0 +1,14 @@
+<p style="color: green"><%= notice %></p>
+
+<h1>Vat types</h1>
+
+<div id="vat_types">
+  <% @vat_types.each do |vat_type| %>
+    <%= render vat_type %>
+    <p>
+      <%= link_to "Show this vat type", vat_type %>
+    </p>
+  <% end %>
+</div>
+
+<%= link_to "New vat type", new_vat_type_path %>

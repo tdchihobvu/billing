@@ -1,0 +1,43 @@
+<div class="row">
+	<div class="card border-0">
+		<div class="card-body">
+			<div class="card-title">Invoices for the Period <%= "#{@start_date.strftime("%d/%m/%Y")} To #{@end_date.strftime("%d/%m/%Y")}"%></div>
+			<table class="table table-striped">
+				<thead>
+					<tr>
+						<th>#</th>
+						<th>Date</th>
+						<th>Invoice No.</th>
+						<th>Currency</th>
+						<th>Category</th>
+						<th>VAT</th>
+						<th>Total</th>
+						<th>Balance</th>
+						<th>Status</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody>
+					<% @client.invoices.active.between_dates(@start_date,@end_date).each_with_index do |invoice,i| %>
+					<tr>
+						<td><%= i+=1 %></td>
+						<td><%= invoice.invoice_date.strftime("%d/%m/%Y") %></td>
+						<td><%= invoice.invoice_number %></td>
+						<td><%= invoice.currency.name %></td>
+						<td><%= invoice.invoice_category&.name %></td>
+						<td><%= number_to_currency(invoice.invoice_vat(@currency), unit: "") %></td>
+						<td><%= number_to_currency(invoice.total_invoice(@currency), unit: "") %></td>
+						<td><%= number_to_currency(invoice.balance, unit: "") %></td>
+						<td><%= Invoice.statuses[invoice.status] %></td>
+						<td>
+							<%= link_to invoice, title: "View Invoice" do %>
+								<i class="fas fa-info-circle"></i>
+							<% end %>
+						</td>
+					</tr>
+					<% end %>
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>

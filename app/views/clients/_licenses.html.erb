@@ -1,0 +1,56 @@
+<div class="card border-0">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-striped small" id="dataTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Client</th>
+            <th>Period</th>
+            <th>Option</th>
+            <th>Status</th>
+            <th>Print</th>
+          </tr>
+        </thead>
+        <tbody>
+          <div id="clients">
+            <% @client.licenses.each_with_index do |license,i| %>
+              <% unless license.invoice.deleted? %>
+              <tr>
+                <td><%= i+=1 %></td>
+                <td><%= license.client.name %></td>
+                <td><%= license.long_period %></td>
+                <td><%= license.license_option.name %></td>
+                <td><%= license.status %></td>
+                <td> 
+                  <% if license.paid? %> 
+                    <% if license.client.branches.empty? %>        
+                      <%= link_to print_licenses_path(id: license, format: :pdf), target: '_blank', class: "btn btn-outline text-dark small", title: "Print Receipt" do %>
+                        <i class="fas fa-print fa-sm text-dark"></i> 
+                      <% end %>
+                    <% else %>
+                      <%= link_to print_multiple_licenses_path(id: license, client_id: license.client_id), target: '_blank', class: "btn btn-outline text-dark small", title: "Print Multiple" do %>
+                        <i class="fas fa-print fa-sm text-dark"></i> 
+                      <% end %>
+                    <% end %>
+                  <% else %>
+                    <%= link_to license.invoice, class: "btn btn-outline text-dark small", title: "Print Receipt" do %>
+                      <i class="fas fa-eye fa-sm text-dark"></i> 
+                    <% end %>
+                  <% end %>
+                </td>
+              </tr>
+              <% end %>
+            <% end %>
+          </div>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript">
+  $(document).ready(function() {
+    $('#dataTable').DataTable();
+  });
+</script>

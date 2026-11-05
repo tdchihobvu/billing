@@ -1,0 +1,5 @@
+<ul>
+  <% @tenant.system_modules.each do |m| %>
+  <li><%= m.name %> - <emv class="small"><%= m.description %></em></li>
+  <% end %>
+</ul>

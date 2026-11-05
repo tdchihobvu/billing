@@ -1,0 +1,65 @@
+<!-- Page Heading -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Receipts</h1>
+    <div class="float-end">
+      <%= link_to new_receipt_path, class: "d-none d-sm-inline-block btn btn-sm btn-outline text-dark" do %>
+      <i class="fas fa-file fa-sm text-dark"></i> New Receipt
+      <% end %> |
+      <%= link_to :back, class: "btn btn-outline btn-sm rounded-0" do %><i class="fas fa-backward text-dark"></i> Back <% end %> 
+    </div>
+</div>
+
+<p style="color: green"><%= notice %></p>
+
+<div class="card border-0">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-striped small" id="dataTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Date</th>
+            <th>Reference Number</th>
+            <th>Client Name</th>
+            <th>Payment Form</th>
+            <th>Comment</th>
+            <% Currency.all.each do |currency| %>
+              <th><%= currency.name %></th>
+            <% end %>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+            <% @receipts.each_with_index do |r,i| %>
+            <tr>
+              <td><%= i+=1 %></td>
+              <td><%= r.transaction_date.strftime("%d/%m/%Y") %></td>
+              <td><%= r.reference_number %></td>
+              <td><%= r.client.name %></td>
+              <td><%= r.payment_form.name %></td>
+              <td><%= r.description %></td>
+              <% Currency.all.each do |currency| %>
+                <td>
+                  <% if r.currency_id == currency.id %>
+                    <%= number_to_currency(r.amount, unit: "") %>
+                  <% end %>
+                </td>
+              <% end %>
+              <td>
+                <%= link_to r, class: "btn btn-outline text-dark small", title: "Print Receipt" do %>
+                  <i class="fas fa-print fa-sm text-dark"></i>
+                <% end %>
+              </td>
+            </tr>
+            <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript">
+  $(document).ready(function() {
+    $('#dataTable').DataTable();
+  });
+</script>

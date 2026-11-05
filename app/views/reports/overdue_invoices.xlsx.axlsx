@@ -1,0 +1,21 @@
+wb = xlsx_package.workbook
+
+wb.add_worksheet(name: "Overdue Invoices") do |sheet|
+  sheet.add_row ["","Overdue Invoices as at #{Date.today.strftime("%d/%m/%Y")}"]
+  sheet.add_row [""]
+  sheet.add_row ["#","Customer Name", "Invoice Date", "Invoice No.","invoice Amount", "Currency","Invoice Due Date","Age","Balance"]
+  i = 0
+  @invoices.each do |invoice|
+    sheet.add_row [
+    i+=1,
+    invoice.client.name,
+    invoice.invoice_date.strftime("%d/%m/%Y"),
+    invoice.invoice_number,
+    "#{format_amount(invoice.total)}",
+    invoice.currency.name,
+    invoice.due_date.strftime("%d/%m/%Y"),
+    invoice.debtors_age,
+    "#{format_amount(invoice.balance)}"
+    ]
+  end
+end

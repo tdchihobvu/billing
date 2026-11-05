@@ -1,0 +1,37 @@
+<div id="<%= dom_id device %>">
+  <p>
+    <strong>Name:</strong>
+    <%= device.name %>
+  </p>
+
+  <p>
+    <strong>Serial number:</strong>
+    <%= device.serial_number %>
+  </p>
+
+  <p>
+    <strong>Model:</strong>
+    <%= device.model %>
+  </p>
+
+  <p>
+    <strong>Active:</strong>
+    <%= device.active %>
+  </p>
+
+  <p>
+    <strong>Device Assigned to:</strong>
+    <%= "#{device.user.user_fullname} (#{device.regional_office.name})" %>
+  </p>
+
+  <p>
+    <strong>Device/Terminal ID</strong>
+    <%= device.terminal_id %>
+  </p>
+
+  <p>
+    <strong>Access token:</strong>
+    <%= device.access_token %>
+  </p>
+
+</div>

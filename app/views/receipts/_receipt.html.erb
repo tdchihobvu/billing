@@ -1,0 +1,50 @@
+<div id="<%= dom_id receipt %>">
+  <p>
+    <strong>Client:</strong>
+    <%= receipt.client.name %>
+  </p>
+
+  <p>
+    <strong>Currency:</strong>
+    <%= receipt.currency.name %>
+  </p>
+
+  <p>
+    <strong>Payment form:</strong>
+    <%= receipt.payment_form.name %>
+  </p>
+
+  <p>
+    <strong>Transaction By:</strong>
+    <%= receipt.user.user_fullname %>
+  </p>
+
+  <p>
+    <strong>Transaction date:</strong>
+    <%= receipt.transaction_date %>
+  </p>
+  <p>
+    <strong>Amount:</strong>
+    <%= number_to_currency(receipt.amount, unit: "") %>
+  </p>
+
+  <p>
+    <strong>Rate:</strong>
+    <%= receipt.rate %>
+  </p>
+
+  <p>
+    <strong>Description:</strong>
+    <%= receipt.description %>
+  </p>
+
+  <p>
+    <strong>Invoice:</strong>
+    <%= receipt.invoice.invoice_number unless receipt.invoice.nil? %>
+  </p>
+
+  <p>
+    <%= image_tag(receipt.qr_code) if receipt.qr_code.attached? %>
+  </p>
+
+</div>

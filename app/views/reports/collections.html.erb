@@ -1,0 +1,37 @@
+<div class="card">
+  <div class="card-body">
+    <%= form_with url: collections_reports_path, method: :get, local: true do %>
+    <div class="form-group row">
+      <div class="col-2">
+        <%= label_tag :from, 'Filter From:', class: 'form-label small' %>
+        <%= date_field_tag :from, params[:from], class: 'form-control form-control-sm' %>
+      </div>
+      <div class="col-2">
+        <%= label_tag :to, 'To:', class: 'form-label small' %>
+        <%= date_field_tag :to, params[:to], class: 'form-control form-control-sm' %>
+      </div>
+      <div class="col-3">
+        <%= label_tag :currency_id, 'Filter By Currency', class: 'form-label small' %>
+        <%= select_tag :currency_id, options_from_collection_for_select(Currency.all, :id, :name, params[:currency_id]), {prompt: "Select Currency", class:"form-select form-select-sm" } %>
+      </div>
+      <div class="col-3">
+        <%= label_tag :user_id, "Filter By #{default_user_title}", class: 'form-label small' %>
+        <%= select_tag :user_id, options_from_collection_for_select(@users, :id, :user_fullname, params[:user_id]), {prompt: "Select #{default_user_title}", class:"form-select form-select-sm" } %>
+      </div>
+      <div class="col-2">
+        <%= submit_tag "Submit", class: 'btn btn-primary btn-sm mt-4 p-2' %>
+      </div>
+    </div>
+    <% end %>
+  </div>
+</div>
+
+<div class="card border-0 mt-2">
+  <div class="card-body">
+    <div class="float-right mb-2">
+      <%= link_to collections_reports_path(from: @from, to: @to, currency_id: @currency, user_id: @user, format: :xlsx), class: "btn btn-primary btn-sm rounded-0" do %><i class="fas fa-file"></i> Export <% end %>
+      <%= link_to collections_by_user_reports_path(from: @from, to: @to, currency_id: @currency, format: :xlsx), class: "btn btn-primary btn-sm rounded-0" do %><i class="fas fa-file"></i> Export By User <% end %>
+    </div>  
+    <%= render 'collections_by_user_chart' %> 	
+  </div>
+</div>

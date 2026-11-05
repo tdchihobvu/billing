@@ -1,0 +1,53 @@
+<!-- Page Heading -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Overdue Invoices - Ageing</h1>
+    <div class="float-end">
+      <%= link_to overdue_invoices_reports_path(format: :xlsx), class: "d-none d-sm-inline-block btn btn-sm btn-outline text-dark" do %>
+      <i class="fas fa-file fa-sm text-dark"></i> Download Excel
+      <% end %>
+      <%= link_to :back, class: "btn btn-outline btn-sm rounded-0" do %><i class="fas fa-backward text-dark"></i> Back <% end %> 
+    </div>
+</div>
+
+<p style="color: green"><%= notice %></p>
+
+<% unless @invoices.empty? %>
+<table id="dataTable" class="table table-striped small" width="100%" cellspacing="0">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Customer Name</th>
+      <th>Invoice Date</th>
+      <th>Invoice No.</th>
+      <th>Invoice Amount</th>
+      <th>Currency</th>
+      <th>Due Date</th>
+      <th>Ageing</th>
+      <th>Balance</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @invoices.each_with_index do |invoice,i| %>
+    <tr id="invoices">
+      <td><%= i+=1 %></td>
+      <td><%= invoice.client.name %></td>
+      <td><%= invoice.invoice_date.strftime("%d/%m/%Y") %></td>
+      <td><%= invoice.invoice_number %></td>
+      <td><%= number_to_currency(invoice.total) %></td>
+      <td><%= invoice.currency.name %></td>
+      <td><%= invoice.due_date.strftime("%d/%m/%Y") unless invoice.due_date.nil? %></td>
+      <td><%= invoice.debtors_age %></td>
+      <td><strong><%= number_to_currency(invoice.balance) %></strong></td>
+      <td>
+        <%= link_to sms_reminder_invoices_path(id: invoice), class: "btn btn-outline text-dark small", title: "SMS Reminder" do %>
+          <i class="fas fa-paper-plane fa-sm text-dark"></i>
+        <% end %>
+      </td>
+    </tr>
+    <% end %>
+  </tbody>
+</table>
+<% else %>
+<div class="alert alert-warning text-center border-0" role="alert">There is nothing to display.</div>
+<% end %>

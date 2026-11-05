@@ -1,0 +1,2 @@
+class TenantLocale < ApplicationRecord
+end

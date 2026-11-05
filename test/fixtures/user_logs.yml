@@ -1,0 +1,15 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  user: one
+  activity: MyText
+  perfomed_at: 2025-09-10 06:00:11
+  ipaddress: MyString
+  device_name: MyString
+
+two:
+  user: two
+  activity: MyText
+  perfomed_at: 2025-09-10 06:00:11
+  ipaddress: MyString
+  device_name: MyString

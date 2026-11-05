@@ -1,0 +1,41 @@
+<h6>All fields marked with <span class="required_field"></span> are mandatory</h6>
+<%= form_for credit_note, url: save_credit_note_invoices_path do |form| %>
+  <% if credit_note.errors.any? %>
+    <div style="color: red">
+      <h2><%= pluralize(credit_note.errors.count, "error") %> prohibited this credit note from being saved:</h2>
+
+      <ul>
+        <% credit_note.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <%= form.hidden_field :tenant_id %>
+
+  <div class="row">
+    <div class="col-sm-12">
+     <div class="form-group">
+        <%= form.label :document_number, "Transaction Date", style: "display: block", class: "required_field" %>
+        <%= form.text_field :document_number, readonly: true, class: "form-control form-control-sm" %>
+      </div>
+     <div class="form-group">
+        <%= form.label :transaction_date, "Transaction Date", style: "display: block", class: "required_field" %>
+        <%= form.date_field :transaction_date, class: "form-control form-control-sm" %>
+      </div>
+      <div class="form-group">
+        <%= form.label :invoice_id, "Invoice to Credit", style: "display: block", class: "required_field" %>
+        <%= form.select :invoice_id, @tenant.invoices.sales.pluck(:invoice_number, :id), {prompt: "Select Invoice"}, class: "form-select form-control-sm" %>
+      </div>
+      <div class="form-group">
+        <%= form.label :reason, "Reason for Credit Note", style: "display: block", class: "required_field" %>
+        <%= form.text_area :reason, class: "form-control small" %>
+      </div>
+    </div>
+  </div>
+
+  <div class="text-center">
+    <%= form.submit "Save Credit Note", class:'btn btn-lg btn-success' %>
+  </div>
+<% end %>

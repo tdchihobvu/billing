@@ -1,0 +1,11 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  industry: one
+  name: MyString
+  amount: 9.99
+
+two:
+  industry: two
+  name: MyString
+  amount: 9.99

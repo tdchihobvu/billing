@@ -1,0 +1,2 @@
+<h5>Collections for the Period <%= "#{@start_date.to_date.strftime("%d/%m/%Y")} To #{@end_date.to_date.strftime("%d/%m/%Y")}" %></h5>
+<%= column_chart Receipt.active.where("transaction_date BETWEEN '#{@start_date.to_date}' AND '#{@end_date.to_date}'").group(:user_fullname).sum(:actual_paid), xtitle: "#{pluralize("", default_user_title)}", ytitle: "Total Collected" %>

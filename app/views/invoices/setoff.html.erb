@@ -1,0 +1,68 @@
+<div class="card">
+  <div class="card-header">
+    <h5 class="mb-0">
+      Setoff Invoice #<%= @invoice.invoice_number %>
+    </h5>
+  </div>
+
+  <div class="card-body">
+
+    <div class="row mb-3">
+      <div class="col-md-6">
+        <strong>Invoice Total:</strong>
+        <%= @invoice.currency.symbol %>
+        <%= number_with_precision(@invoice.total, precision: 2) %>
+      </div>
+
+      <div class="col-md-6">
+        <strong>Outstanding Balance:</strong>
+        <%= @invoice.currency.symbol %>
+        <%= number_with_precision(@invoice.invoice_balance, precision: 2) %>
+      </div>
+    </div>
+
+    <%= form_with url: setoff_invoice_path(@invoice), method: :post do |form| %>
+      <div class="mb-3">
+      <%= form.label :transaction_date, "Transaction Date", style: "display: block", class: "form-label required_field" %>
+      <%= form.date_field :transaction_date, class:'form-control form-control-sm', required:true %>
+      </div>
+
+      <div class="mb-3">
+        <%= form.label :amount, "Setoff Amount", class: "form-label" %>
+
+        <%= form.number_field :amount,
+              value: @invoice.invoice_balance,
+              step: "0.01",
+              min: "0.01",
+              max: @invoice.invoice_balance,
+              class: "form-control form-control-sm",
+              required: true %>
+      </div>
+      <div class="mb-3">
+      <%= form.label :payment_form_id, "Payment Form", style: "display: block", class: "required_field" %>
+      <%= form.select :payment_form_id, PaymentForm.where(is_setoff: true).collect {|c| [c.name, c.id]}, {prompt: 'Select Form'}, class: 'form-select form-select-sm', required: true %>
+      </div>
+      <div class="mb-3">
+        <%= form.label :reason, "Reason", class: "form-label" %>
+
+        <%= form.text_area :reason,
+              rows: 3,
+              class: "form-control form-control-sm",
+              placeholder: "Enter reason for the setoff...",
+              required: true %>
+      </div>
+
+      <div class="text-end">
+        <%= link_to "Cancel", invoice_path(@invoice), class: "btn btn-secondary" %>
+
+        <%= form.submit "Post Setoff",
+              class: "btn btn-primary",
+              data: {
+                turbo_confirm: "Are you sure you want to post this setoff?"
+              } %>
+      </div>
+
+    <% end %>
+
+  </div>
+</div>

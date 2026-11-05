@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  tenant: one
+  setting_category: one
+  config_key: MyString
+  config_value: MyString
+
+two:
+  tenant: two
+  setting_category: two
+  config_key: MyString
+  config_value: MyString

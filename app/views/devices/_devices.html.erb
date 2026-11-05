@@ -1,0 +1,36 @@
+<table class="table table-striped small" id="dataTable">
+	<thead>
+		<tr>
+			<th>#</th>
+			<th>Name</th>
+			<th>Serial No./Mac Address</th>
+			<th>Model</th>
+			<th>Device ID</th>
+			<th>Assigned To</th>
+			<th>Status</th>
+			<th></th>
+		</tr>
+	</thead>
+	<tbody>
+		<% @devices.each_with_index do |device,i| %>
+		<tr>
+			<td><%= i+=1 %></td>
+			<td><%= device.name %></td>
+			<td><%= device.serial_number %></td>
+			<td><%= device.model %></td>
+			<td><%= device.terminal_id %></td>
+			<td><%= "#{device.user.user_fullname} (#{device.regional_office.name})" %></td>
+			<td><%= device.status %></td>
+			<td>
+				<%= link_to "View", device %>
+			</td>
+		</tr>
+		<% end %>
+	</tbody>
+</table>
+
+<script type="text/javascript">
+  $(document).ready(function() {
+    $('#dataTable').DataTable();
+  });
+</script>

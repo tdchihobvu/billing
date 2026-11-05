@@ -1,0 +1,78 @@
+<!-- Page Heading -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800"><%= @client.name %></h1>
+    <div style="float: right;">
+      <%= link_to edit_client_path, class: "d-none d-sm-inline-block btn btn-sm btn-outline text-dark" do %>
+      <i class="fas fa-edit fa-sm text-dark"></i> Edit
+      <% end %> |
+      <%= link_to print_clients_path(id: @client, format: :pdf), class: "d-none d-sm-inline-block btn btn-sm btn-outline text-dark", target: "_blank" do %>
+      <i class="fas fa-print fa-sm text-dark"></i> Print
+      <% end %> |
+      <%= link_to @client, data: {turbo_method: :delete, turbo_confirm: 'Are you sure?' }, class: "btn btn-outline btn-sm rounded-0 text-dark" do %>
+        <i class="fas fa-trash text-dark"></i> Delete
+      <% end %> |
+      <%= link_to :back, class: "btn btn-outline btn-sm rounded-0" do %><i class="fas fa-backward text-dark"></i> Back <% end %> 
+    </div>
+</div>
+
+<p style="color: green"><%= notice %></p>
+
+<div class="card border-0">
+  <div class="card-body">
+
+    <ul class="nav nav-tabs">
+      <li class="nav-item">
+        <a class="nav-link active" aria-current="page" href="#general" data-bs-toggle="tab">General</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#contacts" data-bs-toggle="tab">Contacts</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#contacts_person" data-bs-toggle="tab">Contact Person</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#branches" data-bs-toggle="tab">Branches</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#invoices" data-bs-toggle="tab">Invoices</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#client_receipts" data-bs-toggle="tab">Receipts</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#client_licenses" data-bs-toggle="tab">Licenses</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#statement" data-bs-toggle="tab">Statement</a>
+      </li>
+    </ul>
+    <div id="<%= dom_id @client %>">
+      <div class="tab-content">
+        <div class="active tab-pane" id="general">
+          <%= render 'general', client: @client %>
+        </div>
+        <div class="tab-pane" id="contacts">
+          <%= render 'contacts', client: @client %>
+        </div>
+        <div class="tab-pane" id="contacts_person">
+          <%= render 'contact_person', client: @client %>
+        </div>
+        <div class="tab-pane" id="branches">
+          <%= render 'branches', client: @client %>
+        </div>
+        <div class="tab-pane" id="invoices">
+          <%= render 'invoices', client: @client %>
+        </div>
+        <div class="tab-pane" id="client_receipts">
+          <%= render 'receipts', client: @client %>
+        </div>
+        <div class="tab-pane" id="client_licenses">
+          <%= render 'licenses', client: @client %>
+        </div>
+        <div class="tab-pane" id="statement">
+          <%= render 'statement', client: @client %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

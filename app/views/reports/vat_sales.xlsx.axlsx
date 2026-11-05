@@ -1,0 +1,35 @@
+wb = xlsx_package.workbook
+
+wb.add_worksheet(name: "VAT Sales") do |sheet|
+  sheet.add_row ["","#{@page_title} #{@invoices.size}"]
+  sheet.add_row [""]
+  sheet.add_row ["#","Date", "Invoice No.", "Client Name", "VAT Number","TIN Number","Price Excl","VAT","Price Incl","Category", "#{default_user_title}","Currency"]
+  i = 0
+  @invoices.each do |invoice|
+    currency_symbol = ""
+    unless invoice.currency.nil?
+      currency_symbol = invoice.currency.symbol
+    end
+    description = invoice.description
+    if invoice.is_license
+      unless invoice.license.nil?
+        description = invoice.license.license_category.name
+      end
+    end
+
+    sheet.add_row [
+    i+=1,
+    invoice.invoice_date.strftime("%d/%m/%Y"),
+    invoice.invoice_number,
+    invoice&.client&.name,
+    invoice&.client&.vat_number,
+    invoice&.client&.bp_number,
+    format_amount(invoice.sub_total),
+    format_amount(invoice.vat),
+    format_amount(invoice.total),
+    description,
+    invoice&.user&.user_fullname,
+    invoice&.currency&.name
+    ]
+  end
+end

@@ -1,0 +1,48 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">User Management - Update Details</h1>
+    <div class="float-end">
+      <%= link_to :back, class: "btn btn-outline btn-sm rounded-0" do %><i class="d-none d-sm-inline-block btn  btn-sm btn-outline text-dark"></i> Back <% end %> 
+    </div>
+</div>
+
+<p style="color: green"><%= notice %></p>
+
+<div class="card border-0">
+  <div class="card-body">
+
+	<%= form_for @user, url: save_user_management_index_path do |f| %>
+		<%= f.hidden_field :id %>
+	  <div class="form-group">
+	    <%= f.label :firstname %><br />
+	    <%= f.text_field :firstname, autofocus: true, class: "form-control form-control-sm" %>
+	  </div>
+
+	  <div class="form-group">
+	    <%= f.label :lastname %><br />
+	    <%= f.text_field :lastname, class: "form-control form-control-sm" %>
+	  </div>
+
+	  <% if @user.devices.empty? %>
+	  <div class="form-group">
+	    <%= f.label :username %><br />
+	    <%= f.text_field :username, class: "form-control form-control-sm" %>
+	  </div>
+	  <% end %>
+
+	  <div class="form-group">
+	    <%= f.label :email %><br />
+	    <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "form-control form-control-sm" %>
+	  </div>
+
+	  <div class="form-group">
+	    <%= f.label :role %><br />
+	    <%= f.select :role, ['cashier','supervisor','manager','admin','superadmin'], {prompt: "Select Role"}, class: "form-select form-select-sm" %>
+	  </div>
+
+	  <div class="text-center">
+	    <%= f.submit "Update User", class:'btn btn-lg btn-success' %>
+	  </div>
+	<% end %>
+
+  </div>
+</div>

@@ -1,0 +1,57 @@
+<!-- Page Heading -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Create Journal</h1>
+    <div class="float-end">
+      <!--
+      <%#= link_to invoices_path, class: "d-none d-sm-inline-block btn btn-sm btn-outline text-dark" do %>
+      <i class="fas fa-file fa-sm text-dark"></i> Invoices
+      <%# end %> |
+      -->
+      <%= link_to :back, class: "btn btn-outline btn-sm rounded-0" do %><i class="fas fa-backward text-dark"></i> Back <% end %> 
+    </div>
+</div>
+
+<p style="color: green"><%= notice %></p>
+
+<div class="card border-0">
+  <div class="card-body">
+  <h6>All fields marked with <span class="required_field"></span> are mandatory</h6>
+  <%= form_for @transaction, url: save_journal_clients_path(client_id: @client, id: @transaction) do |form| %>
+    <% if @transaction.errors.any? %>
+      <div style="color: red">
+        <h2><%= pluralize(@transaction.errors.count, "error") %> prohibited this credit note from being saved:</h2>
+        <ul>
+          <% @transaction.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+    <%= form.hidden_field :client_id %>
+    <div class="row">
+      <div class="col-sm-12">
+       <div class="form-group">
+          <%= form.label :transaction_date, "Transaction Date", style: "display: block", class: "required_field" %>
+          <%= form.date_field :transaction_date, class: "form-control form-control-sm" %>
+        </div>
+       <div class="form-group">
+          <%= form.label :description, "Description", style: "display: block", class: "required_field" %>
+          <%= form.text_field :description, class: "form-control form-control-sm" %>
+        </div>
+        <div class="form-group">
+          <%= form.label :amount, "Amount", style: "display: block", class: "required_field" %>
+          <%= form.text_field :amount, class: "form-select form-control-sm" %>
+        </div>
+        <div class="form-group">
+          <%= form.label :currency_id, style: "display: block", class: "required_field" %>
+          <%= form.select :currency_id, Currency.pluck(:name, :id), {prompt: "Select Currency"},class: "form-select form-control-sm" %>
+        </div>
+      </div>
+    </div>
+
+    <div class="text-center">
+      <%= form.submit "Save Journal", class:'btn btn-lg btn-success' %>
+    </div>
+  <% end %>
+  </div>
+</div>

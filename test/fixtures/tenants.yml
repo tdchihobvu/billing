@@ -1,0 +1,45 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  tenant_category: one
+  company_name: MyString
+  trading_name: MyString
+  registration_number: MyString
+  bp_number: MyString
+  vat_number: MyString
+  address_1: MyString
+  address_2: MyString
+  location: MyString
+  city: MyString
+  country: MyString
+  website: MyString
+  info_email: MyString
+  sales_email: MyString
+  mobile_1: MyString
+  mobile_2: MyString
+  phone_1: MyString
+  phone_2: MyString
+  fax_number: MyString
+  active: false
+
+two:
+  tenant_category: two
+  company_name: MyString
+  trading_name: MyString
+  registration_number: MyString
+  bp_number: MyString
+  vat_number: MyString
+  address_1: MyString
+  address_2: MyString
+  location: MyString
+  city: MyString
+  country: MyString
+  website: MyString
+  info_email: MyString
+  sales_email: MyString
+  mobile_1: MyString
+  mobile_2: MyString
+  phone_1: MyString
+  phone_2: MyString
+  fax_number: MyString
+  active: false

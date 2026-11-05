@@ -1,0 +1,41 @@
+{
+  "name": "app",
+  "private": "true",
+  "engines": {
+    "node": "20.x",
+     "yarn": "1.22.22"
+  },
+  "dependencies": {
+    "@fortawesome/fontawesome-free": "5.15.3",
+    "@hotwired/stimulus": "^3.2.2",
+    "@hotwired/turbo-rails": "^7.3.0",
+    "@popperjs/core": "^2.11.8",
+    "@rails/actiontext": "^8.0.200",
+    "@rails/request.js": "^0.0.9",
+    "autoprefixer": "^10.4.17",
+    "bootstrap": "^5.3.2",
+    "bootstrap-icons": "^1.11.3",
+    "chart.js": "^4.4.7",
+    "chartkick": "^5.0.1",
+    "datatables.net-bs5": "^1.13.8",
+    "esbuild": "^0.19.11",
+    "jquery": "^3.7.1",
+    "jquery-ui": "^1.13.2",
+    "nodemon": "^3.0.3",
+    "postcss": "^8.4.33",
+    "postcss-cli": "^11.0.0",
+    "sass": "^1.70.0",
+    "slim-select": "^2.8.1",
+    "trix": "^2.1.15"
+  },
+  "scripts": {
+    "build": "esbuild app/javascript/*.* --bundle --sourcemap --format=esm --outdir=app/assets/builds --public-path=/assets",
+    "build:css:compile": "sass ./app/assets/stylesheets/application.bootstrap.scss:./app/assets/builds/application.css --no-source-map --load-path=node_modules",
+    "build:css:prefix": "postcss ./app/assets/builds/application.css --use=autoprefixer --output=./app/assets/builds/application.css",
+    "build:css": "yarn build:css:compile && yarn build:css:prefix",
+    "watch:css": "nodemon --watch ./app/assets/stylesheets/ --ext scss --exec \"yarn build:css\""
+  },
+  "browserslist": [
+    "defaults"
+  ]
+}

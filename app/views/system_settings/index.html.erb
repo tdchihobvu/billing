@@ -1,0 +1,19 @@
+<h1><%= @tenant.company_name %></h1>
+
+<ul>
+	<li><%= link_to 'Banks', banks_path %></li>
+	<li><%= link_to 'Currencies', currencies_path %></li>
+	<li><%= link_to 'Payment Forms', payment_forms_path %></li>
+	<li><%= link_to 'License Categories', license_categories_path %></li>
+	<li><%= link_to 'License Options', license_options_path %></li>
+	<li><%= link_to 'Exchange Rates', exchange_rates_path %></li>
+</ul>
+
+<%= render "tenants/settings_form", tenant: @tenant %>
+
+<h3>Available Modules</h3>
+<% if @tenant.system_modules.empty? %>
+	<%= render "tenants/modules_form", tenant: @tenant %>
+<% else %>
+	<%= render 'tenants/tenant_modules' %>
+<% end %>

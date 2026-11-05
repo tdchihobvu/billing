@@ -1,0 +1,27 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  client: one
+  currency: one
+  payment_form: one
+  user: one
+  transaction_date: 2024-01-26
+  reference_number: MyString
+  amount: 9.99
+  rate: 9.99
+  description: MyString
+  deleted: false
+  invoice_id: 1
+
+two:
+  client: two
+  currency: two
+  payment_form: two
+  user: two
+  transaction_date: 2024-01-26
+  reference_number: MyString
+  amount: 9.99
+  rate: 9.99
+  description: MyString
+  deleted: false
+  invoice_id: 1

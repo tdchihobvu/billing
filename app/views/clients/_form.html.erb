@@ -1,0 +1,151 @@
+<h6>All fields marked with <span class="required_field"></span> are mandatory</h6>
+<%= form_with(model: client) do |form| %>
+  <% if client.errors.any? %>
+    <div style="color: red">
+      <h2><%= pluralize(client.errors.count, "error") %> prohibited this client from being saved:</h2>
+
+      <ul>
+        <% client.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+  <%= form.hidden_field :tenant_id %>
+
+  <div class="form-group">
+    <%= form.label :name, style: "display: block", class: "required_field" %>
+    <%= form.text_field :name, class: "form-control form-control-sm" %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :trading_name, "Trading Name", style: "display: block" %>
+    <%= form.text_field :trading_name, class: "form-control form-control-sm" %>
+  </div>
+  <div class="row">
+    <div class="col-sm-6">
+      <div class="form-group">
+        <%= form.label :client_type_id, "Client Type", style: "display: block", class: "required_field" %>
+        <%= form.select :client_type_id, ClientType.pluck(:name, :id), {prompt: "Select Type"}, class: "form-select form-select-sm" %>
+      </div>
+    </div>
+    <div class="col-sm-6">
+      <div class="form-group">
+        <%= form.label :industry_id, style: "display: block", class: "required_field" %>
+        <%= form.select :industry_id, tenant.industries.order('name Asc').pluck(:name, :id), {prompt: "Select Industry"}, class: "form-select form-select-sm" %>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-sm-6">
+      <div class="form-group">
+        <%= form.label :bp_number,"Business Partner/TIN", style: "display: block" %>
+        <%= form.text_field :bp_number, class: "form-control form-control-sm" %>
+      </div>
+    </div>
+    <div class="col-sm-6">
+      <div class="form-group">
+        <%= form.label :vat_number, "VAT Number", style: "display: block" %>
+        <%= form.text_field :vat_number, class: "form-control form-control-sm" %>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :address_1,"Address Line 1", style: "display: block", class: "required_field" %>
+    <%= form.text_field :address_1, class: "form-control form-control-sm" %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :address_2, "Address Line 2", style: "display: block" %>
+    <%= form.text_field :address_2, class: "form-control form-control-sm" %>
+  </div>
+
+  <div class="row">
+    <div class="col-sm-4">
+      <div class="form-group">
+        <%= form.label :location, style: "display: block", class: "required_field" %>
+        <%= form.text_field :location, class: "form-control form-control-sm" %>
+      </div>
+    </div>
+    <div class="col-sm-4">
+      <div class="form-group">
+        <%= form.label :city, style: "display: block", class: "required_field" %>
+        <%= form.text_field :city, class: "form-control form-control-sm" %>
+      </div>
+    </div>
+    <div class="col-sm-4">
+      <div class="form-group">
+        <%= form.label :country, style: "display: block", class: "required_field" %>
+        <%= form.text_field :country, class: "form-control form-control-sm" %>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-sm-6">
+      <div class="form-group">
+        <%= form.label :mobile, "Mobile Number", style: "display: block" %>
+        <%= form.text_field :mobile, class: "form-control form-control-sm" %>
+      </div>
+    </div>
+    <div class="col-sm-6">
+      <div class="form-group">
+        <%= form.label :phone, "Phone Number", style: "display: block", class: "required_field" %>
+        <%= form.text_field :phone, class: "form-control form-control-sm" %>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-sm-6">
+      <div class="form-group">
+        <%= form.label :email, style: "display: block", class: "required_field" %>
+        <%= form.email_field :email, class: "form-control form-control-sm" %>
+      </div>
+    </div>
+    <div class="col-sm-6">
+      <div class="form-group">
+        <%= form.label :website, "Website", style: "display: block" %>
+        <%= form.text_field :website, class: "form-control form-control-sm" %>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-sm-6">
+      <div class="form-group">
+        <%= form.label :currency_id, "Default Statement Currency", style: "display: block", class: "required_field" %>
+        <%= form.select :currency_id, Currency.order('name Asc').pluck(:name, :id), {prompt: "Select Currency"}, class: "form-select form-select-sm" %>
+      </div>
+    </div>
+    <div class="col-sm-6">
+    </div>
+  </div>
+
+  <br/>
+  <h6><strong class="required_field">Contact Person Details</strong></h6>
+  <div class="row">
+    <div class="col-sm-4">
+      <div class="form-group">
+        <%= form.label :cp_name, "Full Name", style: "display: block" %>
+        <%= form.text_field :cp_name, class: "form-control form-control-sm"  %>
+      </div>
+    </div>
+    <div class="col-sm-4">
+      <div class="form-group">
+        <%= form.label :cp_mobile, "Mobile Number", style: "display: block" %>
+        <%= form.text_field :cp_mobile, class: "form-control form-control-sm"  %>
+      </div>
+    </div>
+    <div class="col-sm-4">
+      <div class="form-group">
+        <%= form.label :cp_email, "Email", style: "display: block" %>
+        <%= form.text_field :cp_email, class: "form-control form-control-sm"  %>
+      </div>
+    </div>
+  </div>
+  <div class="text-center">
+    <%= form.submit "Save Client", class:'btn btn-lg btn-success' %>
+  </div>
+<% end %>

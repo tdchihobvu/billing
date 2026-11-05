@@ -1,0 +1,2 @@
+class StockCount < ApplicationRecord
+end

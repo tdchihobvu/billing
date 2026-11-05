@@ -1,0 +1,62 @@
+<%= form_with(model: license) do |form| %>
+  <% if license.errors.any? %>
+    <div style="color: red">
+      <h2><%= pluralize(license.errors.count, "error") %> prohibited this license from being saved:</h2>
+
+      <ul>
+        <% license.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+  <%= form.hidden_field :client_id %>
+  <div class="form-group">
+    <%= form.label :invoice_id, "Select Invoice", style: "display: block" %>
+    <%= form.select :invoice_id, @client.invoices.active.select{|invoice| invoice.balance <= 0}.collect {|b| [b.invoice_number,b.id]}, {prompt: "Select Invoice"}, class: "form-select form-select-sm" %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :license_category_id, style: "display: block" %>
+    <%= form.select :license_category_id, LicenseCategory.all.collect {|a| [a.name, a.id]}, {prompt: "Select Category"},class: "form-select form-control-sm" %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :renewal_date, style: "display: block" %>
+    <%= form.date_field :renewal_date, class: "form-control form-control-sm" %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :amount, "Invoice Amount", style: "display: block" %>
+    <%= form.text_field :amount, class: "form-control form-control-sm" %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :quantity, "No. of Licenses", style: "display: block" %>
+    <%= form.text_field :quantity, class: "form-control form-control-sm" %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :auto_renewal, style: "display: block" %>
+    <%= form.check_box :auto_renewal %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :license_option_id, style: "display: block" %>
+    <% LicenseOption.active.each do |o| %>
+      <div class="form-check form-check-inline">
+        <%= form.radio_button :license_option_id, o.id, class: "form-check-input" %> 
+        <label class="form-check-label" for="inlineRadio1"><%= o.name %></label>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :special_days, "Days Must be filled for Special License Only", style: "display: block" %>
+    <%= form.number_field :special_days, class: "form-control form-control-sm" %>
+  </div>
+
+  <div>
+    <%= form.submit %>
+  </div>
+<% end %>

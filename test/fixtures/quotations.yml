@@ -1,0 +1,19 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  client: one
+  quotation_date: 2024-01-16
+  quotation_number: MyString
+  quotation_terms: MyText
+  currency: one
+  bank_id: 1
+  deleted: false
+
+two:
+  client: two
+  quotation_date: 2024-01-16
+  quotation_number: MyString
+  quotation_terms: MyText
+  currency: two
+  bank_id: 1
+  deleted: false

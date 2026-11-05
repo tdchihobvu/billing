@@ -1,0 +1,62 @@
+<div class="row g-3 mb-4">
+
+  <div class="col-md-3">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body">
+        <p class="text-muted mb-1">Total Invoices</p>
+        <h3><%= number_with_delimiter(@invoice_count) %></h3>
+        <small class="text-muted">Active invoices</small>
+      </div>
+    </div>
+  </div>
+
+  <% @financial_summary.each do |item| %>
+
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <p class="text-muted mb-1">
+            Total Invoiced (<%= item[:currency] %>)
+          </p>
+
+          <h3>
+            <%= item[:symbol] %>
+            <%= number_with_delimiter(item[:total_invoiced]) %>
+          </h3>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <p class="text-muted mb-1">
+            Amount Collected (<%= item[:currency] %>)
+          </p>
+
+          <h3 class="text-success">
+            <%= item[:symbol] %>
+            <%= number_with_delimiter(item[:total_paid]) %>
+          </h3>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <p class="text-muted mb-1">
+            Outstanding (<%= item[:currency] %>)
+          </p>
+
+          <h3 class="text-danger">
+            <%= item[:symbol] %>
+            <%= number_with_delimiter(item[:outstanding_balance]) %>
+          </h3>
+        </div>
+      </div>
+    </div>
+
+  <% end %>
+
+</div>

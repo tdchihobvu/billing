@@ -1,0 +1,77 @@
+<%= form_with(model: bank) do |form| %>
+  <% if bank.errors.any? %>
+    <div style="color: red">
+      <h2><%= pluralize(bank.errors.count, "error") %> prohibited this bank from being saved:</h2>
+
+      <ul>
+        <% bank.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <%= form.hidden_field :tenant_id %>
+  <div class="row">
+    <div class="col-sm-6">
+      <div class="form-group">
+        <%= form.label :description, style: "display: block" %>
+        <%= form.text_field :description, class: "form-control form-control-sm" %>
+      </div>
+    </div>
+    <div class="col-sm-6">
+      <div class="form-group">
+        <%= form.label :bank_name, "Name of Bank", style: "display: block" %>
+        <%= form.text_field :bank_name, class: "form-control form-control-sm" %>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-sm-6">
+      <div class="form-group">
+        <%= form.label :account_name, style: "display: block" %>
+        <%= form.text_field :account_name, class: "form-control form-control-sm" %>
+      </div>
+    </div>
+    <div class="col-sm-6">
+      <div class="form-group">
+        <%= form.label :account_number, style: "display: block" %>
+        <%= form.text_field :account_number, class: "form-control form-control-sm" %>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-sm-4">
+      <div class="form-group">
+        <%= form.label :branch, style: "display: block" %>
+        <%= form.text_field :branch, class: "form-control form-control-sm" %>
+      </div>
+    </div>
+    <div class="col-sm-4">
+      <div class="form-group">
+        <%= form.label :swift_code, style: "display: block" %>
+        <%= form.text_field :swift_code, class: "form-control form-control-sm" %>
+      </div>
+    </div>
+    <div class="col-sm-4">
+      <div class="form-group">
+        <%= form.label :currency_id, style: "display: block" %>
+        <%= form.select :currency_id, Currency.all.collect {|c| [c.name, c.id]}, {prompt: "Select Currency"}, class: "form-select form-control-sm" %>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-sm-12">
+      <div class="form-group">
+        <%= form.label :active, "Enable/Disable", style: "display: block" %>
+        <%= form.radio_button :active, true %> Enabled &nbsp;&nbsp;&nbsp; <%= form.radio_button :active, false %> Disabled
+      </div>
+    </div>
+  </div>
+
+  <div class="text-center">
+    <%= form.submit "Save Bank", class:'btn btn-lg btn-success' %>
+  </div>
+<% end %>

@@ -1,0 +1,25 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  client: one
+  user: one
+  invoice_date: 2024-01-22
+  invoice_number: MyString
+  currency: one
+  bank: one
+  deleted: false
+  is_proforma: false
+  sent: false
+  paid: false
+
+two:
+  client: two
+  user: two
+  invoice_date: 2024-01-22
+  invoice_number: MyString
+  currency: two
+  bank: two
+  deleted: false
+  is_proforma: false
+  sent: false
+  paid: false

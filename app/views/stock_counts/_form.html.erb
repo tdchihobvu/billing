@@ -1,0 +1,30 @@
+<%= form_with(model: stock_count) do |form| %>
+  <% if stock_count.errors.any? %>
+    <div style="color: red">
+      <h2><%= pluralize(stock_count.errors.count, "error") %> prohibited this stock_count from being saved:</h2>
+
+      <ul>
+        <% stock_count.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+  <%= form.hidden_field :transaction_date %>
+  <div class="form-group">
+    <%= form.text_field :product_name, placeholder: 'Product Name', class: 'form-control form-control-sm' %>
+  </div>
+
+  <div class="form-group">
+    <%= form.text_field :barcode, placeholder: 'Barcode', class: 'form-control form-control-sm' %>
+  </div>
+
+  <div class="form-group">
+    <%= form.number_field :quantity, placeholder: 'Qty', class: 'form-control form-control-sm' %>
+  </div>
+
+  <div>
+    <%= form.submit "Submit", class: 'btn btn-success', style: "display: block" %>
+  </div>
+<% end %>
+ 

@@ -1,0 +1,15 @@
+@import 'bootstrap/scss/bootstrap';
+@import 'bootstrap-icons/font/bootstrap-icons';
+@import 'sb-admin-2.min';
+@import 'errors';
+@import './scss/sb-admin-2.scss';
+
+$fa-font-path: ".";
+@import "@fortawesome/fontawesome-free/scss/fontawesome";
+@import "@fortawesome/fontawesome-free/scss/brands";
+@import "@fortawesome/fontawesome-free/scss/solid";
+@import "@fortawesome/fontawesome-free/scss/regular";
+@import "@fortawesome/fontawesome-free/scss/v4-shims";
+
+@import url('https://unpkg.com/slim-select@latest/dist/slimselect.css');
+@import 'actiontext.css';

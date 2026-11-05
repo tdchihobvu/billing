@@ -1,0 +1,53 @@
+<!-- Page Heading -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Clients</h1>
+    <div class="float-end">
+      <%= link_to new_client_path, class: "d-none d-sm-inline-block btn btn-sm btn-outline text-dark" do %>
+      <i class="fas fa-user-tie fa-sm text-dark"></i> New Client
+      <% end %> |
+      <%= link_to :back, class: "btn btn-outline btn-sm rounded-0" do %><i class="fas fa-backward text-dark"></i> Back <% end %> 
+    </div>
+</div>
+
+<p style="color: green"><%= notice %></p>
+<div class="card border-0">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-striped small" id="dataTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Account No.</th>
+            <th>Client Name</th>
+            <th>Client Type</th>
+            <th>Industry</th>
+            <th>City</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <div id="clients">
+            <% @clients.each_with_index do |client,i| %>
+              <tr>
+                <td><%= i+=1 %></td>
+                <td><%= client.client_account_number %></td>
+                <td><%= client.name %></td>
+                <td><%= client.client_type.name %></td>
+                <td><%= client.industry.name unless client.industry.nil? %></td>
+                <td><%= client.city %></td>
+                <td><%= link_to "View", client %></td>
+              </tr>
+            <% end %>
+          </div>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript">
+  $(document).ready(function() {
+    $('#dataTable').DataTable();
+  });
+</script>
+

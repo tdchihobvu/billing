@@ -1,0 +1,64 @@
+<!-- Page Heading -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Shifts</h1>
+    <div class="float-end">
+      <%= link_to open_shift_api_v1_billing_index_path, class: "d-none d-sm-inline-block btn btn-sm btn-outline text-dark" do %>
+      <i class="fas fa-user fa-sm text-dark"></i> Open Shift
+      <% end %> |
+      <%= link_to :back, class: "btn btn-outline btn-sm rounded-0" do %><i class="fas fa-backward text-dark"></i> Back <% end %> 
+    </div>
+</div>
+
+<p style="color: green"><%= notice %></p>
+
+<div class="table-responsive">
+  <% unless @shifts.empty? %>
+  <table id="dataTable" class="table table-striped small" width="100%" cellspacing="0">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Date</th>
+        <th>ShiftId</th>
+        <th>Device</th>
+        <th>Username</th>
+        <th>Opened At</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% total = 0 %>
+      <% @shifts.each_with_index do |r,i| %>
+      <tr>
+        <td><%= i+=1 %></td>
+        <td><%= r.created_at.strftime("%d/%m/%Y") %></td>
+        <td><%= r.shift_id %></td>
+        <td><%= r.device.name %></td>
+        <td><%= r.username %></td>
+        <td><%= r.start_time.strftime("%d/%m/%Y %H:%M") %></td>
+        <td><%= r.status %></td>
+        <td>
+            <span class="dropdown no-arrow">
+              <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink"
+                  data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  <i class="fas fa-ellipsis-v fa-fw fa-sm text-dark"></i>
+              </a>
+              <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
+              <%= link_to 'Details', shift_receipts_path(shift_id: r), class: "dropdown-item small" %>
+              <%= button_to 'Close', close_shift_receipts_path(shiftId: r.shift_id, username: r.username, end_time: Time.now), data: {turbo_method: 'post', turbo_confirm: "Are your sure you want to close this shift?"}, class: "dropdown-item small" %>
+            </span>
+        </td>
+      </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <% else %>
+    <div class="alert alert-warning text-center border-0" role="alert">There is nothing to display.</div>
+  <% end %>
+</div>
+
+<script type="text/javascript">
+  $(document).ready(function() {
+    $('#dataTable').DataTable();
+  });
+</script>

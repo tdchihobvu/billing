@@ -1,0 +1,10 @@
+<p style="color: green"><%= notice %></p>
+
+<%= render @license_option %>
+
+<div>
+  <%= link_to "Edit this license option", edit_license_option_path(@license_option) %> |
+  <%= link_to "Back to license options", license_options_path %>
+
+  <%= button_to "Destroy this license option", @license_option, method: :delete %>
+</div>

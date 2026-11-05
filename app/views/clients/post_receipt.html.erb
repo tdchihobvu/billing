@@ -1,0 +1,59 @@
+<%= form_with(model: @receipt) do |form| %>
+  <% if @receipt.errors.any? %>
+    <div style="color: red">
+      <h2><%= pluralize(@receipt.errors.count, "error") %> prohibited this @receipt from being saved:</h2>
+
+      <ul>
+        <% @receipt.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+    <%= form.hidden_field :user_id %>
+    <%= form.hidden_field :client_id %>
+  <div>
+    <%= form.label :transaction_date, style: "display: block" %>
+    <%= form.date_field :transaction_date %>
+  </div>
+
+  <div>
+    <%= form.label :currency_id, style: "display: block" %>
+    <%= form.select :currency_id, Currency.all.collect {|c| [c.name, c.id]}, {prompt: 'Select Currency'} %>
+  </div>
+
+  <div>
+    <%= form.label :payment_form_id, style: "display: block" %>
+    <%= form.select :payment_form_id, PaymentForm.all.collect {|c| [c.name, c.id]}, {prompt: 'Select Form'} %>
+  </div>
+
+  <div>
+    <%= form.label :reference_number, style: "display: block" %>
+    <%= form.text_field :reference_number %>
+  </div>
+
+  <div>
+    <%= form.label :amount, style: "display: block" %>
+    <%= form.text_field :amount %>
+  </div>
+
+  <div>
+    <%= form.label :rate, style: "display: block" %>
+    <%= form.text_field :rate %>
+  </div>
+
+  <div>
+    <%= form.label :description, "Comment/Narration", style: "display: block" %>
+    <%= form.text_field :description %>
+  </div>
+
+  <div>
+    <%= form.label :invoice_id, style: "display: block" %>
+    <%= form.number_field :invoice_id %>
+  </div>
+
+  <div>
+    <%= form.submit %>
+  </div>
+<% end %>

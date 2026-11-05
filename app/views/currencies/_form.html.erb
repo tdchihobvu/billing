@@ -1,0 +1,55 @@
+<%= form_with(model: currency) do |form| %>
+  <% if currency.errors.any? %>
+    <div style="color: red">
+      <h2><%= pluralize(currency.errors.count, "error") %> prohibited this currency from being saved:</h2>
+
+      <ul>
+        <% currency.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= form.label :name, style: "display: block" %>
+    <%= form.text_field :name %>
+  </div>
+
+  <div>
+    <%= form.label :symbol, style: "display: block" %>
+    <%= form.text_field :symbol %>
+  </div>
+
+  <div>
+    <%= form.label :origin, style: "display: block" %>
+    <%= form.text_field :origin %>
+  </div>
+
+  <div>
+    <%= form.label :trcode, "TR Code (for integration with accounting system)", style: "display: block" %>
+    <%= form.text_field :trcode %>
+  </div>
+
+  <div>
+    <%= form.label :account_reference, "Account Reference (for integration with accounting system)", style: "display: block" %>
+    <%= form.text_field :account_reference %>
+  </div>
+
+  <div>
+    <%= form.label :active, style: "display: block" %>
+    <%= form.text_field :active %>
+  </div>
+
+  <h6>Choose payment forms</h6>
+
+  <%= form.collection_check_boxes :payment_form_ids, PaymentForm.order('name Asc'), :id, :name do |b| %>
+    <div class="collection-check-box">
+      &nbsp;<%= b.check_box %> &nbsp;<%= b.label %>
+    </div>
+  <% end %>
+
+  <div>
+    <%= form.submit %>
+  </div>
+<% end %>

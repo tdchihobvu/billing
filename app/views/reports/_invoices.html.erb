@@ -1,0 +1,40 @@
+<h4>Invoices(<%= @invoices.count %>)</h4>
+
+<% if @invoices.empty? %>
+  <div class="alert alert-warning text-center" role="alert">
+    No results found.
+  </div>
+<% else %>
+<table class="table table-striped small">
+  <thead>
+    <tr>
+      <th scope="col">#</th>
+      <th scope="col">Client Name</th>
+      <th scope="col">Invoice Date</th>
+      <th scope="col">Invoice Number</th>
+      <th scope="col">Currency</th>
+      <th scope="col"><%= default_user_title %></th>
+      <th scope="col"></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% i = 0 %>
+    <% @invoices.each_with_index do |r| %>
+      <tr>
+        <th scope="row"><%= i += 1 %></th>
+        <td><%= r.client.name %></td>
+        <td><%= r.invoice_date %></td>
+        <td><%= r.invoice_number %></td>
+        <td><%= r.currency.name %></td>
+        <td><%= r.user.user_fullname %></td>
+        <td>        
+          <%= link_to r, class: "btn btn-outline btn-sm text-dark", title: "Print Invoice" do %>
+            <i class="fas fa-print fa-sm text-dark"></i>
+          <% end %>
+        </td>
+
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+<% end %>

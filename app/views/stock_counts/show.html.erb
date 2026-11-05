@@ -1,0 +1,10 @@
+<p style="color: green"><%= notice %></p>
+
+<%= render @stock_count %>
+
+<div>
+  <%= link_to "Edit this stock count", edit_stock_count_path(@stock_count) %> |
+  <%= link_to "Back to stock counts", stock_counts_path %>
+
+  <%= button_to "Destroy this stock count", @stock_count, method: :delete %>
+</div>

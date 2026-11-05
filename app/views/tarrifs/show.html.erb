@@ -1,0 +1,10 @@
+<p style="color: green"><%= notice %></p>
+
+<%= render @tarrif %>
+
+<div>
+  <%= link_to "Edit this tarrif", edit_tarrif_path(@tarrif) %> |
+  <%= link_to "Back to tarrifs", tarrifs_path %>
+
+  <%= button_to "Destroy this tarrif", @tarrif, method: :delete %>
+</div>

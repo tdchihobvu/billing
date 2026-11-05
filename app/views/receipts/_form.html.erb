@@ -1,0 +1,57 @@
+<h6>All fields marked with <span class="required_field"></span> are mandatory</h6>
+<%= form_with(model: receipt) do |form| %>
+    <% if receipt.errors.any? %>
+      <div style="color: red">
+        <h2><%= pluralize(receipt.errors.count, "error") %> prohibited this receipt from being saved:</h2>
+
+        <ul>
+          <% receipt.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+    <%= form.hidden_field :user_id %>
+    <%= form.hidden_field :transaction_source %>
+    <div class="form-group">
+      <%= form.label :client_id, style: "display: block", class: "required_field" %>
+      <%= form.select :client_id, @clients.collect {|c| [c.name, c.id]}, {prompt: "Select Invoice"}, class: "form-select form-select-sm"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :invoice_id, "Select Invoice", style: "display: block" %>
+      <% if attach_invoice_to_receipt == 'YES' %>
+      <%= form.select :invoice_id, @client.invoices.select{|invoice| invoice.balance > 0}.collect {|b| [b.invoice_number,b.id]}, {prompt: "Select Invoice"}, class: "form-select form-select-sm", required: true %>
+      <% else %>
+      <%= form.select :invoice_id, @client.invoices.select{|invoice| invoice.balance > 0}.collect {|b| [b.invoice_details,b.id]}, {prompt: "Select Invoice"}, class: "form-select form-select-sm" %>
+      <% end %>
+    </div>
+    <div class="form-group">
+    <%= form.label :transaction_date, "Transaction Date", style: "display: block", class: "required_field" %>
+    <%= form.date_field :transaction_date, class:'form-control form-control-sm' %>
+    </div>
+
+    <div class="form-group">
+    <%= form.label :currency_id, style: "display: block", class: "required_field" %>
+    <%= form.select :currency_id, Currency.all.collect {|c| [c.name, c.id]}, {prompt: 'Select Currency'}, class: 'form-select form-select-sm' %>
+    </div>
+
+    <div class="form-group">
+    <%= form.label :payment_form_id, "Payment Form", style: "display: block", class: "required_field" %>
+    <%= form.select :payment_form_id, PaymentForm.where(is_setoff: false).collect {|c| [c.name, c.id]}, {prompt: 'Select Form'}, class: 'form-select form-select-sm' %>
+    </div>
+
+    <div class="form-group">
+    <%= form.label :amount, style: "display: block", class: "required_field" %>
+    <%= form.text_field :amount, class: 'form-control form-control-sm' %>
+    </div>
+
+    <div class="form-group" >
+      <%= form.label :description, "Comment/Narration", style: "display: block", class: "required_field" %>
+      <%= form.text_area :description, class: 'form-control form-control-sm' %>
+    </div>
+
+    <div class="text-center">
+      <%= form.submit "Save Receipt", class:'btn btn-lg btn-success' %>
+    </div>
+<% end %>

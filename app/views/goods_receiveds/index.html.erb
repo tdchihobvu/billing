@@ -1,0 +1,41 @@
+<!-- Page Heading -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">GRVs</h1>
+    <div class="float-end">
+      <%= link_to new_goods_received_path, class: "d-none d-sm-inline-block btn btn-sm btn-outline text-dark" do %>
+      <i class="fas fa-plus fa-sm text-dark"></i> Receive Goods
+      <% end %> |
+      <%= link_to :back, class: "btn btn-outline btn-sm rounded-0" do %><i class="fas fa-backward text-dark"></i> Back <% end %> 
+    </div>
+</div>
+
+<p style="color: green"><%= notice %></p>
+
+<div class="card border-0">
+  <div class="card-body">
+    <% unless @goods_receiveds.empty? %>
+    <table class="table table-striped small">
+      <tr>
+        <th>#</th>
+        <th>Date</th>
+        <th>GRV No.</th>
+        <th>Reference No.</th>
+        <th>Supplier</th>
+        <th></th>
+      </tr>
+      <% @goods_receiveds.each_with_index do |goods_received,i| %>
+      <tr id="goods_received">
+        <td><%= i+=1 %></td>
+        <td><%= goods_received.date_received %></td>
+        <td><%= goods_received.grv_number %></td>
+        <td><%= goods_received.ext_number %></td>
+        <td><%= goods_received.supplier_id %></td>
+        <td><%= link_to "View", goods_received %></td>
+      </tr>
+      <% end %>
+    </table>
+    <% else %>
+    <div class="alert alert-warning text-center border-0" role="alert">There is nothing to display.</div>
+    <% end %>
+  </div>
+</div>

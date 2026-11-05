@@ -1,0 +1,48 @@
+<!-- Page Heading -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Assign Branches <small class="fw-6">#<%= @invoice.invoice_number %></small></h1>
+    <div class="float-end">
+      <%= link_to invoices_path, class: "d-none d-sm-inline-block btn btn-sm btn-outline text-dark" do %>
+      <i class="fas fa-file fa-sm text-dark"></i> Invoices
+      <% end %> |
+      <%= link_to :back, class: "btn btn-outline btn-sm rounded-0" do %><i class="fas fa-backward text-dark"></i> Back <% end %> 
+    </div>
+</div>
+
+<div class="card border-0">
+  <div class="card-body">
+    <h6>All fields marked with <span class="required_field"></span> are mandatory</h6>
+    <%= form_with(model: @invoice) do |form| %>
+      <% if @invoice.errors.any? %>
+        <div style="color: red">
+          <h2><%= pluralize(@invoice.errors.count, "error") %> prohibited this invoice from being saved:</h2>
+
+          <ul>
+            <% @invoice.errors.each do |error| %>
+              <li><%= error.full_message %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <%= form.hidden_field :is_proforma %>
+      <div class="row">
+        <div class="col-sm-6">
+         <div class="form-group">
+          <%= form.label :branches %>
+          <%= form.collection_check_boxes(:branch_ids, @invoice.client.branches, :id, :name) do |b| %>
+            <div>
+              <%= b.check_box %>
+              <%= b.label %>
+            </div>
+          <% end %>
+          </div>
+        </div>
+      </div>
+
+      <div class="text-left">
+        <%= form.submit "Save Invoice", class:'btn btn-lg btn-success' %>
+      </div>
+    <% end %>
+  </div>
+</div>

@@ -1,0 +1,16 @@
+<!-- Page Heading -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Tenants</h1>
+</div>
+
+<p style="color: green"><%= notice %></p>
+
+<div class="row">
+
+  <div id="tenants">
+    <% @tenants.each do |tenant| %>
+      <%= render "tenant_card", tenant: tenant %>
+    <% end %>
+  </div>
+
+</div>

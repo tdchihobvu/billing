@@ -1,0 +1,14 @@
+<p style="color: green"><%= notice %></p>
+
+<h1>Tenant locales</h1>
+
+<div id="tenant_locales">
+  <% @tenant_locales.each do |tenant_locale| %>
+    <%= render tenant_locale %>
+    <p>
+      <%= link_to "Show this tenant locale", tenant_locale %>
+    </p>
+  <% end %>
+</div>
+
+<%= link_to "New tenant locale", new_tenant_locale_path %>

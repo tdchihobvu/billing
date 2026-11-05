@@ -1,0 +1,90 @@
+
+<div
+  data-controller="invoice-dashboard"
+  data-invoice-dashboard-statuses-value="<%= @status_counts.to_json %>"
+  data-invoice-dashboard-financials-value="<%= @financial_summary.to_json %>"
+  class="container-fluid py-4">
+
+  <h3 class="mb-4">Invoice Dashboard</h3>
+
+  <div class="row g-3 mb-4">
+
+    <div class="col-md-3">
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <p class="text-muted">Total Invoices</p>
+          <h3><%= @status_counts.values.sum %></h3>
+        </div>
+      </div>
+    </div>
+
+    <% @financial_summary.each do |item| %>
+      <div class="col-md-3">
+        <div class="card shadow-sm border-0">
+          <div class="card-body">
+            <p class="text-muted">
+              Total Invoiced (<%= item[:currency] %>)
+            </p>
+            <h3><%= number_with_delimiter(item[:total_invoiced]) %></h3>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div class="card shadow-sm border-0">
+          <div class="card-body">
+            <p class="text-muted">
+              Collected (<%= item[:currency] %>)
+            </p>
+            <h3 class="text-success">
+              <%= number_with_delimiter(item[:total_paid]) %>
+            </h3>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div class="card shadow-sm border-0">
+          <div class="card-body">
+            <p class="text-muted">
+              Outstanding (<%= item[:currency] %>)
+            </p>
+            <h3 class="text-danger">
+              <%= number_with_delimiter(item[:outstanding_balance]) %>
+            </h3>
+          </div>
+        </div>
+      </div>
+    <% end %>
+
+  </div>
+
+  <div class="row g-4">
+
+    <div class="col-lg-5">
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <h5>Invoice Status Breakdown</h5>
+
+          <div style="height: 350px;">
+            <canvas data-invoice-dashboard-target="statusChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-7">
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <h5>Financial Overview</h5>
+
+          <div style="height: 350px;">
+            <canvas data-invoice-dashboard-target="financialChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>

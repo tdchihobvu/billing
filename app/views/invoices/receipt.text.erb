@@ -1,0 +1,48 @@
+<% if @invoice.is_proforma? %>
+<% 	title = "Proforma Invoice" %>
+<% else %>
+<% 	title = tenant.system_settings.find_by(config_key_id: ConfigKey.find_by(name: 'Invoice Title').id).config_value %>
+<% end %>
+
+<% width = 32 %>
+<% def line(char = "-", width = 32) %>
+<%= char * width %>
+<% end %>
+<%= title.upcase.center(width) %>
+<%= "" %>
+<%= tenant.company_name.center(width) %>
+<%= tenant.address_1.center(width) %>
+<% unless tenant.address_2.nil? %>
+<% "#{tenant.address_2}, #{tenant.location}" %>
+<% else %>
+<% "#{tenant.location}" %>
+<% end %>
+<%= "#{tenant.city}, #{tenant.country}".center(width)  %>
+<%= "#{tenant.phone_1},#{tenant.mobile_1}".center(width) %>
+<%= "#{tenant.sales_email}".center(width) %>
+<%= line("-", width) %>
+<%= "VAT Number: #{tenant.vat_number}" %>
+<%= "TIN Number: #{tenant.bp_number}" %>
+<%= "Document Number: #{@invoice.invoice_number}" %>
+<%= "Invoice Date: #{@invoice.invoice_date.strftime("%d/%m/%Y")}" %>
+<%= line("-", width) %>
+Customer Details
+<%= "" %>
+Customer Name: <%= "#{@invoice.client.name.upcase}".rjust(28) %>
+Customer Address: <%= "#{@invoice.client.address_1.upcase}".rjust(15) %>
+Customer VAT: <%= "#{@invoice.client.vat_number}".rjust(21) %>
+Customer TIN: <%= "#{@invoice.client.bp_number}".rjust(21) %>
+Customer Email:<%= "#{@invoice.client.email}".rjust(21) %>
+Customer Phone: <%= "#{@invoice.client.default_phone}".rjust(21) %>
+<%= line("-", width) %>
+
+
+
+Subtotal: <%= sprintf("%.2f", @invoice.sub_total).rjust(21) %>
+Tax:      <%= sprintf("%.2f", @invoice.vat).rjust(21) %>
+TOTAL:    <%= sprintf("%.2f", @invoice.license.amount).rjust(21) %>
+
+
+
+
+

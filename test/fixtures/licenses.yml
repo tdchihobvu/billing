@@ -1,0 +1,21 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  client: one
+  license_category: one
+  renewal_date: 2024-02-07
+  expiry_date: 2024-02-07
+  auto_renewal: false
+  license_option: one
+  printed: 1
+  active: false
+
+two:
+  client: two
+  license_category: two
+  renewal_date: 2024-02-07
+  expiry_date: 2024-02-07
+  auto_renewal: false
+  license_option: two
+  printed: 1
+  active: false

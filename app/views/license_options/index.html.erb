@@ -1,0 +1,14 @@
+<p style="color: green"><%= notice %></p>
+
+<h1>License options</h1>
+
+<div id="license_options">
+  <% @license_options.each do |license_option| %>
+    <%= render license_option %>
+    <p>
+      <%= link_to "Show this license option", license_option %>
+    </p>
+  <% end %>
+</div>
+
+<%= link_to "New license option", new_license_option_path %>

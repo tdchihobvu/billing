@@ -1,0 +1,25 @@
+<!-- Page Heading -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Receipt - <span class="text-danger"><%= @receipt.reference_number %></h1>
+    <div class="float-end">
+      <%= link_to receipts_path, class: "d-none d-sm-inline-block btn btn-sm btn-outline text-dark" do %>
+      <i class="fas fa-folder fa-sm text-dark"></i> All Receipts
+      <% end %> |
+      <%= link_to @receipt, data: {turbo_method: :delete, turbo_confirm: 'Are you sure. You want to void this receipt?' }, class: "btn btn-outline btn-sm rounded-0 text-dark" do %>
+        <i class="fas fa-trash text-dark"></i> Void
+      <% end %> |
+      <%= link_to :back, class: "btn btn-outline btn-sm rounded-0" do %><i class="fas fa-backward text-dark"></i> Back <% end %> 
+    </div>
+</div>
+
+<p style="color: green"><%= notice %></p>
+<div class="card border-0">
+  <div class="card-body">
+    <%= render @receipt %>
+  </div>
+  <div class="text-center">
+    <%= link_to print_receipts_path(id: @receipt), class: "btn btn-sm btn-success" do %>
+    <i class="fas fa-print fa-sm"></i> Print
+    <% end %>
+  </div>
+</div>

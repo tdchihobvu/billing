@@ -1,0 +1,30 @@
+<!-- Page Heading -->
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Quotation <small>#<%= @quotation.quotation_number %></small></h1>
+    <div class="float-end">
+      <% unless @quotation.deleted? %>
+        <%= link_to edit_quotation_path(@quotation), class: "d-none d-sm-inline-block btn btn-sm btn-outline text-dark" do %>
+        <i class="fas fa-edit fa-sm text-dark"></i> Edit
+        <% end %> |
+
+        <%= link_to print_quotations_path(id: @quotation, format: :pdf), class: "d-none d-sm-inline-block btn btn-sm btn-outline text-dark" do %> 
+        <i class="fas fa-file fa-sm text-dark"></i> Print
+        <% end %>
+        |
+        <%= link_to new_invoice_path(quotation: @quotation), class: "d-none d-sm-inline-block btn btn-sm btn-outline text-dark" do %> 
+        <i class="fas fa-file fa-sm text-dark"></i> Generate Tax Invoice
+        <% end %>
+        |
+        <%= link_to :back, class: "btn btn-outline btn-sm rounded-0" do %><i class="fas fa-backward text-dark"></i> Back <% end %> 
+      <% end %>
+    </div>
+</div>
+
+<p style="color: green"><%= notice %></p>
+
+<%= render @quotation %>
+
+<div class="row mt-4">
+  <%= button_to "Delete Quotation", @quotation, method: :delete, class: "btn btn-sm btn-danger" %>
+</div>

@@ -1,0 +1,59 @@
+<!-- Page Heading -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Quotations</h1>
+    <div class="float-end">
+      <%= link_to new_quotation_path, class: "d-none d-sm-inline-block btn btn-sm btn-outline text-dark" do %>
+      <i class="fas fa-file fa-sm text-dark"></i> New Quote
+      <% end %> |
+      <%= link_to :back, class: "btn btn-outline btn-sm rounded-0" do %><i class="fas fa-backward text-dark"></i> Back <% end %> 
+    </div>
+</div>
+
+<p style="color: green"><%= notice %></p>
+
+<div class="card border-0">
+  <div class="card-body">
+    <div class="table-responsive">
+      <% unless @quotations.empty? %>
+      <table id="dataTable" class="table table-striped small" width="100%" cellspacing="0">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Date</th>
+            <th>Quote No.</th>
+            <th>Customer</th>
+            <th>Currency</th>
+            <th>Validity</th>
+            <th>Tax</th>
+            <th>Total</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @quotations.each_with_index do |quotation,i| %>
+          <tr id="quotations">
+            <td><%= i+=1 %></td>
+            <td><%= quotation.quotation_date.strftime("%d/%m/%Y") %></td>
+            <td><%= quotation.quotation_number %></td>
+            <td><%= quotation.client.name %></td>
+            <td><%= quotation.currency.name %></td>
+            <td><%= pluralize(quotation.validity, 'day') %></td>
+            <td><%= number_to_currency(quotation.vat, unit: "") %></td>
+            <td><%= number_to_currency(quotation.total, unit: "") %></td>
+            <td><%= link_to "View", quotation %></td>
+          </tr>
+          <% end %>
+        </tbody>
+      </table>
+      <% else %>
+      <div class="alert alert-warning text-center border-0" role="alert">There is nothing to display.</div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript">
+  $(document).ready(function() {
+    $('#dataTable').DataTable();
+  });
+</script>

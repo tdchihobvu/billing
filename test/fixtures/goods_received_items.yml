@@ -1,0 +1,29 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  product: one
+  description: MyString
+  net_cost: 9.99
+  cost_vat: 9.99
+  cost: 9.99
+  quantity: 9.99
+  net_total_cost: 9.99
+  total_vat: 9.99
+  total_cost: 9.99
+  net_selling_price: 9.99
+  selling_price: 9.99
+  vat_type: one
+
+two:
+  product: two
+  description: MyString
+  net_cost: 9.99
+  cost_vat: 9.99
+  cost: 9.99
+  quantity: 9.99
+  net_total_cost: 9.99
+  total_vat: 9.99
+  total_cost: 9.99
+  net_selling_price: 9.99
+  selling_price: 9.99
+  vat_type: two

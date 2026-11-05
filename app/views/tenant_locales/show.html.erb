@@ -1,0 +1,10 @@
+<p style="color: green"><%= notice %></p>
+
+<%= render @tenant_locale %>
+
+<div>
+  <%= link_to "Edit this tenant locale", edit_tenant_locale_path(@tenant_locale) %> |
+  <%= link_to "Back to tenant locales", tenant_locales_path %>
+
+  <%= button_to "Destroy this tenant locale", @tenant_locale, method: :delete %>
+</div>
