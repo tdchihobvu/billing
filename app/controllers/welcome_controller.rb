@@ -22,8 +22,8 @@ class WelcomeController < ApplicationController
         next if v.invoice_total == v.total
 
         v.update!(invoice_total: v.total)
-      rescue ActiveRecord::RecordNotUnique, Mysql2::Error => e
-        Rails.logger.warn("⚠️ Skipped duplicate invoice ID=#{v.id}: #{e.message}")
+      rescue ActiveRecord::RecordNotUnique => e
+        Rails.logger.warn("Skipped duplicate invoice ID=#{v.id}: #{e.message}")
         next
       rescue StandardError => e
         Rails.logger.error("❌ Unexpected error for invoice ID=#{v.id}: #{e.message}")

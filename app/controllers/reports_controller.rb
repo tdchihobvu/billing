@@ -76,10 +76,23 @@ class ReportsController < ApplicationController
   end
 
   def overdue_invoices
-    @invoices = Invoice.unpaid.where("invoice_date < '#{Date.today}'")
-    Invoice.unpaid.where("last_debtors_update < '#{Date.today}'").each do |invoice|
-      puts("dealing with #{invoice.id}")
-      invoice.update_debtors_age
+    today = Date.current
+
+    scope = Invoice.unpaid
+                   .where("due_date < ?", today)
+                   .includes(:client, :currency)
+                   .order(due_date: :asc, id: :asc)
+
+    respond_to do |format|
+      format.html do
+        @pagy, @invoices = pagy(scope, limit: 100)
+      end
+
+      format.xlsx do
+        @invoices = scope
+        render xlsx: "overdue_invoices",
+               filename: "overdue_invoices.xlsx"
+      end
     end
   end
 

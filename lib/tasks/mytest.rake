@@ -258,5 +258,23 @@ namespace :mytest do
     
   end
 
+  task update_reference_numbers_sequence: :environment do
+    receipts = Receipt
+      .where("reference_number >= ?", "007552")
+      .order(:id)
+
+    next_reference_number = 7552
+
+    receipts.each do |receipt|
+      new_reference_number = "%06d" % next_reference_number
+
+      puts "#{receipt.id}, #{receipt.reference_number} -> #{new_reference_number}"
+
+      receipt.update_column(:reference_number, new_reference_number)
+
+      next_reference_number += 1
+    end
+  end
+
 
 end

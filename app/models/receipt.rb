@@ -36,6 +36,21 @@ class Receipt < ApplicationRecord
   scope :active, -> {where(deleted: false)}
   scope :between_dates, ->(start_date, end_date) {active.includes(:currency, :payment_form).where(transaction_date: start_date..end_date)}
 
+  def self.generate_receipt_number(tenant)
+    rec_format = tenant.system_settings
+                       .joins(:config_key)
+                       .find_by(config_keys: { name: "Receipt No." })
+                       &.config_value
+
+    return unless rec_format.present?
+
+    last = tenant.receipts.where(receipt_type: 'Payment').order(id: :desc).first
+
+    rec_no = last.present? ? last.reference_number.next : rec_format
+
+    rec_no
+  end
+
   def client_name
     self.client.name unless self.client.nil?
   end

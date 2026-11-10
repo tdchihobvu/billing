@@ -53,11 +53,10 @@ class Client < ApplicationRecord
   end
 
   def self.search(search)
-    if search 
-      Client.where("name LIKE '%#{search}%'").order("name asc")
-    else
-      []
-    end
+    return [] if search.blank?
+
+    Client.where("name ILIKE ?", "%#{search.split.join('%')}%")
+          .order(name: :asc)
   end
 
   def journal_debits

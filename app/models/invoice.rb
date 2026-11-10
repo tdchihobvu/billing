@@ -264,38 +264,73 @@ class Invoice < ApplicationRecord
     self.source_reference
   end
 
-  def age
-    a = 0
-    unless self.paid
-      a = (Date.today - self.due_date).to_i
-    end
-    a
+  # def age
+  #   a = 0
+  #   unless self.paid
+  #     a = (Date.today - self.due_date).to_i
+  #   end
+  #   a
+  # end
+
+  # def update_debtors_age
+  #   # update the last debtors update, payment and age
+  #   if self.last_payment_update.nil?
+  #     receipts = Receipt.active.order(transaction_date: :asc).where(invoice_id: self.id)
+  #     unless receipts.empty?
+  #       self.update(last_payment_update: receipts[-1].transaction_date)    
+  #     end 
+  #   end
+       
+  #   unless self.last_debtors_update.nil?
+  #     unless self.last_payment_update.nil?
+  #       if self.last_debtors_update.to_date < Date.today || self.last_debtors_update < self.last_payment_update
+  #         puts("do the comparison and update")
+  #         self.update(debtors_age: age, last_debtors_update: Time.now + 2.hours) 
+  #       end
+  #     else
+  #       if self.last_debtors_update.to_date < Date.today
+  #         self.update(debtors_age: age, last_debtors_update: Time.now + 2.hours) 
+  #       end
+  #     end
+  #   else
+  #     puts("initialize debtors update")
+  #     self.update(debtors_age: age, last_debtors_update: Time.now + 2.hours)
+  #   end
+  # end
+
+  def age(report_date = Date.current)
+    return 0 if paid || due_date.blank?
+
+    (report_date.to_date - due_date.to_date).to_i
   end
 
-  def update_debtors_age
-    # update the last debtors update, payment and age
-    if self.last_payment_update.nil?
-      receipts = Receipt.active.order(transaction_date: :asc).where(invoice_id: self.id)
-      unless receipts.empty?
-        self.update(last_payment_update: receipts[-1].transaction_date)    
-      end 
-    end
-       
-    unless self.last_debtors_update.nil?
-      unless self.last_payment_update.nil?
-        if self.last_debtors_update.to_date < Date.today || self.last_debtors_update < self.last_payment_update
-          puts("do the comparison and update")
-          self.update(debtors_age: age, last_debtors_update: Time.now + 2.hours) 
-        end
-      else
-        if self.last_debtors_update.to_date < Date.today
-          self.update(debtors_age: age, last_debtors_update: Time.now + 2.hours) 
-        end
-      end
-    else
-      puts("initialize debtors update")
-      self.update(debtors_age: age, last_debtors_update: Time.now + 2.hours)
-    end
+  def update_debtors_age(report_date = Date.current)
+    report_date = report_date.to_date
+
+    latest_payment_date = Receipt.active
+                                 .where(invoice_id: id)
+                                 .maximum(:transaction_date)
+
+    payment_changed = last_payment_update != latest_payment_date
+
+    ageing_outdated = last_debtors_update.nil? ||
+                      last_debtors_update.to_date < report_date
+
+    return false unless ageing_outdated || payment_changed
+
+    calculated_age = age(report_date)
+
+    update_columns(
+      debtors_age: calculated_age,
+      last_payment_update: latest_payment_date,
+      last_debtors_update: Time.current
+    )
+
+    Rails.logger.info(
+      "Invoice #{id}: Ageing updated to #{calculated_age} days"
+    )
+
+    true
   end
 
   def update_payment_status

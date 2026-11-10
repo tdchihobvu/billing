@@ -11,43 +11,58 @@
 
 <p style="color: green"><%= notice %></p>
 
-<% unless @invoices.empty? %>
-<table id="dataTable" class="table table-striped small" width="100%" cellspacing="0">
-  <thead>
-    <tr>
-      <th>#</th>
-      <th>Customer Name</th>
-      <th>Invoice Date</th>
-      <th>Invoice No.</th>
-      <th>Invoice Amount</th>
-      <th>Currency</th>
-      <th>Due Date</th>
-      <th>Ageing</th>
-      <th>Balance</th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-    <% @invoices.each_with_index do |invoice,i| %>
-    <tr id="invoices">
-      <td><%= i+=1 %></td>
-      <td><%= invoice.client.name %></td>
-      <td><%= invoice.invoice_date.strftime("%d/%m/%Y") %></td>
-      <td><%= invoice.invoice_number %></td>
-      <td><%= number_to_currency(invoice.total) %></td>
-      <td><%= invoice.currency.name %></td>
-      <td><%= invoice.due_date.strftime("%d/%m/%Y") unless invoice.due_date.nil? %></td>
-      <td><%= invoice.debtors_age %></td>
-      <td><strong><%= number_to_currency(invoice.balance) %></strong></td>
-      <td>
-        <%= link_to sms_reminder_invoices_path(id: invoice), class: "btn btn-outline text-dark small", title: "SMS Reminder" do %>
-          <i class="fas fa-paper-plane fa-sm text-dark"></i>
-        <% end %>
-      </td>
-    </tr>
-    <% end %>
-  </tbody>
-</table>
+<% if @invoices.any? %>
+  <table id="dataTable" class="table table-striped small" width="100%" cellspacing="0">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Customer Name</th>
+        <th>Invoice Date</th>
+        <th>Invoice No.</th>
+        <th>Invoice Amount</th>
+        <th>Currency</th>
+        <th>Due Date</th>
+        <th>Ageing</th>
+        <th>Balance</th>
+        <th></th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <% @invoices.each_with_index do |invoice, i| %>
+        <tr>
+          <td><%= @pagy.offset + i + 1 %></td>
+          <td><%= invoice.client&.name %></td>
+          <td><%= invoice.invoice_date&.strftime("%d/%m/%Y") %></td>
+          <td><%= invoice.invoice_number %></td>
+          <td><%= number_to_currency(invoice.total) %></td>
+          <td><%= invoice.currency&.name %></td>
+          <td><%= invoice.due_date&.strftime("%d/%m/%Y") %></td>
+          <td><%= invoice.debtors_age %></td>
+          <td><strong><%= number_to_currency(invoice.balance) %></strong></td>
+          <td>
+            <%= link_to sms_reminder_invoices_path(id: invoice),
+                class: "btn btn-outline text-dark small",
+                title: "SMS Reminder" do %>
+              <i class="fas fa-paper-plane fa-sm text-dark"></i>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <div class="d-flex justify-content-between align-items-center mt-3">
+    <small class="text-muted">
+      Showing <%= @pagy.from %> - <%= @pagy.to %>
+      of <%= @pagy.count %> invoices
+    </small>
+
+    <%== pagy_bootstrap_nav(@pagy) %>
+  </div>
+
 <% else %>
-<div class="alert alert-warning text-center border-0" role="alert">There is nothing to display.</div>
+  <div class="alert alert-warning text-center border-0">
+    There is nothing to display.
+  </div>
 <% end %>

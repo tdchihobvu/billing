@@ -1,5 +1,7 @@
 module ApplicationHelper
 
+	include Pagy::Frontend
+
 	def tenant
 		current_user.tenant
 	end

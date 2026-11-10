@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_01_051532) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_09_022348) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -124,7 +124,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_01_051532) do
     t.string "phone", null: false
     t.string "email", null: false
     t.string "cp_name", null: false
-    t.string "cp_mobile", null: false
+    t.string "cp_mobile"
     t.string "cp_email"
     t.boolean "active", default: true
     t.datetime "created_at", null: false
@@ -380,7 +380,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_01_051532) do
     t.index ["client_id"], name: "index_invoices_on_client_id"
     t.index ["currency_id"], name: "index_invoices_on_currency_id"
     t.index ["invoice_date", "client_id", "invoice_total", "deleted"], name: "unique_invoice_per_client", unique: true
+    t.index ["invoice_date"], name: "index_invoices_on_invoice_date"
     t.index ["invoice_number", "is_proforma", "device_id", "deleted"], name: "invoice_number_unique", unique: true
+    t.index ["last_debtors_update"], name: "index_invoices_on_last_debtors_update"
     t.index ["user_id"], name: "index_invoices_on_user_id"
   end
 
@@ -809,7 +811,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_01_051532) do
   add_foreign_key "branches", "license_categories"
   add_foreign_key "branches", "license_options"
   add_foreign_key "clients", "client_types"
-  add_foreign_key "clients", "industries"
+  add_foreign_key "clients", "industries", validate: false
   add_foreign_key "clients", "tenants"
   add_foreign_key "config_keys", "setting_categories"
   add_foreign_key "contact_people", "tenants"
@@ -825,7 +827,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_01_051532) do
   add_foreign_key "goods_receiveds", "suppliers"
   add_foreign_key "goods_receiveds", "tenants"
   add_foreign_key "goods_receiveds", "users"
-  add_foreign_key "invoice_items", "invoices"
+  add_foreign_key "invoice_items", "invoices", validate: false
   add_foreign_key "invoices", "banks"
   add_foreign_key "invoices", "clients"
   add_foreign_key "invoices", "currencies"
@@ -856,7 +858,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_01_051532) do
   add_foreign_key "tarrifs", "tenants"
   add_foreign_key "tenant_locales", "tenants"
   add_foreign_key "tenants", "tenant_categories"
-  add_foreign_key "transactions", "clients"
+  add_foreign_key "transactions", "clients", validate: false
   add_foreign_key "transactions", "users"
   add_foreign_key "users", "tenants"
 end

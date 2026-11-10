@@ -195,6 +195,7 @@ GEM
       ast
       ruby-ll (~> 2.1)
     orm_adapter (0.5.0)
+    pagy (9.4.0)
     pdf-core (0.10.0)
     pg (1.7.0)
     pg (1.7.0-x64-mingw-ucrt)
@@ -340,6 +341,7 @@ DEPENDENCIES
   groupdate
   image_processing (~> 1.2)
   jsbundling-rails
+  pagy
   pg (~> 1.1)
   prawn
   prawn-qrcode

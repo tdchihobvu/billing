@@ -292,6 +292,8 @@ class InvoicesController < ApplicationController
         return
       end
 
+      rec_no = Receipt.generate_receipt_number(current_user.tenant)
+
       receipt = @invoice.receipts.build(
         transaction_date: transaction_date,
         payment_form_id: payment_form_id,
@@ -302,8 +304,8 @@ class InvoicesController < ApplicationController
         actual_paid: amount,
         description: "Setoff: #{reason}",
         reason: reason,
-        source_reference: "SETOFF-#{@invoice.invoice_number}-#{Time.current.to_i}",
-        reference_number: "SETOFF-#{@invoice.invoice_number}-#{Time.current.to_i}",
+        source_reference: rec_no,
+        reference_number: rec_no,
         user: current_user,
         tenant_id: @invoice.tenant_id,
         transaction_source: 'BaseApplication'

@@ -62,25 +62,13 @@ class ReceiptsController < ApplicationController
   def create
     @receipt = Receipt.new(receipt_params)
     @receipt.tenant_id = tenant.id
+    @client = Client.find_by(id: params[:receipt][:client_id])
+    @clients = Client.where(id: @client.id)
 
-    rec_format = tenant.system_settings.joins(:config_key)
-     .find_by(config_keys: { name: "Receipt No." })
-     &.config_value
+    rec_no = Receipt.generate_receipt_number(current_user.tenant)
 
-    if rec_format.present?
-      last = current_user.tenant.receipts
-                         .order(reference_number: :desc)
-                         .first
-
-      if last.nil?
-        @receipt.reference_number = rec_format
-        @receipt.source_reference = rec_format
-      else
-        rec_no = last.reference_number.next
-        @receipt.reference_number = rec_no
-        @receipt.source_reference = rec_no
-      end
-    end
+    @receipt.reference_number = rec_no
+    @receipt.source_reference = rec_no
 
     if @receipt.save
       @receipt.update!(actual_paid: @receipt.amount_paid)
@@ -92,7 +80,7 @@ class ReceiptsController < ApplicationController
     else
       Rails.logger.info "RECEIPT ERRORS: #{@receipt.errors.full_messages}"
 
-      render :new, status: :unprocessable_entity
+      render :record_receipt, status: :unprocessable_entity
     end
   end
 
