@@ -13,12 +13,10 @@ class ReceiptsController < ApplicationController
 
     @receipts = current_user.tenant.receipts
                              .active
-                             .where(transaction_date: Date.current.all_month)
+                             # .where(transaction_date: Date.current.all_month)
                              .includes(:client, :payment_form, :currency)
                              .order(transaction_date: :desc).limit(50)
   end
-
-
 
   # GET /receipts/1
   def show

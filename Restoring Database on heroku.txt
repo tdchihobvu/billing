@@ -1,0 +1,8 @@
+## Check your local versions
+pg_restore --version
+psql --version
+
+## Use new PostgreSQL version to restore
+"C:\Program Files\PostgreSQL\17\bin\pg_restore.exe" --version
+
+## Restore the database using the script below
