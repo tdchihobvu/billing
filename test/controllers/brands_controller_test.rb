@@ -17,7 +17,7 @@ class BrandsControllerTest < ActionDispatch::IntegrationTest
 
   test "should create brand" do
     assert_difference("Brand.count") do
-      post brands_url, params: { brand: { name: @brand.name } }
+      post brands_url, params: { brand: fresh_attributes(@brand) }
     end
 
     assert_redirected_to brand_url(Brand.last)
@@ -39,10 +39,21 @@ class BrandsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should destroy brand" do
+    record = unreferenced_copy(@brand)
+
     assert_difference("Brand.count", -1) do
-      delete brand_url(@brand)
+      delete brand_url(record)
     end
 
     assert_redirected_to brands_url
+  end
+
+  test "should explain when a brand is in use" do
+    assert_no_difference("Brand.count") do
+      delete brand_url(brands(:one))
+    end
+
+    assert_response :see_other
+    assert_equal "This record is in use by other records and cannot be deleted.", flash[:alert]
   end
 end

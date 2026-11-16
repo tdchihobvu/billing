@@ -1,6 +1,9 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
+  tenant: one
+  regional_office: one
+  terminal_id: <%= ActiveRecord::FixtureSet.identify(:one) %>
   name: MyString
   serial_number: MyString
   model: MyString
@@ -9,8 +12,11 @@ one:
   access_token: MyText
 
 two:
+  tenant: two
+  regional_office: two
+  terminal_id: <%= ActiveRecord::FixtureSet.identify(:two) %>
   name: MyString
-  serial_number: MyString
+  serial_number: serial_number_two
   model: MyString
   active: false
   user: two

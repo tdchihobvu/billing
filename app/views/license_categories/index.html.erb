@@ -1,14 +1,1 @@
-<p style="color: green"><%= notice %></p>
-
-<h1>License categories</h1>
-
-<div id="license_categories">
-  <% @license_categories.each do |license_category| %>
-    <%= render license_category %>
-    <p>
-      <%= link_to "Show this license category", license_category %>
-    </p>
-  <% end %>
-</div>
-
-<%= link_to "New license category", new_license_category_path %>
+<%= render "shared/crud_index", records: @license_categories, model: LicenseCategory, title: "License categories", crumb: "Licensing", new_path: new_license_category_path, new_label: "New license category" %>

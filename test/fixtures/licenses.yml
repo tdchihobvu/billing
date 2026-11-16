@@ -1,6 +1,8 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
+  amount: 100
+  invoice: one
   client: one
   license_category: one
   renewal_date: 2024-02-07
@@ -11,6 +13,8 @@ one:
   active: false
 
 two:
+  amount: 100
+  invoice: two
   client: two
   license_category: two
   renewal_date: 2024-02-07

@@ -17,7 +17,7 @@ class RegionalOfficesControllerTest < ActionDispatch::IntegrationTest
 
   test "should create regional_office" do
     assert_difference("RegionalOffice.count") do
-      post regional_offices_url, params: { regional_office: { name: @regional_office.name, region_id: @regional_office.region_id } }
+      post regional_offices_url, params: { regional_office: fresh_attributes(@regional_office) }
     end
 
     assert_redirected_to regional_office_url(RegionalOffice.last)
@@ -39,8 +39,10 @@ class RegionalOfficesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should destroy regional_office" do
+    record = unreferenced_copy(@regional_office)
+
     assert_difference("RegionalOffice.count", -1) do
-      delete regional_office_url(@regional_office)
+      delete regional_office_url(record)
     end
 
     assert_redirected_to regional_offices_url

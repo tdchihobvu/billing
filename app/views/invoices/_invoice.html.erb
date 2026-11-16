@@ -104,13 +104,19 @@
               <th style="width:62%">Subtotal:</th>
               <td><%= number_to_currency(invoice.license.sub_total, unit: "") %></td>
             </tr>
+            <% if invoice.discount_amount.positive? %>
+              <tr>
+                <th>Discount:</th>
+                <td>-<%= number_to_currency(invoice.discount_amount, unit: "") %></td>
+              </tr>
+            <% end %>
             <tr>
               <th>Tax</th>
-              <td><%= number_to_currency(invoice.license.vat, unit: "") %></td>
+              <td><%= number_to_currency(invoice.discount_amount.positive? ? invoice.vat : invoice.license.vat, unit: "") %></td>
             </tr>
             <tr>
               <th>Total:</th>
-              <td><%= number_to_currency(invoice.license.amount, unit: "") %></td>
+              <td><%= number_to_currency(invoice.discount_amount.positive? ? invoice.total : invoice.license.amount, unit: "") %></td>
             </tr>
             <tr>
               <th>Balance:</th>
@@ -123,6 +129,12 @@
               <th style="width:62%">Subtotal:</th>
               <td><%= number_to_currency(invoice.sub_total, unit: "") %></td>
             </tr>
+            <% if invoice.discount_amount.positive? %>
+              <tr>
+                <th>Discount:</th>
+                <td>-<%= number_to_currency(invoice.discount_amount, unit: "") %></td>
+              </tr>
+            <% end %>
             <tr>
               <th>Tax</th>
               <td><%= number_to_currency(invoice.vat, unit: "") %></td>

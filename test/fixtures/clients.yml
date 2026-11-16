@@ -1,6 +1,9 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
+  currency: one
+  tenant: one
+  client_account_number: client_account_number_one
   client_type: one
   industry: one
   name: MyString
@@ -22,6 +25,9 @@ one:
   active: false
 
 two:
+  currency: two
+  tenant: two
+  client_account_number: client_account_number_two
   client_type: two
   industry: two
   name: MyString

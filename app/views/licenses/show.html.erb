@@ -1,11 +1,80 @@
-<p style="color: green"><%= notice %></p>
+<% lic = @license %>
+<div class="zpage">
+  <%= render "shared/zhead", title: "License #{lic.license_key.presence || lic.id}", crumb: link_to("Licensing / Valid Licenses", licenses_path),
+             sub: lic.client&.name,
+             actions: safe_join([
+               link_to("Edit this license", edit_license_path(lic), class: "b"),
+               (current_user.sees_license_approvals? && lic.approval_status != "pending_payment" ? link_to("Approval details", license_approval_path(lic), class: "b") : nil),
+               (lic.printable? ? link_to(print_licenses_path(id: lic, format: :pdf), class: "b main", target: "_blank", rel: "noopener") { safe_join([tag.i(class: "fas fa-print", "aria-hidden": "true"), " Print License"]) } : nil)
+             ].compact, " ") %>
+  <% unless lic.printable? %>
+    <div class="znote warn"><span><i class="fas fa-hourglass-half" aria-hidden="true"></i></span><div><b><%= lic.approval_label %></b><%= lic.approval_hint %></div></div>
+  <% end %>
+  <section class="box">
+    <div class="zdetails">
+      <% [["Client", lic.client ? link_to(lic.client.name, lic.client) : nil], ["Invoice", lic.invoice ? link_to(lic.invoice.invoice_number, lic.invoice) : nil],
+          ["Category", lic.license_for], ["Option", lic.license_option&.name], ["Valid from", lic.renewal_date&.strftime("%d %b %Y")], ["Expires", lic.expiry_date&.strftime("%d %b %Y")],
+          ["Quantity", lic.quantity], ["Amount", lic.amount && number_with_precision(lic.amount, precision: 2, delimiter: ",")], ["Status", lic.status], ["Paid", lic.paid ? "Yes" : "No"], ["Approval", lic.approval_label],
+          ["Auto renewal", lic.auto_renewal ? "Yes" : "No"], ["Printed", lic.printed.to_i.positive? ? "Yes" : "No"]].each do |label, value| %>
+        <div><small class="muted"><%= label %></small><div><b><%= value.presence || "Not given" %></b></div></div>
+      <% end %>
+    </div>
+    <div class="zformfoot">
+      <%= link_to "Back to licenses", licenses_path, class: "b" %>
+      <%= button_to "Destroy this license", lic, method: :delete, class: "b danger", form: { class: "button_to" }, data: { turbo_confirm: "Delete this licence? This can't be undone." } %>
+    </div>
+  </section>
 
-<%= render @license %>
+  <% fleet = lic.client.vehicles.active.ordered.to_a %>
+  <% covered = lic.vehicles.active.ordered.to_a %>
+  <% can_print_discs = lic.printable? && can?("licenses.print") %>
+  <section class="box" id="vehicles">
+    <div class="boxh">
+      <h2>Vehicle licence discs</h2>
+      <span><%= covered.any? ? "#{pluralize(covered.size, 'vehicle')} covered" : "For music played in the client's vehicles" %><%= " of #{lic.quantity} invoiced" if covered.any? && lic.quantity.to_i.positive? %></span>
+    </div>
 
-<div>
-  <%= link_to "Edit this license", edit_license_path(@license) %> |
-  <%= link_to "Print License", print_licenses_path(id: @license, format: :pdf), target: '_blank' %> |
-  <%= link_to "Back to licenses", licenses_path %>
+    <% if fleet.empty? %>
+      <%= zempty("No vehicles on this client", "Add the client's vehicles first, then choose which ones this licence covers.",
+                 (can?("clients.manage") ? link_to("Add vehicles", client_path(lic.client, tab: "vehicles"), class: "b main") : nil)) %>
+    <% else %>
+      <% if covered.size > lic.quantity.to_i && lic.quantity.to_i.positive? %>
+        <div class="znote warn" style="margin:0 18px 12px"><span><i class="fas fa-exclamation-triangle" aria-hidden="true"></i></span><div><b>More vehicles than licences invoiced</b>This licence was invoiced for <%= pluralize(lic.quantity, "licence") %> but covers <%= pluralize(covered.size, "vehicle") %>. Check the invoice before printing.</div></div>
+      <% end %>
 
-  <%= button_to "Destroy this license", @license, method: :delete %>
+      <%= form_with url: vehicles_license_path(lic), method: :patch do %>
+        <%= hidden_field_tag "vehicle_ids[]", "", id: nil %>
+        <div class="zwrap"><table class="zt">
+          <thead><tr><th style="width:44px"><span class="visually-hidden">Covered</span></th><th>Registration</th><th>Make and model</th><th>Notes</th><th><span class="visually-hidden">Disc</span></th></tr></thead>
+          <tbody>
+            <% fleet.each do |v| %>
+              <% on = covered.include?(v) %>
+              <tr>
+                <td><%= check_box_tag "vehicle_ids[]", v.id, on, id: "veh_#{v.id}", class: "zbox", disabled: !can?("licenses.generate"), "aria-label": "Licence covers #{v.registration_number}" %></td>
+                <td><label for="veh_<%= v.id %>" style="margin:0;cursor:pointer"><span class="zplate"><%= v.registration_number %></span></label></td>
+                <td><%= v.make_model %></td>
+                <td><%= v.description %></td>
+                <td class="r">
+                  <% if on && can_print_discs %>
+                    <%= link_to vehicle_discs_license_path(lic, vehicle_id: v.id, format: :pdf), class: "b", target: "_blank", rel: "noopener" do %><i class="fas fa-print" aria-hidden="true"></i> Disc<% end %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table></div>
+        <div class="zformfoot" style="justify-content:space-between">
+          <span class="muted" style="font-size:12.5px">
+            <%= can_print_discs ? "Each disc is an A4 page with the licence on top and a square disc to cut out." : (lic.printable? ? "Your role can't print licences." : "Discs print once the licence is approved.") %>
+          </span>
+          <span class="acts">
+            <% if can?("licenses.generate") %><%= submit_tag "Save vehicles", class: "b" %><% end %>
+            <% if can_print_discs && covered.any? %>
+              <%= link_to vehicle_discs_license_path(lic, format: :pdf), class: "b main", target: "_blank", rel: "noopener" do %><i class="fas fa-print" aria-hidden="true"></i> Print <%= pluralize(covered.size, "disc") %><% end %>
+            <% end %>
+          </span>
+        </div>
+      <% end %>
+    <% end %>
+  </section>
 </div>

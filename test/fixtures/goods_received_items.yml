@@ -1,6 +1,7 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
+  goods_received: one
   product: one
   description: MyString
   net_cost: 9.99
@@ -15,6 +16,7 @@ one:
   vat_type: one
 
 two:
+  goods_received: two
   product: two
   description: MyString
   net_cost: 9.99

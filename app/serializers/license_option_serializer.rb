@@ -1,3 +1,3 @@
 class LicenseOptionSerializer < ActiveModel::Serializer
-  attributes :name
+  attributes :name, :months, :count_by
 end

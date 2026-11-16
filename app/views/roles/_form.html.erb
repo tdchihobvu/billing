@@ -1,0 +1,67 @@
+<%= form_with model: role, class: "zroleform", data: { controller: "permissions" } do |f| %>
+  <%= render "shared/form_errors", record: role %>
+  <%= hidden_field_tag "role[permissions_submitted]", "1" %>
+  <%= hidden_field_tag "role[permissions][]", "", id: nil %>
+
+  <section class="box">
+    <div class="boxh"><h2>About this role</h2><span>Fields marked <span class="req"></span> are required</span></div>
+    <div class="zgrid" style="padding:0 18px 18px">
+      <div class="zfield"><%= f.label :name, "Role name", class: "req" %><%= f.text_field :name, placeholder: "e.g. Senior Inspector", maxlength: 60, required: true %></div>
+      <div class="zfield wide"><%= f.label :description, "What this person does" %><%= f.text_area :description, rows: 2, placeholder: "e.g. Visits clients in Harare, raises licence invoices and records receipts." %><span class="zhint">Shown when choosing a role for someone.</span></div>
+    </div>
+  </section>
+
+  <section class="box">
+    <div class="boxh">
+      <h2>Access</h2>
+      <span><span data-permissions-target="total"><%= role.permissions.size %> of <%= Permission::KEYS.size - 1 %></span> permissions allowed</span>
+    </div>
+    <p class="zaccess-intro">Choose how much of each area this role can use. <b>Custom</b> lets you pick individual permissions.</p>
+
+    <div class="zareas">
+      <% Permission.grouped.each do |group, label, icon, items| %>
+        <% items = items.reject(&:superadmin_only) %>
+        <% next if items.empty? %>
+        <% level = Permission.access_level(role.permissions, items) %>
+        <% has_view = items.any?(&:view) %>
+        <div class="zarea">
+          <div class="zarea__head">
+            <span class="zic m" aria-hidden="true"><i class="fas <%= icon %>"></i></span>
+            <div class="zarea__title">
+              <h3><%= label %></h3>
+              <small data-permissions-target="groupCount" data-group="<%= group %>"><%= (items.map(&:key) & role.permissions).size %> of <%= items.size %> allowed</small>
+            </div>
+            <div class="zseg" role="group" aria-label="<%= label %> access">
+              <% [["none", "No access"], ["view", "View only"], ["full", "Full access"], ["custom", "Custom"]].each do |key, text| %>
+                <% next if key == "view" && (!has_view || items.size == 1) %>
+                <button type="button" class="zseg__btn" aria-pressed="<%= level.to_s == key %>"
+                        data-permissions-target="level" data-group="<%= group %>" data-level="<%= key %>" data-action="permissions#setLevel"><%= text %></button>
+              <% end %>
+            </div>
+          </div>
+          <div class="zarea__list" data-permissions-target="list" data-group="<%= group %>" hidden>
+            <% items.each do |perm| %>
+              <% id = "perm_#{perm.key.tr('.', '_')}" %>
+              <label class="zperm" for="<%= id %>">
+                <span><b><%= perm.label %></b><small><%= perm.hint %></small></span>
+                <input type="checkbox" name="role[permissions][]" value="<%= perm.key %>" id="<%= id %>" class="zswitch" role="switch"
+                       <%= "checked" if role.permissions.include?(perm.key) %>
+                       data-permissions-target="box" data-group="<%= group %>" data-view="<%= perm.view ? 'true' : 'false' %>" data-action="permissions#refresh">
+              </label>
+            <% end %>
+          </div>
+          <button type="button" class="zarea__more" data-group="<%= group %>" data-action="permissions#toggleList"><%= items.size == 1 ? "Show the permission" : "Show the #{items.size} permissions" %> in <%= label %></button>
+        </div>
+      <% end %>
+    </div>
+    <p class="zhint" style="margin:0;padding:12px 18px 16px">Managing roles stays with Super admins, so nobody can give themselves more access.</p>
+  </section>
+
+  <div class="zsavebar">
+    <span class="muted">Changes apply to everyone with this role on their next page.</span>
+    <span class="acts">
+      <%= link_to "Cancel", roles_path, class: "b" %>
+      <%= f.submit (role.persisted? ? "Save role" : "Create role"), class: "b main", data: { turbo_submits_with: "Saving…" } %>
+    </span>
+  </div>
+<% end %>

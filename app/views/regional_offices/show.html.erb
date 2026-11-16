@@ -1,10 +1,1 @@
-<p style="color: green"><%= notice %></p>
-
-<%= render @regional_office %>
-
-<div>
-  <%= link_to "Edit this regional office", edit_regional_office_path(@regional_office) %> |
-  <%= link_to "Back to regional offices", regional_offices_path %>
-
-  <%= button_to "Destroy this regional office", @regional_office, method: :delete %>
-</div>
+<%= render "shared/crud_show", record: @regional_office, model: RegionalOffice, crumb: link_to("Settings / Regional offices", regional_offices_path), index_path: regional_offices_path %>

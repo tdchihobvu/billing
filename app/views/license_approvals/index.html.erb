@@ -1,0 +1,87 @@
+<%
+  tabs = LicenseApprovalsController::TABS
+  keep = request.query_parameters.slice("q")
+  role_line = if current_user.finance_officer? then "As a Finance Officer you confirm that full payment was received."
+              elsif current_user.final_approver? then "You give the final approval after Finance has confirmed payment."
+              else "You can follow licences through approval. Finance Officers and Managers act on them."
+              end
+%>
+<div class="zpage">
+  <%= render "shared/zhead", title: "Licence approvals", crumb: "Licensing",
+             sub: "Fully paid licences wait here. Finance confirms the payment, then the Manager gives final approval. Only approved licences can be printed. #{role_line}" %>
+
+  <section class="box">
+    <nav class="ztabs" aria-label="Approval stage">
+      <% tabs.each do |key, (label, _)| %>
+        <%= link_to license_approvals_path(keep.merge(tab: key)), "aria-current": (@tab == key ? "page" : nil) do %>
+          <%= label %><em><%= number_with_delimiter(@counts[key]) %></em>
+        <% end %>
+      <% end %>
+    </nav>
+
+    <%= form_with url: license_approvals_path, method: :get, class: "zfilters", data: { turbo_action: "advance" } do |f| %>
+      <%= hidden_field_tag :tab, @tab %>
+      <label class="zsearch"><span class="visually-hidden">Client or invoice number</span><i class="fas fa-search" aria-hidden="true"></i>
+        <%= f.search_field :q, value: params[:q], placeholder: "Client or invoice number" %></label>
+      <%= f.submit "Search", name: nil, class: "b" %>
+      <% if params[:q].present? %><div class="right"><%= link_to "Clear", license_approvals_path(tab: @tab), class: "zlink", style: "color:var(--soft)" %></div><% end %>
+    <% end %>
+
+    <% if @licenses.any? %>
+      <div class="zwrap">
+        <table class="zt">
+          <thead>
+            <tr>
+              <th>Client</th><th>Licence</th><th class="r">Invoiced</th><th class="r">Balance</th><th><%= default_user_title %></th>
+              <th><%= { "approved" => "Approved", "rejected" => "Rejected" }.fetch(@tab, "Waiting since") %></th>
+              <th><span class="visually-hidden">Action</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @licenses.each do |lic| %>
+              <% inv = lic.invoice %>
+              <% bal = lic.invoice_balance %>
+              <tr>
+                <td class="zvn zclient"><%= link_to lic.client.name, license_approval_path(lic), class: "zno" %><small><%= inv.invoice_number %></small></td>
+                <td><%= lic.license_category&.name %><small class="muted" style="display:block"><%= lic.license_option&.name %>, <%= lic.long_period %></small></td>
+                <td class="r money"><span class="cur"><%= inv.currency&.name %></span> <%= number_with_precision(inv.invoice_total, precision: 2, delimiter: ",") %></td>
+                <td class="r money"><% if bal <= LicenseApproval::PAID_TOLERANCE %><span class="ztag paid">Paid in full</span><% else %><b style="color:var(--late)"><%= number_with_precision(bal, precision: 2, delimiter: ",") %></b><% end %></td>
+                <td><%= inv.user&.fullname || inv.user_fullname %></td>
+                <td>
+                  <% if @tab == "approved" %><%= lic.manager_approved_at&.strftime("%d %b %Y") %>
+                  <% elsif @tab == "rejected" %><span title="<%= lic.rejection_reason %>"><%= lic.rejected_at&.strftime("%d %b %Y") %> by <%= lic.rejecter&.fullname %></span>
+                  <% else %>
+                    <%= lic.queued_at ? "#{time_ago_in_words(lic.queued_at)} ago" : "" %>
+                    <% if @tab == "finance" && lic.rejected_stage == "manager" %><small style="display:block;color:var(--late)">Returned by Manager</small><% end %>
+                    <% if @tab == "manager" && lic.finance_approver %><small class="muted" style="display:block">Paid, confirmed by <%= lic.finance_approver.fullname %></small><% end %>
+                  <% end %>
+                </td>
+                <td style="text-align:right">
+                  <% acts = lic.finance_can_act?(current_user) || lic.manager_can_act?(current_user) %>
+                  <%= link_to (acts ? "Review" : "View"), license_approval_path(lic), class: "b #{'main' if acts}" %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+      <% if @pages > 1 %>
+        <div class="zpager">
+          <span>Page <%= @page %> of <%= @pages %>, <%= number_with_delimiter(@count) %> licences</span>
+          <span class="acts">
+            <%= link_to "Previous", license_approvals_path(keep.merge(tab: @tab, page: @page - 1)), class: "b #{'disabled' if @page <= 1}", "aria-disabled": (@page <= 1) %>
+            <%= link_to "Next", license_approvals_path(keep.merge(tab: @tab, page: @page + 1)), class: "b #{'disabled' if @page >= @pages}", "aria-disabled": (@page >= @pages) %>
+          </span>
+        </div>
+      <% end %>
+    <% else %>
+      <% empty = {
+           "finance" => ["Nothing waiting for Finance", "Licences appear here automatically as soon as they are fully paid."],
+           "manager" => ["Nothing waiting for final approval", "Licences appear here once Finance has confirmed the payment."],
+           "rejected" => ["No rejected licences", "Licences rejected by Finance appear here and can be sent back for approval."],
+           "approved" => ["No licences approved yet", "Licences approved through this queue appear here."]
+         }[@tab] %>
+      <%= zempty(*empty) %>
+    <% end %>
+  </section>
+</div>

@@ -1,53 +1,53 @@
-<!-- Page Heading -->
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Clients</h1>
-    <div class="float-end">
-      <%= link_to new_client_path, class: "d-none d-sm-inline-block btn btn-sm btn-outline text-dark" do %>
-      <i class="fas fa-user-tie fa-sm text-dark"></i> New Client
-      <% end %> |
-      <%= link_to :back, class: "btn btn-outline btn-sm rounded-0" do %><i class="fas fa-backward text-dark"></i> Back <% end %> 
-    </div>
-</div>
+<%
+  keep = request.query_parameters.slice("q", "client_type_id", "industry_id")
+  filtered = keep.values.any?(&:present?)
+%>
+<div class="zpage">
+  <%= render "shared/zhead", title: "Clients", crumb: "Sales", sub: "#{number_with_delimiter(@count)} clients#{' match these filters' if filtered}.",
+             actions: safe_join([link_to("Industries and tariffs", industries_path, class: "b"), link_to(new_client_path, class: "b main") { safe_join([tag.i(class: "fas fa-plus", "aria-hidden": "true"), " New Client"]) }], " ") %>
 
-<p style="color: green"><%= notice %></p>
-<div class="card border-0">
-  <div class="card-body">
-    <div class="table-responsive">
-      <table class="table table-striped small" id="dataTable">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Account No.</th>
-            <th>Client Name</th>
-            <th>Client Type</th>
-            <th>Industry</th>
-            <th>City</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <div id="clients">
-            <% @clients.each_with_index do |client,i| %>
+  <section class="box" aria-label="Client list">
+    <%= form_with url: clients_path, method: :get, class: "zfilters", data: { turbo_action: "advance" } do |f| %>
+      <label class="zsearch"><span class="visually-hidden">Search clients</span><i class="fas fa-search" aria-hidden="true"></i>
+        <%= f.search_field :q, value: params[:q], placeholder: "Name, account no., city or mobile" %></label>
+      <%= f.select :client_type_id, options_from_collection_for_select(@client_types, :id, :name, params[:client_type_id]), { include_blank: "Any client type" }, class: "zsel #{'on' if params[:client_type_id].present?}", "aria-label": "Client type", onchange: "this.form.requestSubmit()" %>
+      <%= f.select :industry_id, options_from_collection_for_select(@industries, :id, :name, params[:industry_id]), { include_blank: "Any industry" }, class: "zsel #{'on' if params[:industry_id].present?}", "aria-label": "Industry", onchange: "this.form.requestSubmit()" %>
+      <%= f.submit "Search", name: nil, class: "b" %>
+      <div class="right"><% if filtered %><%= link_to "Clear all", clients_path, class: "zlink", style: "color:var(--soft)" %><% end %></div>
+    <% end %>
+
+    <% if @clients.any? %>
+      <div class="zwrap">
+        <table class="zt">
+          <thead><tr><th>Client Name</th><th>Account No.</th><th>Type and industry</th><th>City</th><th>Mobile</th><th></th></tr></thead>
+          <tbody>
+            <% @clients.each do |client| %>
               <tr>
-                <td><%= i+=1 %></td>
+                <td class="zvn"><%= link_to client.name, client, class: "zno" %><% if client.trading_name.present? && client.trading_name != client.name %><small><%= client.trading_name %></small><% end %></td>
                 <td><%= client.client_account_number %></td>
-                <td><%= client.name %></td>
-                <td><%= client.client_type.name %></td>
-                <td><%= client.industry.name unless client.industry.nil? %></td>
-                <td><%= client.city %></td>
-                <td><%= link_to "View", client %></td>
+                <td class="zvn"><%= client.client_type&.name %><small><%= client.industry&.name %></small></td>
+                <td><%= client.city.presence || client.location %></td>
+                <td><%= client.mobile %></td>
+                <td class="r"><div class="acts" style="justify-content:flex-end">
+                  <%= link_to "View", client, class: "b" %>
+                  <%= link_to "Statement", client_path(client, tab: "statement"), class: "b ghost" %>
+                </div></td>
               </tr>
             <% end %>
-          </div>
-        </tbody>
-      </table>
-    </div>
-  </div>
+          </tbody>
+        </table>
+      </div>
+      <div class="zpager">
+        <span>Page <%= @page %> of <%= @pages %>, A to Z</span>
+        <span class="acts">
+          <%= link_to "Previous", clients_path(keep.merge(page: @page - 1)), class: "b #{'disabled' if @page <= 1}" %>
+          <%= link_to "Next", clients_path(keep.merge(page: @page + 1)), class: "b #{'disabled' if @page >= @pages}" %>
+        </span>
+      </div>
+    <% elsif filtered %>
+      <%= zempty("No clients match these filters", "Try part of the name, the account number or the city.", link_to("Clear all", clients_path, class: "b")) %>
+    <% else %>
+      <%= zempty("No clients yet", "Register the first client to start invoicing.", link_to("New Client", new_client_path, class: "b main")) %>
+    <% end %>
+  </section>
 </div>
-
-<script type="text/javascript">
-  $(document).ready(function() {
-    $('#dataTable').DataTable();
-  });
-</script>
-

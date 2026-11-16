@@ -1,10 +1,3 @@
-<h1>Editing client type</h1>
-
-<%= render "form", client_type: @client_type %>
-
-<br>
-
-<div>
-  <%= link_to "Show this client type", @client_type %> |
-  <%= link_to "Back to client types", client_types_path %>
-</div>
+<%= render layout: "shared/crud_form", locals: { title: "Edit " + (ClientType.model_name.human.downcase), crumb: link_to("Sales / Clients / Client types", client_types_path), back_path: client_types_path, back_label: "Back to client types" } do %>
+  <%= render "form", client_type: @client_type %>
+<% end %>

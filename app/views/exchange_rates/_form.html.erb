@@ -1,31 +1,16 @@
-<%= form_with(model: exchange_rate) do |form| %>
-  <% if exchange_rate.errors.any? %>
-    <div style="color: red">
-      <h2><%= pluralize(exchange_rate.errors.count, "error") %> prohibited this exchange_rate from being saved:</h2>
-
-      <ul>
-        <% exchange_rate.errors.each do |error| %>
-          <li><%= error.full_message %></li>
-        <% end %>
-      </ul>
+<%= form_with(model: exchange_rate, class: "box") do |form| %>
+  <%= render "shared/form_errors", record: exchange_rate %>
+  <section class="zsect">
+    <div class="boxh"><h2>Exchange rate</h2><span>Fields marked <span class="req"></span> are required</span></div>
+    <div class="zgrid">
+      <div class="zfield"><%= form.label :transaction_date, "Transaction Date", class: "req" %><%= form.date_field :transaction_date %></div>
+      <div class="zfield"><%= form.label :currency_id, "Currency", class: "req" %><%= form.select :currency_id, Currency.non_base.pluck(:name, :id), { prompt: "Select Currency" } %></div>
+      <div class="zfield"><%= form.label :selling_rate, "Selling Rate", class: "req" %><%= form.text_field :selling_rate, required: true, inputmode: "decimal" %></div>
+      <div class="zfield"><%= form.label :alternative_rate, "Alternative Rate", class: "req" %><%= form.text_field :alternative_rate, required: true, inputmode: "decimal" %></div>
     </div>
-  <% end %>
-
-  <div class="form-group row">
-    <div class="col-2">
-      <%= form.date_field :transaction_date, class: "form-control form-control-sm"  %>
-    </div>
-    <div class="col-2">
-      <%= form.select :currency_id, Currency.non_base.pluck(:name, :id), {prompt: "Select Currency"}, class: "form-select form-select-sm" %>
-    </div>
-    <div class="col-3">
-      <%= form.text_field :selling_rate, placeholder: 'Selling Rate', class: "form-control form-control-sm", required: true %>
-    </div>
-    <div class="col-3">
-      <%= form.text_field :alternative_rate, placeholder: 'Alternative Rate', class: "form-control form-control-sm", required: true %>
-    </div>
-    <div class="col-2">
-      <%= form.submit "Submit", class: 'btn btn-primary btn-sm' %>
-    </div>
+  </section>
+  <div class="zformfoot">
+    <%= link_to "Cancel", (exchange_rate.persisted? ? exchange_rate_path(exchange_rate) : exchange_rates_path), class: "b" %>
+    <%= form.submit "Submit", class: "b main" %>
   </div>
 <% end %>

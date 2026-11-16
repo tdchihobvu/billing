@@ -1,59 +1,23 @@
-<%= form_with(model: @receipt) do |form| %>
-  <% if @receipt.errors.any? %>
-    <div style="color: red">
-      <h2><%= pluralize(@receipt.errors.count, "error") %> prohibited this @receipt from being saved:</h2>
+<div class="zpage">
+  <%= render "shared/zhead", title: "Post Receipt", crumb: link_to("Clients", clients_path) + " / " + link_to(@client.name, @client), actions: link_to("Back to client", @client, class: "b") %>
 
-      <ul>
-        <% @receipt.errors.each do |error| %>
-          <li><%= error.full_message %></li>
-        <% end %>
-      </ul>
-    </div>
-  <% end %>
-
+  <%= form_with(model: @receipt, class: "box") do |form| %>
+    <%= render "shared/form_errors", record: @receipt %>
     <%= form.hidden_field :user_id %>
     <%= form.hidden_field :client_id %>
-  <div>
-    <%= form.label :transaction_date, style: "display: block" %>
-    <%= form.date_field :transaction_date %>
-  </div>
-
-  <div>
-    <%= form.label :currency_id, style: "display: block" %>
-    <%= form.select :currency_id, Currency.all.collect {|c| [c.name, c.id]}, {prompt: 'Select Currency'} %>
-  </div>
-
-  <div>
-    <%= form.label :payment_form_id, style: "display: block" %>
-    <%= form.select :payment_form_id, PaymentForm.all.collect {|c| [c.name, c.id]}, {prompt: 'Select Form'} %>
-  </div>
-
-  <div>
-    <%= form.label :reference_number, style: "display: block" %>
-    <%= form.text_field :reference_number %>
-  </div>
-
-  <div>
-    <%= form.label :amount, style: "display: block" %>
-    <%= form.text_field :amount %>
-  </div>
-
-  <div>
-    <%= form.label :rate, style: "display: block" %>
-    <%= form.text_field :rate %>
-  </div>
-
-  <div>
-    <%= form.label :description, "Comment/Narration", style: "display: block" %>
-    <%= form.text_field :description %>
-  </div>
-
-  <div>
-    <%= form.label :invoice_id, style: "display: block" %>
-    <%= form.number_field :invoice_id %>
-  </div>
-
-  <div>
-    <%= form.submit %>
-  </div>
-<% end %>
+    <div class="zgrid" style="padding-top:18px">
+      <div class="zfield"><%= form.label :transaction_date, "Transaction Date" %><%= form.date_field :transaction_date %></div>
+      <div class="zfield"><%= form.label :currency_id, "Currency" %><%= form.select :currency_id, Currency.all.collect { |c| [c.name, c.id] }, { prompt: "Select Currency" } %></div>
+      <div class="zfield"><%= form.label :payment_form_id, "Payment Form" %><%= form.select :payment_form_id, PaymentForm.all.collect { |c| [c.name, c.id] }, { prompt: "Select Form" } %></div>
+      <div class="zfield"><%= form.label :reference_number, "Reference Number" %><%= form.text_field :reference_number %></div>
+      <div class="zfield"><%= form.label :amount, "Amount" %><%= form.text_field :amount, inputmode: "decimal" %></div>
+      <div class="zfield"><%= form.label :rate, "Rate" %><%= form.text_field :rate, inputmode: "decimal" %></div>
+      <div class="zfield"><%= form.label :invoice_id, "Invoice" %><%= form.number_field :invoice_id %></div>
+      <div class="zfield wide"><%= form.label :description, "Comment/Narration" %><%= form.text_field :description %></div>
+    </div>
+    <div class="zformfoot">
+      <%= link_to "Cancel", @client, class: "b" %>
+      <%= form.submit "Save Receipt", class: "b main" %>
+    </div>
+  <% end %>
+</div>

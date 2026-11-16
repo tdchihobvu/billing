@@ -1,103 +1,122 @@
-<!-- Page Heading -->
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Billing Menu</h1>
-    <a href="#" class="d-none d-sm-inline-block btn btn-sm btn-info shadow-sm border-0"><i
-            class="fas fa-chart-line"></i> View Dashboard</a>
-</div>
-
-<div class="card border-0">
-    <div class="card-body">
-        <div class="row">
-            <div class="col-sm-12">
-                <%= link_to upcoming_renewals_reports_path do %>
-                     Upcoming Renewals <i class="fas fa-caret-down"></i></a>
-                <% end %>
-            </div>
-        </div>
+<%
+  s = @summary
+  hour = Time.current.hour
+  greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening"
+  pct = s.collected_pct
+  arc = 377
+  todos = s.todos(void_requests: (can?("invoices.delete") ? unprocessed_notifications.size : 0), license_approvals: license_approvals_waiting_count)
+  todo_paths = {
+    approvals: license_approvals_path,
+    overdue: overdue_invoices_reports_path(over: 30),
+    expiring: upcoming_renewals_reports_path(period: "next_7"),
+    notifications: void_requests_path,
+    rates: exchange_rates_path,
+    receipts: receipts_path(unlinked: 1)
+  }
+  team = s.inspectors
+  months = s.collections_by_month
+  month_max = [months.map(&:last).max.to_f, 1].max
+  team_max = [team.map { |m| [m.invoiced, m.collected].max }.max.to_f, 1].max
+%>
+<div class="zpage">
+  <section class="band" aria-label="This month">
+    <div>
+      <h1><%= greeting %>, <%= current_user.firstname %></h1>
+      <p><%= Date.current.strftime("%A %-d %B %Y") %>. Figures for <%= s.month_start.strftime("%B") %> in USD.</p>
+      <div class="figs">
+        <div><small>Invoiced this month</small><b><span class="cur">USD</span><%= number_with_precision(s.invoiced, precision: 2, delimiter: ",") %></b></div>
+        <div><small>Collected</small><b><span class="cur">USD</span><%= number_with_precision(s.collected, precision: 2, delimiter: ",") %></b></div>
+        <div><small>Overdue now</small><b><span class="cur">USD</span><%= number_with_precision(s.overdue_base, precision: 2, delimiter: ",") %></b></div>
+      </div>
     </div>
-    <div class="card-body">
-        <% if default_module == 'licensing' %>
-        <div class="row">
-            <div class="col-sm-4">
-                <%= link_to license_invoices_path, class: "btn btn-outline-primary btn-sm btn-block shadow-sm mb-2 border-2" do %>
-                    <i class="fas fa-file-invoice-dollar fa-lg py-4"></i> &nbsp; New Sales Invoice
-                <% end %>
+    <div class="sunwrap" role="img" aria-label="<%= pct %>% of this month's invoices paid">
+      <svg viewBox="0 0 300 160" aria-hidden="true">
+        <path d="M30 152 A120 120 0 0 1 270 152" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="18" stroke-linecap="round"/>
+        <path d="M30 152 A120 120 0 0 1 270 152" fill="none" stroke="#f3b81b" stroke-width="18" stroke-linecap="round" stroke-dasharray="<%= arc %>" stroke-dashoffset="<%= (arc * (1 - pct / 100.0)).round(1) %>"/>
+      </svg>
+      <div class="sunlabel"><b><%= pct %>%</b><small>of this month's invoices paid</small></div>
+    </div>
+  </section>
+
+  <div class="acts" role="group" aria-label="Quick actions">
+    <% if default_module == "licensing" %>
+      <% if can?("invoices.create") %><%= link_to license_invoices_path, class: "b main" do %><i class="fas fa-file-invoice-dollar" aria-hidden="true"></i> New Sales Invoice<% end %><% end %>
+      <% if can?("receipts.create") %><%= link_to new_receipt_path, class: "b" do %><i class="fas fa-dollar-sign" aria-hidden="true"></i> Record Receipt<% end %><% end %>
+      <% if can?("licenses.generate") %><%= link_to new_license_path, class: "b" do %><i class="fas fa-stamp" aria-hidden="true"></i> Generate License<% end %><% end %>
+    <% else %>
+      <% if can?("invoices.create") %><%= link_to new_invoice_path, class: "b main" do %><i class="fas fa-file-invoice-dollar" aria-hidden="true"></i> New Sales Invoice<% end %><% end %>
+      <% if can?("receipts.create") %><%= link_to new_receipt_path, class: "b" do %><i class="fas fa-dollar-sign" aria-hidden="true"></i> Record Receipt<% end %><% end %>
+      <% if can?("invoices.create") %><%= link_to new_quotation_path, class: "b" do %><i class="fas fa-file-invoice" aria-hidden="true"></i> New Quotation<% end %><% end %>
+      <% if can?("invoices.create") %><%= link_to proforma_invoices_path, class: "b" do %><i class="fas fa-file" aria-hidden="true"></i> New Proforma<% end %><% end %>
+    <% end %>
+    <% if current_user.sees_license_approvals? %><%= link_to license_approvals_path, class: "b" do %><i class="fas fa-clipboard-check" aria-hidden="true"></i> Licence approvals<% end %><% end %>
+    <% if can?("reports.view") %><%= zmore_menu([["Expiring licences", upcoming_renewals_reports_path], ["Overdue invoices", overdue_invoices_reports_path], ["#{default_user_title} report", inspector_report_reports_path]], label: "View Dashboard") %><% end %>
+  </div>
+
+  <div class="grid2">
+    <section class="box" aria-labelledby="needs">
+      <div class="boxh"><h2 id="needs">Needs you today</h2><span><%= pluralize(todos.size, "thing") if todos.any? %></span></div>
+      <% if todos.any? %>
+        <div class="todo">
+          <% todos.each do |t| %>
+            <div class="it">
+              <span class="zic <%= t.tone %>"><i class="fas <%= t.icon %>" aria-hidden="true"></i></span>
+              <div><b><%= t.title %></b><small><%= t.detail %></small></div>
+              <%= link_to t.action, todo_paths[t.path], class: "zlink" %>
             </div>
-            <div class="col-sm-4">
-                <%= link_to new_receipt_path, class: "btn btn-outline-warning btn-sm btn-block shadow-sm mb-2 border-2" do %>
-                    <i class="fas fa-dollar-sign fa-lg py-4"></i> &nbsp; Record Receipt
-                <% end %>
-            </div>
-            <div class="col-sm-4">
-                <%= link_to new_license_path, class: "btn btn-outline-success btn-sm btn-block shadow-sm mb-2 border-2" do %>
-                    <i class="fas fa-receipt fa-lg py-4"></i> &nbsp; Generate License
-                <% end %>
-            </div>
+          <% end %>
         </div>
-        <% else %>
-        <div class="row">
-            <div class="col-sm-3">
-                <%= link_to new_quotation_path, class: "btn btn-outline-success btn-sm btn-block shadow-sm mb-2 border-2" do %>
-                    <i class="fas fa-file-invoice fa-lg py-4"></i> &nbsp; New Quotation
-                <% end %>
+      <% else %>
+        <%= zempty("Nothing needs you today", "No overdue invoices, expiring licences or requests waiting. New work shows up here.") %>
+      <% end %>
+    </section>
+
+    <section class="box" aria-labelledby="team">
+      <div class="boxh"><h2 id="team"><%= default_user_title.to_s.pluralize %> this month</h2><span>collected of invoiced, USD</span></div>
+      <% if team.any? %>
+        <div class="team">
+          <% team.each do |m| %>
+            <% share = m.invoiced.positive? ? [(m.collected / m.invoiced * 100).round, 100].min : (m.collected.positive? ? 100 : 0) %>
+            <div class="mate">
+              <span class="zav"><%= m.initials %></span>
+              <div><b><%= can?("reports.view") ? link_to(m.name, inspector_report_reports_path(user_id: m.id), class: "zmate-link", title: "Open #{m.name}'s report for this month") : m.name %></b><div class="meter" role="img" aria-label="<%= share %>% collected"><i style="width:<%= share %>%"></i></div></div>
+              <small class="muted money"><%= number_with_delimiter(m.collected.round) %> / <%= number_with_delimiter(m.invoiced.round) %></small>
             </div>
-            <div class="col-sm-3">
-                <%= link_to proforma_invoices_path, class: "btn btn-outline-secondary btn-sm btn-block shadow-sm mb-2 border-2" do %>
-                    <i class="fas fa-file-invoice-dollar fa-lg py-4"></i> &nbsp; New Proforma
-                <% end %>
-            </div>
-            <div class="col-sm-3">
-                <%= link_to new_invoice_path, class: "btn btn-outline-primary btn-sm btn-block shadow-sm mb-2 border-2" do %>
-                    <i class="fas fa-file-invoice-dollar fa-lg py-4"></i> &nbsp; New Sales Invoice
-                <% end %>
-            </div>
-            <div class="col-sm-3">
-                <%= link_to new_receipt_path, class: "btn btn-outline-warning btn-sm btn-block shadow-sm mb-2 border-2" do %>
-                    <i class="fas fa-dollar-sign fa-lg py-4"></i> &nbsp; Record Receipt
-                <% end %>
-            </div>
+          <% end %>
         </div>
+      <% else %>
+        <%= zempty("No activity yet this month", "Invoices and receipts raised this month appear here per #{default_user_title.to_s.downcase}.") %>
+      <% end %>
+    </section>
+  </div>
+
+  <div class="grid2">
+    <section class="box" aria-labelledby="ch1">
+      <div class="boxh"><h2 id="ch1">Sales &amp; Collections By <%= default_user_title %></h2><span><i class="key"></i>Sales<i class="key c"></i>Collections, USD</span></div>
+      <% if team.any? %>
+        <div class="barchart">
+          <% team.each do |m| %>
+            <div class="bgrp" role="img" aria-label="<%= m.name %>: sales USD <%= number_with_precision(m.invoiced, precision: 2, delimiter: ",") %>, collections USD <%= number_with_precision(m.collected, precision: 2, delimiter: ",") %>">
+              <div class="bars"><i style="height:<%= (m.invoiced / team_max * 100).round(1) %>%"></i><i class="c" style="height:<%= (m.collected / team_max * 100).round(1) %>%"></i></div>
+              <small><%= m.name.split.first %></small>
+            </div>
+          <% end %>
+        </div>
+      <% else %>
+        <%= zempty("No sales yet this month", "The chart fills in as invoices and receipts come in.") %>
+      <% end %>
+    </section>
+
+    <section class="box" aria-labelledby="ch2">
+      <div class="boxh"><h2 id="ch2">Collections By Month</h2><span>USD, last six months</span></div>
+      <div class="barchart">
+        <% months.each_with_index do |(label, value), k| %>
+          <div class="bgrp" role="img" aria-label="<%= label %>: USD <%= number_with_precision(value, precision: 2, delimiter: ",") %>">
+            <div class="bars"><i class="<%= 'c' if k == months.size - 1 %>" style="height:<%= (value / month_max * 100).round(1) %>%;width:24px"></i></div>
+            <small><%= label %></small>
+          </div>
         <% end %>
-        <div class="row">
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-lg-6 d-flex flex-column">
-            <div class="card border-0">
-              <div class="card-body">
-                <div class="row">
-                  <div class="col-lg-12">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                      <div>
-                        <h6 class="card-title card-title-dash">Sales & Collections By <%= default_user_title %> - <%= "#{@start_date.to_date.strftime("%d/%m/%Y")} To #{@end_date.to_date.strftime("%d/%m/%Y")}" %></h6>
-                      </div>
-                    </div>
-                    <div class="mt-3">
-                      <%= render 'chart_by_inspector' %>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-        </div>
-
-        <div class="col-lg-6 d-flex flex-column">
-            <div class="card border-0">
-              <div class="card-body">
-                <div class="row">
-                  <div class="col-lg-12">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                      <div>
-                        <h6 class="card-title card-title-dash">Collections By Month - <%= "#{@from.to_date.strftime("%d/%m/%Y")} To #{@to.to_date.strftime("%d/%m/%Y")}" %></h6>
-                      </div>
-                    </div>
-                    <div class="mt-3">
-                      <%= column_chart Receipt.active.where(transaction_date: @from.to_date..@to.to_date).group(:user_fullname).sum(:actual_paid) %>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-        </div>
-    </div>
+      </div>
+    </section>
+  </div>
 </div>

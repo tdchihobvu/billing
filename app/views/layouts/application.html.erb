@@ -5,12 +5,13 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
+    <%# Payment figures must never come from a cached page. %>
+    <meta name="turbo-cache-control" content="no-cache">
 
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slim-select@2.10.0/dist/slimselect.css">
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
-    <script src="https://cdn.jsdelivr.net/npm/slim-select@2.10.0/dist/slimselect.min.js"></script>
     <%= javascript_include_tag "application", "data-turbo-track": "reload", defer: true %>
-    <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         .required_field {
             color: #333;
@@ -25,7 +26,7 @@
     </style>
   </head>
 
-  <body id="page-top">
+  <body id="page-top"<% if current_user %> style="--brand: <%= brand_color %>; --brand-ink: <%= brand_ink %>;"<% end %>>
     <!-- Page Wrapper -->
     <div id="wrapper">
         <% unless current_user.nil? %>
@@ -43,6 +44,9 @@
                 <!-- Begin Page Content -->
                 <div class="container-fluid">
 
+                  <% if alert.present? %>
+                    <div class="alert alert-danger" role="alert"><%= alert %></div>
+                  <% end %>
                   <%= yield %>
                   <%= turbo_frame_tag "remote_modal" %>
 

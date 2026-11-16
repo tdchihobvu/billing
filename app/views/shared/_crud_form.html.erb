@@ -1,0 +1,7 @@
+<%# Wraps a settings form in the ZIMURA design. Use with render layout:. Locals: title, crumb, back_path, back_label. %>
+<div class="zpage">
+  <%= render "shared/zhead", title: title, crumb: crumb, actions: link_to(back_label, back_path, class: "b") %>
+  <section class="box zlegacy">
+    <%= yield %>
+  </section>
+</div>

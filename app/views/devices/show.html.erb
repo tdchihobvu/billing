@@ -1,10 +1,1 @@
-<p style="color: green"><%= notice %></p>
-
-<%= render @device %>
-
-<div>
-  <%= link_to "Edit this device", edit_device_path(@device) %> |
-  <%= link_to "Back to devices", devices_path %>
-
-  <%= button_to "Destroy this device", @device, method: :delete %>
-</div>
+<%= render "shared/crud_show", record: @device, model: Device, crumb: link_to("Integrations / Apps and devices", devices_path), index_path: devices_path %>

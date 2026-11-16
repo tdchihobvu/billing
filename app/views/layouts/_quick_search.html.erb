@@ -1,0 +1,8 @@
+<dialog id="quickSearch" class="quick-search" style="--brand: <%= brand_color %>; --brand-ink: <%= brand_ink %>;" data-url="<%= quick_search_path %>" aria-label="Search">
+  <div class="quick-search__field">
+    <i class="fas fa-search" aria-hidden="true"></i>
+    <input type="text" enterkeyhint="search" autocomplete="off" spellcheck="false" placeholder="Search pages, clients and invoices" aria-label="Search pages, clients and invoices" aria-controls="quickSearchResults">
+    <kbd>Esc</kbd>
+  </div>
+  <div id="quickSearchResults" class="quick-search__results" role="listbox" aria-label="Search results"></div>
+</dialog>

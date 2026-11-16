@@ -1,0 +1,15 @@
+wb = xlsx_package.workbook
+total = 0
+
+wb.add_worksheet(name: "Sales") do |sheet|
+  sheet.add_row [@page_title]
+  sheet.add_row []
+  sheet.add_row ["#{default_user_title} name", "Amount"]
+
+  @invoices.each do |row|
+    total += row["total"].to_d
+    sheet.add_row [User.find_by(id: row.user_id)&.fullname.to_s, row["total"].to_f], types: [:string, :float]
+  end
+
+  sheet.add_row ["Total", total.to_f], types: [:string, :float]
+end

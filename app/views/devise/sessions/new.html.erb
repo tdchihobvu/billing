@@ -1,57 +1,49 @@
-<!-- check if this device is registered -->
 <% if DeviceSetting.all.empty? and system_mode == 'client' %>
-  <div class="text-left">
-      <h1 class="h4 text-gray-900 mb-4">Enter Device ID</h1>
-  </div>
-  <%= form_tag register_device_welcome_index_path do %>
-    <div class="form-group">
-      <%= label_tag :deviceID, "Device ID" %><br />
-      <%= text_field_tag :deviceID %>
-    </div>
-    <div class="actions">
-      <%= submit_tag "Register Device", class: "btn btn-primary btn-user btn-block" %>
-    </div>
+  <%# This device must be registered before anyone can sign in on it. %>
+  <h1 class="zauth__title">Enter Device ID</h1>
+  <p class="zauth__sub">Register this device before signing in.</p>
+  <%= form_tag register_device_welcome_index_path, class: "zauth__form" do %>
+    <div class="zfield"><%= label_tag :deviceID, "Device ID" %><%= text_field_tag :deviceID, nil, autofocus: true %></div>
+    <%= submit_tag "Register Device", class: "b main zauth__go", data: { turbo_submits_with: "Registering…" } %>
   <% end %>
 <% else %>
-  <div class="text-left">
-      <h1 class="h4 text-gray-900 mb-4">Sign in</h1>
-  </div>
+  <h1 class="zauth__title">Welcome back</h1>
+  <p class="zauth__sub">Sign in to <%= auth_brand[:name] %> Billing and Licensing.</p>
 
-  <%= form_for(resource, as: resource_name, url: session_path(resource_name), class: "user") do |f| %>
-    <div class="form-group">
-      <%= f.label :username, "Username" %><br />
-      <%= f.text_field :username, autofocus: true, class: "form-control form-control-user" %>
+  <%= form_for(resource, as: resource_name, url: session_path(resource_name), html: { class: "zauth__form", data: { controller: "signin" } }) do |f| %>
+    <div class="zfield">
+      <%= f.label :username, "Username" %>
+      <%= f.text_field :username, autofocus: true, autocomplete: "username", autocapitalize: "none", spellcheck: false, required: true %>
     </div>
 
-    <div class="form-group">
-      <%= f.label :password %><br />
-      <%= f.password_field :password, autocomplete: "current-password", class: "form-control form-control-user" %>
+    <div class="zfield">
+      <div class="zauth__labelrow">
+        <%= f.label :password %>
+        <%= link_to "Forgot password?", new_password_path(resource_name), class: "zauth__forgot" %>
+      </div>
+      <div class="zauth__pw">
+        <%= f.password_field :password, autocomplete: "current-password", required: true, "aria-describedby": "caps-warning",
+                             data: { signin_target: "password", action: "keyup->signin#caps keydown->signin#caps blur->signin#hideCaps" } %>
+        <button type="button" class="zauth__eye" aria-label="Show password" aria-pressed="false"
+                data-signin-target="toggle" data-action="signin#toggle"><i class="far fa-eye" aria-hidden="true"></i></button>
+      </div>
+      <span class="zauth__caps" id="caps-warning" data-signin-target="caps" hidden><i class="fas fa-arrow-up" aria-hidden="true"></i> Caps Lock is on</span>
     </div>
 
     <% if devise_mapping.rememberable? %>
-      <div class="form-group">
-        <div class="custom-control custom-checkbox small">
-          <%= f.check_box :remember_me, class: "custom-control-input" %>
-          <%= f.label :remember_me, class: "custom-control-label" %>
-        </div>
-      </div>
+      <label class="zcheck"><%= f.check_box :remember_me %> Keep me signed in on this computer</label>
     <% end %>
 
-    <div class="actions">
-      <%= f.submit "Log in", class: "btn btn-primary btn-user btn-block" %>
-    </div>
+    <%= f.submit "Log in", class: "b main zauth__go", data: { turbo_submits_with: "Signing in…" } %>
   <% end %>
 
-  <% unless notice.nil? %>
-  <br/>
-    <p class="alert alert-info d-flex align-items-center"><%= notice %></p>
-  <% end %>
-  <% unless alert.nil? %>
-  <br/>
-    <p class="alert alert-warning d-flex align-items-center"><%= alert %></p>
-  <% end %>
-  <hr/>
-  <div class="text-left small">
-  <%= render "devise/shared/links" %>
-  </div>
+  <details class="zauth__trouble">
+    <summary>Trouble signing in?</summary>
+    <ul>
+      <li>Forgot your password? <%= link_to "Reset it by email", new_password_path(resource_name) %></li>
+      <% if devise_mapping.confirmable? %><li>New account? <%= link_to "Resend confirmation instructions", new_confirmation_path(resource_name) %></li><% end %>
+      <% if devise_mapping.lockable? && resource_class.unlock_strategy_enabled?(:email) %><li>Account locked after too many tries? <%= link_to "Send unlock instructions", new_unlock_path(resource_name) %></li><% end %>
+      <li>Forgot your username? Ask your administrator.</li>
+    </ul>
+  </details>
 <% end %>

@@ -12,7 +12,7 @@ class Quotation < ApplicationRecord
   accepts_nested_attributes_for :quotation_items, allow_destroy: true, reject_if: proc { |attributes| attributes['description'].blank? }
 
   def bank
-    Bank.find(self.bank_id)
+    Bank.find_by(id: self.bank_id)
   end
   
   def sub_total

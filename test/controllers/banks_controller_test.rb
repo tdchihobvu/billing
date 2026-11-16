@@ -17,7 +17,7 @@ class BanksControllerTest < ActionDispatch::IntegrationTest
 
   test "should create bank" do
     assert_difference("Bank.count") do
-      post banks_url, params: { bank: { account_name: @bank.account_name, account_number: @bank.account_number, active: @bank.active, bank_name: @bank.bank_name, branch: @bank.branch, currency_id: @bank.currency_id, swift_code: @bank.swift_code, tenant_id: @bank.tenant_id } }
+      post banks_url, params: { bank: fresh_attributes(@bank) }
     end
 
     assert_redirected_to bank_url(Bank.last)
@@ -39,8 +39,10 @@ class BanksControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should destroy bank" do
+    record = unreferenced_copy(@bank)
+
     assert_difference("Bank.count", -1) do
-      delete bank_url(@bank)
+      delete bank_url(record)
     end
 
     assert_redirected_to banks_url

@@ -40,7 +40,7 @@ class AllBranchesLicensesPdf < Prawn::Document
 			@branch = branch
 			qrcode_content = "http://github.com/jabbrwcky/prawn-qrcode"
 			# qrcode = RQRCode::QRCode.new(qrcode_content, level: :h, size: 20)
-	    	qrcode = RQRCode::QRCode.new("#{@license.license_category.name} for #{@branch.name} Issued On: #{@license.renewal_date.strftime("%d %b %Y")} Valid Until: #{@license.expiry_date.strftime("%d %b %Y")}", level: :h, size: 15, :pos => [150, cursor], stroke: false)
+	    	qrcode = RQRCode::QRCode.new("#{@license.license_category.name} for #{@branch.branch_name} Issued On: #{@license.renewal_date.strftime("%d %b %Y")} Valid Until: #{@license.expiry_date.strftime("%d %b %Y")}", level: :h, size: 15, :pos => [150, cursor], stroke: false)
 
 			image "#{Rails.root}/public/tenant_logo/#{logo_path}", fit: [150, 150], position: :center
 			move_down 40

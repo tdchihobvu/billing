@@ -1,6 +1,7 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
+  user_id: <%= ActiveRecord::FixtureSet.identify(:one) %>
   message: MyString
   read: false
   processed_by: 1
@@ -8,6 +9,7 @@ one:
   processed: false
 
 two:
+  user_id: <%= ActiveRecord::FixtureSet.identify(:two) %>
   message: MyString
   read: false
   processed_by: 1

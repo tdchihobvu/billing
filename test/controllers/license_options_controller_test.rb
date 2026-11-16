@@ -17,7 +17,7 @@ class LicenseOptionsControllerTest < ActionDispatch::IntegrationTest
 
   test "should create license_option" do
     assert_difference("LicenseOption.count") do
-      post license_options_url, params: { license_option: { active: @license_option.active, months: @license_option.months, name: @license_option.name } }
+      post license_options_url, params: { license_option: fresh_attributes(@license_option) }
     end
 
     assert_redirected_to license_option_url(LicenseOption.last)
@@ -39,8 +39,10 @@ class LicenseOptionsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should destroy license_option" do
+    record = unreferenced_copy(@license_option)
+
     assert_difference("LicenseOption.count", -1) do
-      delete license_option_url(@license_option)
+      delete license_option_url(record)
     end
 
     assert_redirected_to license_options_url

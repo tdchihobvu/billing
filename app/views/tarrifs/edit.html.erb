@@ -1,10 +1,3 @@
-<h1>Editing tarrif</h1>
-
-<%= render "form", tarrif: @tarrif %>
-
-<br>
-
-<div>
-  <%= link_to "Show this tarrif", @tarrif %> |
-  <%= link_to "Back to tarrifs", tarrifs_path %>
-</div>
+<%= render layout: "shared/crud_form", locals: { title: "Edit " + (Tarrif.model_name.human.downcase), crumb: link_to("Sales / Clients / Tariffs", tarrifs_path), back_path: tarrifs_path, back_label: "Back to tariffs" } do %>
+  <%= render "form", tarrif: @tarrif %>
+<% end %>

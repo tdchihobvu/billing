@@ -1,0 +1,722 @@
+// The application's menu, top bar and search box.
+// --brand and --brand-ink are set per company in the layout.
+
+$nav-width: 16rem;
+$rail-width: 4.5rem;
+$drawer-limit: 767.98px;
+$ink: #1f2933;
+$muted: #5f6b7a;
+$line: #e4e7eb;
+$hover: rgba(31, 41, 51, 0.06);
+$row-radius: 0.5rem;
+
+#wrapper {
+  display: flex;
+}
+
+#content-wrapper {
+  min-width: 0;
+}
+
+.app-nav {
+  --nav-muted: rgba(255, 255, 255, 0.85);
+  --nav-muted: color-mix(in srgb, var(--brand-ink) 86%, transparent);
+  --nav-line: rgba(255, 255, 255, 0.22);
+  --nav-line: color-mix(in srgb, var(--brand-ink) 22%, transparent);
+  --nav-hover: rgba(255, 255, 255, 0.14);
+  --nav-hover: color-mix(in srgb, var(--brand-ink) 14%, transparent);
+
+  position: sticky;
+  top: 0;
+  z-index: 1030;
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  width: $nav-width;
+  height: 100vh;
+  color: var(--brand-ink);
+  background: var(--brand);
+  transition: width 0.18s ease;
+
+  a,
+  button {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  a:focus-visible,
+  button:focus-visible {
+    outline: 2px solid var(--brand-ink);
+    outline-offset: 1px;
+  }
+
+  small {
+    display: block;
+    overflow: hidden;
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: var(--nav-muted);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.app-nav__head {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.875rem 0.625rem 0.875rem 0.875rem;
+}
+
+.app-nav__brand {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 0.625rem;
+  min-width: 0;
+  border-radius: $row-radius;
+}
+
+.app-nav__mark {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  font-size: 1rem;
+  color: var(--brand);
+  background: var(--brand-ink);
+  border-radius: 0.625rem;
+}
+
+.app-nav__name {
+  min-width: 0;
+  font-size: 0.9375rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.app-nav__toggle,
+.app-nav__action {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  color: var(--nav-muted) !important;
+  background: transparent;
+  border: 0;
+  border-radius: $row-radius;
+
+  &:hover {
+    color: var(--brand-ink) !important;
+    background: var(--nav-hover);
+  }
+}
+
+.app-nav__scroll {
+  flex: 1;
+  min-height: 0;
+  padding: 0.25rem 0.75rem 0.75rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--nav-line) transparent;
+}
+
+.nav-list {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.nav-group {
+  padding: 0 0.625rem;
+  margin: 1.125rem 0 0.25rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--nav-muted);
+}
+
+.app-nav .nav-item {
+  margin-bottom: 1px;
+}
+
+.app-nav .nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  width: 100%;
+  min-height: 2.5rem;
+  padding: 0 0.625rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: $row-radius;
+
+  > .fa-fw {
+    flex: 0 0 1.25rem;
+    font-size: 0.9375rem;
+    color: inherit;
+  }
+
+  &:hover {
+    background: var(--nav-hover);
+  }
+}
+
+.nav-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-nav .nav-link .nav-label {
+  flex: 1;
+}
+
+.nav-chevron {
+  font-size: 0.625rem;
+  color: var(--nav-muted);
+  transition: transform 0.18s ease;
+}
+
+.nav-link:not(.collapsed) .nav-chevron {
+  transform: rotate(90deg);
+}
+
+// The current page: the one strong use of the company colour.
+.app-nav .nav-item.active > a.nav-link {
+  color: var(--brand);
+  background: var(--brand-ink);
+
+  &:hover {
+    background: var(--brand-ink);
+  }
+
+  > .fa-fw {
+    color: inherit;
+  }
+}
+
+.app-nav .nav-item.active > button.nav-link {
+  font-weight: 800;
+}
+
+.collapse-inner {
+  padding: 0.125rem 0;
+  margin: 0.125rem 0 0.375rem 1.1875rem;
+  border-left: 1px solid var(--nav-line);
+}
+
+.collapse-item {
+  position: relative;
+  display: block;
+  padding: 0.375rem 0.625rem 0.375rem 0.875rem;
+  margin-left: 0.125rem;
+  font-size: 0.875rem;
+  color: var(--nav-muted) !important;
+  white-space: nowrap;
+  border-radius: 0.375rem;
+
+  &:hover {
+    color: var(--brand-ink) !important;
+    background: var(--nav-hover);
+  }
+
+  &.active {
+    font-weight: 800;
+    color: var(--brand-ink) !important;
+
+    &::before {
+      position: absolute;
+      top: 0.25rem;
+      bottom: 0.25rem;
+      left: -0.1875rem;
+      width: 2px;
+      content: "";
+      background: var(--brand-ink);
+    }
+  }
+}
+
+.app-nav__account {
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+  padding: 0.625rem 0.625rem 0.625rem 0.75rem;
+  border-top: 1px solid var(--nav-line);
+}
+
+.app-nav__person {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 0.625rem;
+  min-width: 0;
+  padding: 0.25rem;
+  border-radius: $row-radius;
+
+  &:hover {
+    background: var(--nav-hover);
+  }
+}
+
+.app-nav__avatar {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  background: var(--nav-hover);
+  border-radius: 50%;
+}
+
+.app-nav__who {
+  min-width: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.app-nav__actions {
+  display: flex;
+  flex: 0 0 auto;
+}
+
+.app-nav__logout {
+  margin: 0;
+}
+
+// Icon rail: desktop, collapsed.
+@media (min-width: 768px) {
+  .app-nav.toggled {
+    width: $rail-width;
+
+    .nav-label,
+    .nav-chevron {
+      display: none;
+    }
+
+    .app-nav__head {
+      flex-direction: column;
+      padding: 0.875rem 0 0.5rem;
+    }
+
+    .app-nav__brand {
+      flex: 0 0 auto;
+    }
+
+    .app-nav__toggle i {
+      transform: rotate(180deg);
+    }
+
+    .app-nav__scroll {
+      padding: 0.25rem 0.75rem 0.75rem;
+    }
+
+    .nav-group {
+      height: 1px;
+      padding: 0;
+      margin: 0.625rem 0.5rem;
+      overflow: hidden;
+      color: transparent;
+      background: var(--nav-line);
+    }
+
+    .nav-link {
+      justify-content: center;
+      padding: 0;
+    }
+
+    .nav-item.active > button.nav-link {
+      color: var(--brand);
+      background: var(--brand-ink);
+
+      > .fa-fw {
+        color: inherit;
+      }
+    }
+
+    .collapse,
+    .collapsing {
+      position: fixed;
+      left: calc(#{$rail-width} + 0.5rem);
+      z-index: 1040;
+      width: 14rem;
+      height: auto !important;
+      transition: none;
+    }
+
+    .collapse-inner {
+      padding: 0.5rem;
+      margin: 0;
+      background: #fff;
+      border: 1px solid $line;
+      border-radius: 0.625rem;
+      box-shadow: 0 8px 24px rgba(31, 41, 51, 0.14);
+
+      &::before {
+        display: block;
+        padding: 0.25rem 0.625rem 0.375rem;
+        font-size: 0.8125rem;
+        font-weight: 800;
+        color: $ink;
+        content: attr(data-title);
+      }
+    }
+
+    .collapse-item {
+      margin-left: 0;
+      padding-left: 0.625rem;
+      color: $muted !important;
+
+      &:hover,
+      &.active {
+        color: $ink !important;
+      }
+
+      &:hover {
+        background: $hover;
+      }
+
+      &.active::before {
+        display: none;
+      }
+    }
+
+    .app-nav__account {
+      flex-direction: column;
+      gap: 0.25rem;
+      padding: 0.625rem 0;
+    }
+
+    .app-nav__person {
+      flex: 0 0 auto;
+    }
+
+    .app-nav__actions {
+      flex-direction: column;
+      gap: 0.125rem;
+    }
+  }
+}
+
+.app-nav-tip {
+  position: fixed;
+  z-index: 1060;
+  display: none;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #fff;
+  pointer-events: none;
+  background: $ink;
+  border-radius: 0.375rem;
+  transform: translateY(-50%);
+
+  &.visible {
+    display: block;
+  }
+}
+
+// Top bar.
+.app-topbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 3.75rem;
+  padding: 0 1.5rem;
+  background: #fff;
+  border-bottom: 1px solid $line;
+}
+
+.app-topbar__search {
+  display: flex;
+  flex: 0 1 26rem;
+  align-items: center;
+  gap: 0.625rem;
+  min-width: 0;
+  height: 2.5rem;
+  padding: 0 0.5rem 0 0.75rem;
+  font-size: 0.875rem;
+  color: $muted;
+  text-align: left;
+  background: #f4f5f7;
+  border: 1px solid transparent;
+  border-radius: $row-radius;
+
+  &:hover {
+    border-color: $line;
+  }
+
+  span {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.app-topbar kbd,
+.quick-search kbd {
+  padding: 0.125rem 0.375rem;
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: $muted;
+  background: #fff;
+  border: 1px solid $line;
+  border-radius: 0.3125rem;
+  box-shadow: none;
+}
+
+.app-topbar__right {
+  position: relative;
+  margin-left: auto;
+}
+
+.app-topbar__icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  color: $muted;
+  background: transparent;
+  border: 0;
+  border-radius: $row-radius;
+
+  &:hover {
+    color: $ink;
+    background: $hover;
+  }
+}
+
+#sidebarToggleTop {
+  display: none;
+}
+
+.app-topbar__count {
+  position: absolute;
+  top: 0.125rem;
+  right: 0.0625rem;
+  min-width: 1.125rem;
+  padding: 0 0.25rem;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  line-height: 1.125rem;
+  color: #fff;
+  text-align: center;
+  background: #c8322f;
+  border-radius: 0.5625rem;
+}
+
+.app-alerts {
+  width: 22rem;
+  max-width: calc(100vw - 2rem);
+  max-height: 70vh;
+  padding: 0.5rem;
+  overflow-y: auto;
+  border: 1px solid $line;
+  border-radius: 0.625rem;
+  box-shadow: 0 8px 24px rgba(31, 41, 51, 0.14);
+}
+
+.app-alerts__title {
+  padding: 0.25rem 0.5rem 0.5rem;
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 800;
+  color: $ink;
+}
+
+.app-alerts__empty {
+  padding: 0.25rem 0.5rem 0.5rem;
+  margin: 0;
+  font-size: 0.875rem;
+  color: $muted;
+}
+
+.app-alerts__item {
+  display: block;
+  padding: 0.5rem;
+  font-size: 0.875rem;
+  color: $ink;
+  text-decoration: none;
+  border-radius: 0.375rem;
+
+  &:hover {
+    color: $ink;
+    background: $hover;
+  }
+
+  small {
+    display: block;
+    margin-top: 0.125rem;
+    color: $muted;
+  }
+}
+
+// Ctrl+K search.
+.quick-search {
+  width: min(38rem, calc(100vw - 2rem));
+  max-height: min(32rem, 76vh);
+  padding: 0;
+  margin: 12vh auto 0;
+  overflow: hidden;
+  color: $ink;
+  border: 1px solid $line;
+  border-radius: 0.875rem;
+  box-shadow: 0 24px 64px rgba(31, 41, 51, 0.28);
+
+  &[open] {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &::backdrop {
+    background: rgba(31, 41, 51, 0.38);
+  }
+}
+
+.quick-search__field {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  color: $muted;
+  border-bottom: 1px solid $line;
+
+  input {
+    flex: 1;
+    min-width: 0;
+    font-size: 1.0625rem;
+    color: $ink;
+    outline: 0;
+    background: transparent;
+    border: 0;
+    appearance: none;
+
+    &::-webkit-search-cancel-button {
+      display: none;
+    }
+  }
+}
+
+.quick-search__results {
+  padding: 0.25rem 0.5rem 0.5rem;
+  overflow-y: auto;
+}
+
+.quick-search__group {
+  padding: 0 0.625rem;
+  margin: 0.625rem 0 0.25rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: $muted;
+}
+
+.quick-search__option {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0.625rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: $ink;
+  text-decoration: none;
+  border-radius: 0.4375rem;
+
+  &:hover {
+    color: $ink;
+  }
+
+  &[aria-selected="true"] {
+    color: var(--brand-ink);
+    background: var(--brand);
+
+    small {
+      color: inherit;
+    }
+  }
+
+  span,
+  small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  small {
+    flex: 0 1 45%;
+    font-size: 0.8125rem;
+    font-weight: 400;
+    color: $muted;
+    text-align: right;
+  }
+}
+
+.quick-search__message {
+  padding: 1rem 0.625rem;
+  margin: 0;
+  font-size: 0.9375rem;
+  color: $muted;
+}
+
+// Phones and small tablets: the menu is a drawer.
+@media (max-width: $drawer-limit) {
+  .app-nav {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: min(18rem, 84vw);
+    height: auto;
+    box-shadow: 0 0 32px rgba(31, 41, 51, 0.24);
+    transition: transform 0.2s ease;
+
+    &.toggled {
+      box-shadow: none;
+      transform: translateX(-100%);
+    }
+  }
+
+  body:not(.sidebar-toggled) #content-wrapper::after {
+    position: fixed;
+    inset: 0;
+    z-index: 1020;
+    content: "";
+    background: rgba(31, 41, 51, 0.38);
+  }
+
+  .app-nav__toggle {
+    display: none;
+  }
+
+  #sidebarToggleTop {
+    display: grid;
+    flex: 0 0 auto;
+  }
+
+  .app-topbar {
+    padding: 0 0.75rem;
+  }
+
+  .app-topbar kbd {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-nav,
+  .nav-chevron,
+  .collapsing {
+    transition: none !important;
+  }
+}

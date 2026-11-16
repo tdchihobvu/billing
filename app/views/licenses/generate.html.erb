@@ -1,30 +1,37 @@
-<!-- Page Heading -->
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Valid Licenses for <%= @client.name %></h1>
-    <div class="float-end">
-      <%= link_to generate_new_licenses_path(client_id: @client), class: "btn btn-outline btn-sm rounded-0" do %>
-        <i class="fas fa-backward text-dark"></i> Generate License
-      <% end %> 
-      <%= link_to :back, class: "btn btn-outline btn-sm rounded-0" do %><i class="fas fa-backward text-dark"></i> Back <% end %> 
-    </div>
-</div>
+<% lic = @license %>
+<div class="zpage">
+  <%= render "shared/zhead", title: "Valid Licenses for #{@client.name}", crumb: link_to("Licensing / Generate License", new_license_path),
+             actions: safe_join([
+               link_to("Client", client_path(@client), class: "b"),
+               link_to(generate_new_licenses_path(client_id: @client), class: "b main") { safe_join([tag.i(class: "fas fa-plus", "aria-hidden": "true"), " Generate License"]) }
+             ]) %>
 
-<p style="color: green"><%= notice %></p>
-
-<div class="card border-0">
-  <div class="card-body">
-    <% unless @license.nil? %>
-        <% if @license.paid? %> 
-          <% if @license.client.branches.empty? %>        
-            <%= link_to print_licenses_path(id: @license, format: :pdf), target: '_blank', class: "btn btn-outline text-dark small", title: "Print Receipt" do %>
-              <i class="fas fa-print fa-sm text-dark"></i> <%= "Single License for the Period #{@license.long_period}" %>
+  <section class="box">
+    <div class="boxh"><h2>Licence from the latest invoice</h2></div>
+    <% if lic.nil? %>
+      <%= zempty("No licence on the latest invoice", "Generate a licence from one of this client's paid invoices.", link_to("Generate License", generate_new_licenses_path(client_id: @client), class: "b main")) %>
+    <% else %>
+      <div class="zlic" style="margin:0 18px 18px">
+        <span class="zseal" aria-hidden="true"></span>
+        <div>
+          <b><%= lic.license_for %><%= " (#{lic.license_option.name})" if lic.license_option %></b>
+          <small class="muted" style="display:block">Valid <%= lic.long_period %> · Invoice <%= link_to lic.invoice.invoice_number, lic.invoice %></small>
+        </div>
+        <div class="acts">
+          <% if lic.printable? %>
+            <span class="ztag paid">Approved</span>
+            <% if lic.client.branches.empty? %>
+              <%= link_to print_licenses_path(id: lic, format: :pdf), target: "_blank", rel: "noopener", class: "b main" do %><i class="fas fa-print" aria-hidden="true"></i> Print Single License<% end %>
+            <% else %>
+              <%= link_to print_multiple_licenses_path(id: lic, client_id: lic.client_id), class: "b main" do %><i class="fas fa-print" aria-hidden="true"></i> Print Multiple Licenses<% end %>
             <% end %>
           <% else %>
-            <%= link_to print_multiple_licenses_path(id: @license, client_id: @license.client_id), class: "btn btn-outline text-dark small", title: "Print Multiple" do %>
-              <i class="fas fa-print fa-sm text-dark"></i> <%= "Multiple Licenses for the Period #{@license.long_period}" %>
-            <% end %>
+            <%= zlicense_approval_tag(lic) %>
+            <span class="muted" style="font-size:12.5px"><%= lic.approval_hint %></span>
+            <% if current_user.sees_license_approvals? && lic.paid? %><%= link_to "Review", license_approval_path(lic), class: "b" %><% end %>
           <% end %>
-        <% end %>      
+        </div>
+      </div>
     <% end %>
-  </div>
+  </section>
 </div>

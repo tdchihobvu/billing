@@ -1,0 +1,11 @@
+<%# Filter box shared by the Sales and Collections reports (prototype: reportFilters). Locals: url, from_key, to_key. %>
+<div class="box">
+  <%= form_with url: url, method: :get, local: true, class: "zfilters" do %>
+    <label class="zdate">From <%= date_field_tag from_key, @start_date.to_date, class: "zsel", "aria-label": "From date" %></label>
+    <label class="zdate">To <%= date_field_tag to_key, @end_date.to_date, class: "zsel", "aria-label": "To date" %></label>
+    <%= select_tag :currency_id, options_from_collection_for_select(Currency.all, :id, :name, params[:currency_id]), prompt: "Select Currency", class: "zsel #{'on' if params[:currency_id].present?}", "aria-label": "Select Currency" %>
+    <%= select_tag :user_id, options_from_collection_for_select(@users, :id, :fullname, params[:user_id]), prompt: "All #{default_user_title.to_s.pluralize}", class: "zsel #{'on' if params[:user_id].present?}", "aria-label": default_user_title %>
+    <%= submit_tag "Apply", name: nil, class: "b main" %>
+    <%= link_to "Reset", url, class: "b" %>
+  <% end %>
+</div>

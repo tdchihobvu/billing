@@ -1,0 +1,36 @@
+<%# Shell for signed-out pages (sign in, forgot password, reset password), in the ZIMURA design. %>
+<% brand = auth_brand %>
+<main class="zauth">
+  <aside class="zauth__art">
+    <div class="zauth__org">
+      <% if brand[:logo] %>
+        <span class="zauth__logo"><%= image_tag brand[:logo], alt: "#{brand[:name]} logo", width: 64, height: 64 %></span>
+      <% end %>
+      <div>
+        <b><%= brand[:name] %></b>
+        <% if brand[:full_name].present? && brand[:full_name] != brand[:name] %><small><%= brand[:full_name] %></small><% end %>
+      </div>
+    </div>
+    <div class="zauth__pitch">
+      <h2>Billing and Licensing</h2>
+      <p>Invoices, receipts, licences and statements, in one place.</p>
+    </div>
+    <svg class="zauth__sun" viewBox="0 0 200 200" aria-hidden="true">
+      <circle cx="100" cy="100" r="46"/>
+      <% 12.times do |i| %><rect x="96" y="18" width="8" height="26" rx="4" transform="rotate(<%= i * 30 %> 100 100)"/><% end %>
+    </svg>
+  </aside>
+
+  <section class="zauth__panel">
+    <div class="zauth__card">
+      <% if alert.present? %>
+        <div class="znote err" role="alert"><span><i class="fas fa-exclamation-circle" aria-hidden="true"></i></span><div><%= alert %></div></div>
+      <% end %>
+      <% if notice.present? %>
+        <div class="znote ok" role="status"><span><i class="fas fa-check" aria-hidden="true"></i></span><div><%= notice %></div></div>
+      <% end %>
+      <%= yield %>
+    </div>
+    <footer class="zauth__foot">&copy; 2024 &ndash; <%= Date.today.year %> &middot; Billing Management System by <a href="http://dapsoft.co.zw" target="_blank" rel="noopener">Dapsoft Solutions</a></footer>
+  </section>
+</main>

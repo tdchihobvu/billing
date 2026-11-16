@@ -1,57 +1,33 @@
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">User Management</h1>
-    <div class="float-end">
-      <%= link_to :back, class: "btn btn-outline btn-sm rounded-0" do %><i class="d-none d-sm-inline-block btn  btn-sm btn-outline text-dark"></i> Back <% end %> 
+<div class="zpage">
+  <%= render "shared/zhead", title: "New user", crumb: link_to("Administration / Users", user_management_index_path),
+             sub: "They get a temporary password and must change it when they first sign in." %>
+
+  <%= form_for @user, url: save_user_management_index_path, html: { class: "box" } do |f| %>
+    <%= render "shared/form_errors", record: @user %>
+
+    <section class="zsect">
+      <div class="boxh"><h2>Details</h2><span>Fields marked <span class="req"></span> are required</span></div>
+      <div class="zgrid">
+        <div class="zfield"><%= f.label :firstname, "First name", class: "req" %><%= f.text_field :firstname, autofocus: true %></div>
+        <div class="zfield"><%= f.label :lastname, "Last name", class: "req" %><%= f.text_field :lastname %></div>
+        <div class="zfield"><%= f.label :username, class: "req" %><%= f.text_field :username, autocomplete: "off" %></div>
+        <div class="zfield"><%= f.label :email %><%= f.email_field :email, autocomplete: "email" %></div>
+      </div>
+    </section>
+
+    <%= render "role_picker", f: f %>
+
+    <section class="zsect">
+      <div class="boxh"><h2>Temporary password</h2><span><%= User::PASSWORD_RULES %></span></div>
+      <div class="zgrid">
+        <div class="zfield"><%= f.label :password, class: "req" %><%= f.password_field :password, autocomplete: "new-password" %></div>
+        <div class="zfield"><%= f.label :password_confirmation, "Confirm password", class: "req" %><%= f.password_field :password_confirmation, autocomplete: "new-password" %></div>
+      </div>
+    </section>
+
+    <div class="zformfoot">
+      <%= link_to "Cancel", user_management_index_path, class: "b" %>
+      <%= f.submit "Save User", class: "b main" %>
     </div>
-</div>
-
-<p style="color: green"><%= notice %></p>
-
-<div class="card border-0">
-  <div class="card-body">
-<h2>Sign up</h2>
-
-	<%= form_for @user, url: save_user_management_index_path do |f| %>
-
-	  <%= f.hidden_field :role, value: 'cashier' %>
-	  <%= f.hidden_field :tenant_id %>
-	  <div class="form-group">
-	    <%= f.label :firstname %><br />
-	    <%= f.text_field :firstname, autofocus: true, class: "form-control" %>
-	  </div>
-
-	  <div class="form-group">
-	    <%= f.label :lastname %><br />
-	    <%= f.text_field :lastname, class: "form-control" %>
-	  </div>
-
-	  <div class="form-group">
-	    <%= f.label :username %><br />
-	    <%= f.text_field :username, class: "form-control" %>
-	  </div>
-
-	  <div class="form-group">
-	    <%= f.label :email %><br />
-	    <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "form-control" %>
-	  </div>
-
-	  <div class="form-group">
-	    <%= f.label :password %>
-	    <% if @minimum_password_length %>
-	    <em>(<%= @minimum_password_length %> characters minimum)</em>
-	    <% end %><br />
-	    <%= f.password_field :password, autocomplete: "new-password", class: "form-control" %>
-	  </div>
-
-	  <div class="form-group">
-	    <%= f.label :password_confirmation %><br />
-	    <%= f.password_field :password_confirmation, autocomplete: "new-password", class: "form-control" %>
-	  </div>
-
-	  <div class="actions">
-	    <%= f.submit "Save User", class: "btn btn-sm" %>
-	  </div>
-	<% end %>
-
-  </div>
+  <% end %>
 </div>

@@ -17,7 +17,7 @@ class DevicesControllerTest < ActionDispatch::IntegrationTest
 
   test "should create device" do
     assert_difference("Device.count") do
-      post devices_url, params: { device: { access_token: @device.access_token, active: @device.active, model: @device.model, name: @device.name, serial_number: @device.serial_number, user_id: @device.user_id } }
+      post devices_url, params: { device: fresh_attributes(@device) }
     end
 
     assert_redirected_to device_url(Device.last)
@@ -39,8 +39,10 @@ class DevicesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should destroy device" do
+    record = unreferenced_copy(@device)
+
     assert_difference("Device.count", -1) do
-      delete device_url(@device)
+      delete device_url(record)
     end
 
     assert_redirected_to devices_url

@@ -1,90 +1,32 @@
+<div class="zpage"
+     data-controller="invoice-dashboard"
+     data-invoice-dashboard-statuses-value="<%= @status_counts.to_json %>"
+     data-invoice-dashboard-financials-value="<%= @financial_summary.to_json %>">
+  <%= render "shared/zhead", title: "Invoice Dashboard", crumb: link_to("Dashboard", root_path), sub: "All active invoices, by status and currency." %>
 
-<div
-  data-controller="invoice-dashboard"
-  data-invoice-dashboard-statuses-value="<%= @status_counts.to_json %>"
-  data-invoice-dashboard-financials-value="<%= @financial_summary.to_json %>"
-  class="container-fluid py-4">
-
-  <h3 class="mb-4">Invoice Dashboard</h3>
-
-  <div class="row g-3 mb-4">
-
-    <div class="col-md-3">
-      <div class="card shadow-sm border-0">
-        <div class="card-body">
-          <p class="text-muted">Total Invoices</p>
-          <h3><%= @status_counts.values.sum %></h3>
-        </div>
-      </div>
-    </div>
-
-    <% @financial_summary.each do |item| %>
-      <div class="col-md-3">
-        <div class="card shadow-sm border-0">
-          <div class="card-body">
-            <p class="text-muted">
-              Total Invoiced (<%= item[:currency] %>)
-            </p>
-            <h3><%= number_with_delimiter(item[:total_invoiced]) %></h3>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-md-3">
-        <div class="card shadow-sm border-0">
-          <div class="card-body">
-            <p class="text-muted">
-              Collected (<%= item[:currency] %>)
-            </p>
-            <h3 class="text-success">
-              <%= number_with_delimiter(item[:total_paid]) %>
-            </h3>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-md-3">
-        <div class="card shadow-sm border-0">
-          <div class="card-body">
-            <p class="text-muted">
-              Outstanding (<%= item[:currency] %>)
-            </p>
-            <h3 class="text-danger">
-              <%= number_with_delimiter(item[:outstanding_balance]) %>
-            </h3>
-          </div>
-        </div>
-      </div>
-    <% end %>
-
+  <div class="zstats">
+    <div class="zstat"><small>Total Invoices</small><b><%= number_with_delimiter(@status_counts.values.sum) %></b></div>
   </div>
 
-  <div class="row g-4">
-
-    <div class="col-lg-5">
-      <div class="card shadow-sm border-0">
-        <div class="card-body">
-          <h5>Invoice Status Breakdown</h5>
-
-          <div style="height: 350px;">
-            <canvas data-invoice-dashboard-target="statusChart"></canvas>
-          </div>
-        </div>
+  <% @financial_summary.each do |item| %>
+    <section class="box">
+      <div class="boxh"><h2><%= item[:currency] %></h2><span><%= pluralize(number_with_delimiter(item[:invoice_count]), "invoice") %></span></div>
+      <div class="zstats" style="padding:0 18px 14px">
+        <div class="zstat"><small>Total Invoiced</small><b><%= number_with_precision(item[:total_invoiced], precision: 2, delimiter: ",") %></b></div>
+        <div class="zstat"><small>Collected</small><b style="color:var(--paid)"><%= number_with_precision(item[:total_paid], precision: 2, delimiter: ",") %></b></div>
+        <div class="zstat owe"><small>Outstanding</small><b><%= number_with_precision(item[:outstanding_balance], precision: 2, delimiter: ",") %></b></div>
       </div>
-    </div>
+    </section>
+  <% end %>
 
-    <div class="col-lg-7">
-      <div class="card shadow-sm border-0">
-        <div class="card-body">
-          <h5>Financial Overview</h5>
-
-          <div style="height: 350px;">
-            <canvas data-invoice-dashboard-target="financialChart"></canvas>
-          </div>
-        </div>
-      </div>
-    </div>
-
+  <div class="zsplit">
+    <section class="box">
+      <div class="boxh"><h2>Invoice Status Breakdown</h2></div>
+      <div style="height:340px;padding:0 18px 18px"><canvas data-invoice-dashboard-target="statusChart" aria-label="Invoices by status" role="img"></canvas></div>
+    </section>
+    <section class="box">
+      <div class="boxh"><h2>Financial Overview</h2></div>
+      <div style="height:340px;padding:0 18px 18px"><canvas data-invoice-dashboard-target="financialChart" aria-label="Invoiced, collected and outstanding by currency" role="img"></canvas></div>
+    </section>
   </div>
-
 </div>

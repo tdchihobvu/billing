@@ -6,50 +6,64 @@ module ApplicationHelper
 		current_user.tenant
 	end
 
+	# The menu and theme ask for these many times per page, so load them once per request.
+	def tenant_module(name)
+		@tenant_modules ||= tenant.system_modules.to_a.index_by(&:name)
+		@tenant_modules[name]
+	end
+
+	def tenant_setting(name)
+		@tenant_settings ||= tenant.system_settings.joins(:config_key).pluck("config_keys.name", "system_settings.config_value").to_h
+		@tenant_settings[name]
+	end
+
+	def unprocessed_notifications
+		# Void requests waiting for a decision: this company's only, each request once.
+		@unprocessed_notifications ||= current_user ? Notification.waiting_requests(tenant) : []
+	end
+
 	def receipting
-		tenant.system_modules.find_by(name: "Receipting")
+		tenant_module("Receipting")
 	end
 
 	def quotations
-		tenant.system_modules.find_by(name: "Quotations")
+		tenant_module("Quotations")
 	end
 
 	def invoicing
-		tenant.system_modules.find_by(name: "Invoicing")
+		tenant_module("Invoicing")
 	end
 
 	def multicurrency
-		tenant.system_modules.find_by(name: "Multicurrency")
+		tenant_module("Multicurrency")
 	end
 
 	def licensing
-		tenant.system_modules.find_by(name: "Licensing")
+		tenant_module("Licensing")
 	end
 
 	def cards
-		tenant.system_modules.find_by(name: "Card Management")
+		tenant_module("Card Management")
 	end
 
 	def expenses
-		tenant.system_modules.find_by(name: "Expenses")
+		tenant_module("Expenses")
 	end
 
 	def api
-		tenant.system_modules.find_by(name: "API")
+		tenant_module("API")
 	end
 
 	def inventory
-		tenant.system_modules.find_by(name: "Inventory")
+		tenant_module("Inventory")
 	end
 
 	def product_pricing
-		config_key = ConfigKey.find_by(name: 'Product Pricing')
-		tenant.system_settings.find_by(config_key_id: config_key.id).config_value		
+		tenant_setting('Product Pricing')
 	end
 
 	def invoice_validity
-		config_key = ConfigKey.find_by(name: 'Invoice Validity')
-		tenant.system_settings.find_by(config_key_id: config_key.id).config_value.to_i		
+		tenant_setting('Invoice Validity').to_i
 	end
 
 	def product_pricing_short_name
@@ -62,18 +76,12 @@ module ApplicationHelper
 
 	def attach_invoice_to_receipt
 		'NO'
-		config_key = ConfigKey.find_by(name: 'Attach Invoice to Receipt')
-		unless tenant.system_settings.find_by(config_key_id: config_key.id).nil?
-			tenant.system_settings.find_by(config_key_id: config_key.id).config_value	
-		end
+		tenant_setting('Attach Invoice to Receipt')
 	end
 
 	def default_user_title
 		'User'
-		config_key = ConfigKey.find_by(name: 'System Users Title')
-		unless tenant.system_settings.find_by(config_key_id: config_key.id).nil?
-			tenant.system_settings.find_by(config_key_id: config_key.id).config_value	
-		end
+		tenant_setting('System Users Title')
 	end
 
 	def system_mode
@@ -82,10 +90,7 @@ module ApplicationHelper
 
 	def default_module
 		'invoicing'
-		config_key = ConfigKey.find_by(name: 'Default Module')
-		unless tenant.system_settings.find_by(config_key_id: config_key.id).nil?
-			tenant.system_settings.find_by(config_key_id: config_key.id).config_value
-		end	
+		tenant_setting('Default Module')
 	end
 
 	def license_invoice
@@ -94,20 +99,33 @@ module ApplicationHelper
 
 	# Start of Themes
 
+	DEFAULT_BRAND_COLOR = "#2f5bd0"
+
+	# Only a valid hex colour reaches the page's CSS.
+	def brand_color
+		value = theme_background_color.to_s.strip
+		value.match?(/\A#(\h{3}|\h{6})\z/) ? value : DEFAULT_BRAND_COLOR
+	end
+
+	# Dark or white text, whichever is readable on the company colour.
+	def brand_ink
+		hex = brand_color.delete("#")
+		hex = hex.chars.map { |digit| digit * 2 }.join if hex.length == 3
+		red, green, blue = hex.scan(/../).map { |pair| pair.to_i(16) }
+		(red * 299 + green * 587 + blue * 114) / 1000 > 150 ? "#1f2933" : "#ffffff"
+	end
+
+	def user_initials
+		current_user.fullname.split.first(2).map { |name| name[0] }.join.upcase
+	end
+
 	def theme_background_color
 		'#FFFFFF'
-		config_key = ConfigKey.find_by(name: 'Background Color')
-		unless tenant.system_settings.find_by(config_key_id: config_key.id).nil?
-			tenant.system_settings.find_by(config_key_id: config_key.id).config_value	
-		end
+		tenant_setting('Background Color')
 	end
 
 	def exchange_rate_update_frequency
-	  config = ConfigKey.find_by(name: 'Exchange Rate Update Frequency')
-	  return nil unless config
-
-	  setting = tenant.system_settings.find_by(config_key_id: config.id)
-	  setting&.config_value
+	  tenant_setting('Exchange Rate Update Frequency')
 	end
 
 end

@@ -17,7 +17,7 @@ class ReceiptsControllerTest < ActionDispatch::IntegrationTest
 
   test "should create receipt" do
     assert_difference("Receipt.count") do
-      post receipts_url, params: { receipt: { amount: @receipt.amount, client_id: @receipt.client_id, currency_id: @receipt.currency_id, deleted: @receipt.deleted, description: @receipt.description, invoice_id: @receipt.invoice_id, payment_form_id: @receipt.payment_form_id, rate: @receipt.rate, reference_number: @receipt.reference_number, transaction_date: @receipt.transaction_date, user_id: @receipt.user_id } }
+      post receipts_url, params: { receipt: fresh_attributes(@receipt) }
     end
 
     assert_redirected_to receipt_url(Receipt.last)
@@ -38,11 +38,12 @@ class ReceiptsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to receipt_url(@receipt)
   end
 
-  test "should destroy receipt" do
-    assert_difference("Receipt.count", -1) do
+  test "should soft delete receipt" do
+    assert_no_difference("Receipt.count") do
       delete receipt_url(@receipt)
     end
 
+    assert_equal true, @receipt.reload.deleted
     assert_redirected_to receipts_url
   end
 end

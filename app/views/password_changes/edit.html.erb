@@ -1,0 +1,15 @@
+<div class="zpage" style="max-width:560px">
+  <%= render "shared/zhead", title: "Choose a new password", crumb: "Account",
+             sub: "You signed in with a temporary password. Set your own to continue." %>
+
+  <%= form_with model: current_user, url: password_change_path, method: :patch, scope: :user, class: "box" do |form| %>
+    <%= render "devise/shared/error_messages", resource: current_user %>
+    <section class="zsect">
+      <div class="zgrid" style="grid-template-columns:1fr">
+        <div class="zfield"><%= form.label :password, "New password", class: "req" %><%= form.password_field :password, autofocus: true, autocomplete: "new-password", required: true %><span class="zhint"><%= User::PASSWORD_RULES %></span></div>
+        <div class="zfield"><%= form.label :password_confirmation, "Confirm new password", class: "req" %><%= form.password_field :password_confirmation, autocomplete: "new-password", required: true %></div>
+      </div>
+    </section>
+    <div class="zformfoot"><%= form.submit "Save new password", class: "b main" %></div>
+  <% end %>
+</div>

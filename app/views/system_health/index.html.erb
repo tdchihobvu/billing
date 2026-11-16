@@ -1,0 +1,141 @@
+<%
+  money = ->(v) { v.nil? ? "" : number_with_precision(v, precision: 2, delimiter: ",") }
+  running = @run&.running?
+  fixable_total = @open_fixable.to_i
+%>
+<div class="zpage">
+  <%= render "shared/zhead", title: "System health", crumb: "Administration",
+             sub: "Problems the system ran into, and a check that every invoice's balance matches its receipts.",
+             actions: (running ? content_tag(:span, safe_join([tag.i(class: "fas fa-circle-notch fa-spin", "aria-hidden": "true"), " Balance check running…"]), class: "b", "aria-live": "polite") :
+                        button_to(check_balances_system_health_path, class: "b main", form: { class: "button_to" }) { safe_join([tag.i(class: "fas fa-balance-scale", "aria-hidden": "true"), " Run balance check now"]) }) %>
+
+  <div class="zstats">
+    <div class="box zstat <%= 'owe' if @open_count.positive? %>">
+      <small>Problems to look at</small>
+      <b><%= @open_count %></b>
+      <em><%= @open_count.zero? ? "nothing logged" : @kind_counts.map { |k, n| "#{n} #{SystemEvent::KINDS.dig(k, 0).to_s.downcase}" }.join(", ") %></em>
+    </div>
+    <div class="box zstat <%= 'owe' if fixable_total.positive? %>">
+      <small>Invoices with a wrong balance</small>
+      <b><%= @last_finished ? fixable_total : "–" %></b>
+      <em><%= @last_finished ? "from the check of #{@last_finished.finished_at.strftime('%d %b %Y, %H:%M')}" : "no check run yet" %></em>
+    </div>
+    <div class="box zstat">
+      <small>Last balance check</small>
+      <b><%= @last_finished ? "#{time_ago_in_words(@last_finished.finished_at)} ago" : "Never" %></b>
+      <em><%= @last_finished ? "#{number_with_delimiter(@last_finished.invoices_checked)} invoices checked" : "runs nightly once scheduled" %></em>
+    </div>
+  </div>
+
+  <% if @run&.status == "failed" %>
+    <div class="znote err" role="alert"><span><i class="fas fa-exclamation-circle" aria-hidden="true"></i></span><div><b>The last balance check stopped with an error</b><%= @run.error %></div></div>
+  <% end %>
+
+  <section class="box">
+    <nav class="ztabs" aria-label="System health">
+      <%= link_to system_health_path(tab: "problems"), "aria-current": (@tab == "problems" ? "page" : nil) do %>Problems<em><%= @open_count %></em><% end %>
+      <%= link_to system_health_path(tab: "balances"), "aria-current": (@tab == "balances" ? "page" : nil) do %>Balance check<em><%= @last_finished ? fixable_total : "–" %></em><% end %>
+    </nav>
+
+    <% if @tab == "problems" %>
+      <div class="zfilters">
+        <%= link_to "All", system_health_path(tab: "problems", show: @show), class: "zchip #{'on' if params[:kind].blank?}" %>
+        <% SystemEvent::KINDS.each do |key, (label, icon)| %>
+          <%= link_to system_health_path(tab: "problems", kind: key, show: @show), class: "zchip #{'on' if params[:kind] == key}" do %><i class="fas <%= icon %>" aria-hidden="true"></i> <%= label %><% if @kind_counts[key].to_i.positive? %> <b><%= @kind_counts[key] %></b><% end %><% end %>
+        <% end %>
+        <div class="right">
+          <%= link_to (@show == "open" ? "Show dealt with" : "Show open"), system_health_path(tab: "problems", show: (@show == "open" ? "resolved" : "open"), kind: params[:kind]), class: "zlink", style: "color:var(--soft)" %>
+          <% if @show == "open" && @events.any? %>
+            <%= button_to "Mark all dealt with", resolve_all_system_events_path(kind: params[:kind]), class: "b", form: { class: "button_to" },
+                          data: { turbo_confirm: "Mark #{pluralize(@events.size, 'problem')} as dealt with?" } %>
+          <% end %>
+        </div>
+      </div>
+
+      <% if @events.any? %>
+        <ul class="zhealthlist">
+          <% @events.each do |e| %>
+            <li>
+              <span class="zdot <%= e.resolved_at ? 'g' : (e.kind == 'payment_sync' || e.kind == 'balance' ? 'r' : 's') %>"><i class="fas <%= e.icon %>" aria-hidden="true"></i></span>
+              <div>
+                <b><%= e.title %></b>
+                <small>
+                  <%= e.kind_label %> · <%= time_ago_in_words(e.created_at) %> ago (<%= e.created_at.strftime("%d %b %Y, %H:%M") %>)<%= " · #{e.user.fullname}" if e.user %>
+                  <% if e.record_type == "Invoice" && e.record_id %> · <%= link_to "Open invoice", invoice_path(e.record_id) %><% end %>
+                  <% if e.record_type == "Receipt" && e.record_id %> · <%= link_to "Open receipt", receipt_path(e.record_id) %><% end %>
+                  <%= " · dealt with #{e.resolved_at.strftime('%d %b %Y')}" if e.resolved_at %>
+                </small>
+                <% if e.details.present? || e.path.present? %>
+                  <details><summary>Details</summary><pre><%= [e.path, e.details].compact_blank.join("\n") %></pre></details>
+                <% end %>
+              </div>
+              <% unless e.resolved_at %>
+                <%= button_to "Mark dealt with", resolve_system_event_path(e), class: "b", form: { class: "button_to" } %>
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+      <% else %>
+        <%= zempty(@show == "open" ? "No problems to look at" : "Nothing dealt with yet",
+                   "Payments that couldn't be applied, pages or exports that failed, and phone uploads the server refused appear here.") %>
+      <% end %>
+
+    <% else %>
+      <% if @last_finished %>
+        <nav class="ztabs ztabs--sub" aria-label="Kind of difference">
+          <% BalanceIssue::KINDS.each do |key, (label, _, _)| %>
+            <%= link_to system_health_path(tab: "balances", issue: key), "aria-current": (@issue_kind == key ? "page" : nil) do %><%= label %><em><%= @issue_counts[key].to_i %></em><% end %>
+          <% end %>
+        </nav>
+        <% kind_label, explanation, = BalanceIssue::KINDS[@issue_kind] %>
+        <div class="zfilters">
+          <p class="muted" style="margin:0;font-size:13px;flex:1"><%= explanation %>
+            <% if BalanceIssue::NEEDS_FIX.include?(@issue_kind) %> Fixing recalculates the stored figures from the invoice's own lines and receipts, the same way saving a receipt does. Invoices paid through the statement are never turned back to unpaid.<% end %></p>
+          <% if BalanceIssue::NEEDS_FIX.include?(@issue_kind) && @open_in_kind.positive? %>
+            <%= button_to "Fix all #{number_with_delimiter(@open_in_kind)}", fix_all_balance_issues_path(issue: @issue_kind), class: "b main", form: { class: "button_to" },
+                          data: { turbo_confirm: "Recalculate #{pluralize(@open_in_kind, 'invoice')} from their receipts?", turbo_submits_with: "Fixing…" } %>
+          <% end %>
+        </div>
+
+        <% if @issues.any? %>
+          <div class="zwrap">
+            <table class="zt">
+              <thead><tr><th>Invoice</th><th>Client</th><th class="r">Total stored</th><th class="r">Total from lines</th><th class="r">Paid stored</th><th class="r">Paid from receipts</th><th><span class="visually-hidden">Fix</span></th></tr></thead>
+              <tbody>
+                <% @issues.each do |i| %>
+                  <% inv = i.invoice %>
+                  <tr<%= ' class="zmuted"'.html_safe if i.fixed_at %>>
+                    <td class="zvn"><%= link_to inv.invoice_number, inv, class: "zno" %><small><%= inv.invoice_date&.strftime("%d %b %Y") %></small></td>
+                    <td class="zclient" title="<%= inv.client&.name %>"><span class="zclip"><%= inv.client&.name %></span></td>
+                    <td class="r money"><span class="cur"><%= inv.currency&.name %></span> <%= money.(i.stored_total) %></td>
+                    <td class="r money <%= 'zdiff' if (i.stored_total.to_d - i.calculated_total.to_d).abs > 0.01 %>"><%= money.(i.calculated_total) %></td>
+                    <td class="r money"><%= money.(i.stored_paid) %></td>
+                    <td class="r money <%= 'zdiff' if (i.stored_paid.to_d - i.calculated_paid.to_d).abs > 0.01 %>"><%= money.(i.calculated_paid) %></td>
+                    <td style="text-align:right;white-space:nowrap">
+                      <% if i.fixed_at %>
+                        <span class="ztag paid">Fixed</span>
+                      <% elsif BalanceIssue::NEEDS_FIX.include?(i.kind) %>
+                        <%= button_to "Fix", fix_balance_issue_path(i), class: "b", form: { class: "button_to" } %>
+                      <% else %>
+                        <span class="ztag <%= i.tone %>"><%= i.label %></span>
+                      <% end %>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% else %>
+          <%= zempty("None of this kind", "The last check found no invoices with this kind of difference.") %>
+        <% end %>
+      <% else %>
+        <%= zempty("No balance check yet", "Run the check to compare every invoice's stored balance with its receipts. It takes about a minute.") %>
+      <% end %>
+    <% end %>
+  </section>
+</div>
+
+<% if running %>
+  <%# Refreshes while the check runs, so the result appears without pressing anything. %>
+  <script>setTimeout(function () { if (window.Turbo) { Turbo.visit(window.location.href, { action: "replace" }) } else { window.location.reload() } }, 8000)</script>
+<% end %>

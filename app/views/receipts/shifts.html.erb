@@ -1,15 +1,14 @@
-<!-- Page Heading -->
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Shifts</h1>
-    <div class="float-end">
-      <%= link_to open_shift_api_v1_billing_index_path, class: "d-none d-sm-inline-block btn btn-sm btn-outline text-dark" do %>
-      <i class="fas fa-user fa-sm text-dark"></i> Open Shift
-      <% end %> |
-      <%= link_to :back, class: "btn btn-outline btn-sm rounded-0" do %><i class="fas fa-backward text-dark"></i> Back <% end %> 
+<div class="zpage">
+  <div class="zhead">
+    <div><h1>Shifts</h1></div>
+    <div class="acts">
+      <%= link_to open_shift_api_v1_billing_index_path, class: "b" do %>
+      <i class="fas fa-user" aria-hidden="true"></i> Open Shift
+      <% end %>
     </div>
-</div>
+  </div>
+  <% if notice.present? %><div class="znote ok"><span><i class="fas fa-check" aria-hidden="true"></i></span><div><%= notice %></div></div><% end %>
 
-<p style="color: green"><%= notice %></p>
 
 <div class="table-responsive">
   <% unless @shifts.empty? %>
@@ -56,9 +55,4 @@
     <div class="alert alert-warning text-center border-0" role="alert">There is nothing to display.</div>
   <% end %>
 </div>
-
-<script type="text/javascript">
-  $(document).ready(function() {
-    $('#dataTable').DataTable();
-  });
-</script>
+</div>

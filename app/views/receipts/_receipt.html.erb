@@ -41,6 +41,9 @@
   <p>
     <strong>Invoice:</strong>
     <%= receipt.invoice.invoice_number unless receipt.invoice.nil? %>
+    <% if receipt.invoice&.discount_amount&.positive? %>
+      (includes a discount of <%= number_to_currency(receipt.invoice.discount_amount, unit: "") %>)
+    <% end %>
   </p>
 
   <p>

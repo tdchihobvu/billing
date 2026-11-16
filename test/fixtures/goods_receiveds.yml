@@ -1,6 +1,7 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
+  tenant: one
   grv_number: MyString
   ext_number: MyString
   supplier: one
@@ -9,6 +10,7 @@ one:
   deleted: false
 
 two:
+  tenant: two
   grv_number: MyString
   ext_number: MyString
   supplier: two

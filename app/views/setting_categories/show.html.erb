@@ -1,10 +1,1 @@
-<p style="color: green"><%= notice %></p>
-
-<%= render @setting_category %>
-
-<div>
-  <%= link_to "Edit this setting category", edit_setting_category_path(@setting_category) %> |
-  <%= link_to "Back to setting categories", setting_categories_path %>
-
-  <%= button_to "Destroy this setting category", @setting_category, method: :delete %>
-</div>
+<%= render "shared/crud_show", record: @setting_category, model: SettingCategory, crumb: link_to("Settings / Setting categories", setting_categories_path), index_path: setting_categories_path %>

@@ -1,11 +1,14 @@
-<div class="modal-body">
-  <%= form_tag(account_statement_clients_path(format: :pdf), :method => "get") do %>
+<div class="zpage">
+  <%= render "shared/zhead", title: "Print As At", crumb: link_to("Clients", clients_path) + " / " + link_to(@client.name, client_path(@client, tab: "statement")),
+             sub: "The account statement shows everything up to this date.", actions: link_to("Back to statement", client_path(@client, tab: "statement"), class: "b") %>
+  <%= form_tag(account_statement_clients_path(format: :pdf), method: :get, class: "box", target: "_blank") do %>
     <%= hidden_field_tag :id, @client.id %>
-    <div class="form-group row">
-      <div class="col-sm-3">
-		   <%= date_field_tag :as_at, class: "form-control form-control-sm" %>
-      </div>
-      <div class="col-sm-3"><%= submit_tag "Submit", class: "btn btn-primary btn-sm" %></div>
+    <div class="zgrid" style="padding-top:18px">
+      <div class="zfield"><%= label_tag :as_at, "As at", class: "req" %><%= date_field_tag :as_at, Date.current, max: Date.current, required: true %></div>
+    </div>
+    <div class="zformfoot">
+      <%= link_to "Cancel", client_path(@client, tab: "statement"), class: "b" %>
+      <%= submit_tag "Submit", name: nil, class: "b main" %>
     </div>
   <% end %>
 </div>

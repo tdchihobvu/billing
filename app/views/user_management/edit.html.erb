@@ -1,48 +1,36 @@
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">User Management - Update Details</h1>
-    <div class="float-end">
-      <%= link_to :back, class: "btn btn-outline btn-sm rounded-0" do %><i class="d-none d-sm-inline-block btn  btn-sm btn-outline text-dark"></i> Back <% end %> 
+<div class="zpage">
+  <%= render "shared/zhead", title: "Update Details", crumb: link_to("Administration / Users", user_management_index_path),
+             sub: @user.fullname,
+             actions: link_to("View user", details_user_management_index_path(id: @user), class: "b") %>
+
+  <%= form_for @user, url: save_user_management_index_path, html: { class: "box" } do |f| %>
+    <%= render "shared/form_errors", record: @user %>
+    <%= f.hidden_field :id %>
+
+    <section class="zsect">
+      <div class="boxh"><h2>Details</h2></div>
+      <div class="zgrid">
+        <div class="zfield"><%= f.label :firstname, "First name" %><%= f.text_field :firstname, autofocus: true %></div>
+        <div class="zfield"><%= f.label :lastname, "Last name" %><%= f.text_field :lastname %></div>
+        <% if @user.devices.empty? %>
+          <div class="zfield"><%= f.label :username %><%= f.text_field :username, autocomplete: "off" %></div>
+        <% else %>
+          <div class="zfield"><span class="zlabel">Username</span><input type="text" value="<%= @user.username %>" disabled aria-label="Username"><span class="zhint">Can't change: this user is linked to a device.</span></div>
+        <% end %>
+        <div class="zfield"><%= f.label :email %><%= f.email_field :email, autocomplete: "email" %></div>
+      </div>
+    </section>
+
+    <% if @user == current_user %>
+      <section class="zsect"><div class="boxh"><h2>Role</h2></div>
+        <p style="padding:0 18px 16px;margin:0"><b><%= role_label(@user.role) %></b>. <span class="muted">You can't change your own role. Ask another Super admin.</span></p></section>
+    <% else %>
+      <%= render "role_picker", f: f %>
+    <% end %>
+
+    <div class="zformfoot">
+      <%= link_to "Cancel", user_management_index_path, class: "b" %>
+      <%= f.submit "Update User", class: "b main" %>
     </div>
-</div>
-
-<p style="color: green"><%= notice %></p>
-
-<div class="card border-0">
-  <div class="card-body">
-
-	<%= form_for @user, url: save_user_management_index_path do |f| %>
-		<%= f.hidden_field :id %>
-	  <div class="form-group">
-	    <%= f.label :firstname %><br />
-	    <%= f.text_field :firstname, autofocus: true, class: "form-control form-control-sm" %>
-	  </div>
-
-	  <div class="form-group">
-	    <%= f.label :lastname %><br />
-	    <%= f.text_field :lastname, class: "form-control form-control-sm" %>
-	  </div>
-
-	  <% if @user.devices.empty? %>
-	  <div class="form-group">
-	    <%= f.label :username %><br />
-	    <%= f.text_field :username, class: "form-control form-control-sm" %>
-	  </div>
-	  <% end %>
-
-	  <div class="form-group">
-	    <%= f.label :email %><br />
-	    <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "form-control form-control-sm" %>
-	  </div>
-
-	  <div class="form-group">
-	    <%= f.label :role %><br />
-	    <%= f.select :role, ['cashier','supervisor','manager','admin','superadmin'], {prompt: "Select Role"}, class: "form-select form-select-sm" %>
-	  </div>
-
-	  <div class="text-center">
-	    <%= f.submit "Update User", class:'btn btn-lg btn-success' %>
-	  </div>
-	<% end %>
-
-  </div>
+  <% end %>
 </div>

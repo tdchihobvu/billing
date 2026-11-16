@@ -1,35 +1,82 @@
-<!-- Page Heading -->
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Invoices</h1>
-    <div class="float-end">
-      <% if default_module == 'licensing' %>
-        <%= link_to license_invoices_path, class: "d-none d-sm-inline-block btn btn-sm btn-outline text-dark" do %>
-        <i class="fas fa-file fa-sm text-dark"></i> New Invoice
-        <% end %> |
-      <% else %>
-        <%= link_to proforma_invoices_path, class: "d-none d-sm-inline-block btn btn-sm btn-outline text-dark" do %>
-        <i class="fas fa-file fa-sm text-dark"></i> New Invoice
-        <% end %> |
-      <% end %>
-      <%= link_to inactive_invoices_path, class: "d-none d-sm-inline-block btn btn-sm btn-outline text-dark" do %>
-      <i class="fas fa-file fa-sm text-dark"></i> Inactive Invoices
-      <% end %> |
-      <%= link_to :back, class: "btn btn-outline btn-sm rounded-0" do %><i class="fas fa-backward text-dark"></i> Back <% end %> 
+<%
+  tabs = [["all", "All"], ["unpaid", "Unpaid"], ["overdue", "Overdue"], ["paid", "Paid"]]
+  keep = request.query_parameters.slice("q", "user_id", "currency_id")
+  filtered = keep.values.any?(&:present?)
+%>
+<div class="zpage">
+  <div class="zhead">
+    <div>
+      <div class="zcrumb">Sales</div>
+      <h1>Invoices</h1>
+      <p>From <%= @window_start.strftime("%d %b %Y") %> to today.</p>
     </div>
-</div>
-
-<p style="color: green"><%= notice %></p>
-
-<div class="card border-0">
-  <div class="card-body">
-    <div class="table-responsive">
-      <%= render 'invoices' %>
+    <div class="acts">
+      <%= link_to "Inactive Invoices", inactive_invoices_path, class: "b" %>
+      <%= link_to "View receipts", receipts_path, class: "b" %>
+      <%= link_to (default_module == "licensing" ? license_invoices_path : new_invoice_path), class: "b main" do %><i class="fas fa-plus" aria-hidden="true"></i> New Invoice<% end %>
     </div>
   </div>
-</div>
 
-<script type="text/javascript">
-  $(document).ready(function() {
-    $('#dataTable').DataTable();
-  });
-</script>
+  <% if notice.present? %><div class="znote ok"><span><i class="fas fa-check" aria-hidden="true"></i></span><div><%= notice %></div></div><% end %>
+
+  <section class="box" aria-label="Invoice list">
+    <nav class="ztabs" aria-label="Invoice status">
+      <% tabs.each do |key, label| %>
+        <%= link_to invoices_path(keep.merge(tab: key)), "aria-current": (@tab == key ? "page" : nil) do %>
+          <%= label %><em><%= number_with_delimiter(@counts[key]) %></em>
+        <% end %>
+      <% end %>
+    </nav>
+
+    <%= form_with url: invoices_path, method: :get, class: "zfilters", data: { turbo_action: "advance" } do |f| %>
+      <%= hidden_field_tag :tab, @tab %>
+      <label class="zsearch"><span class="visually-hidden">Search invoices</span><i class="fas fa-search" aria-hidden="true"></i>
+        <%= f.search_field :q, value: params[:q], placeholder: "Client or invoice number" %></label>
+      <%= f.select :user_id, options_from_collection_for_select(@users, :id, :fullname, params[:user_id]), { include_blank: "Any #{default_user_title}" }, class: "zsel #{'on' if params[:user_id].present?}", "aria-label": default_user_title, onchange: "this.form.requestSubmit()" %>
+      <%= f.select :currency_id, options_from_collection_for_select(@currencies, :id, :name, params[:currency_id]), { include_blank: "Any currency" }, class: "zsel #{'on' if params[:currency_id].present?}", "aria-label": "Currency", onchange: "this.form.requestSubmit()" %>
+      <%= f.submit "Search", name: nil, class: "b" %>
+      <div class="right"><% if filtered %><%= link_to "Clear all", invoices_path(tab: @tab), class: "zlink", style: "color:var(--soft)" %><% end %></div>
+    <% end %>
+
+    <% if @invoices.any? %>
+      <div class="zwrap">
+        <table class="zt">
+          <thead>
+            <tr><th>Invoice</th><th>Date</th><th>Client</th><th>Due</th><th>How late</th><th class="r">Total</th><th class="r">Balance</th><th>Status</th><th><span class="visually-hidden">Print</span></th></tr>
+          </thead>
+          <tbody>
+            <% @invoices.each do |invoice| %>
+              <% due = invoice.effective_due_date(invoice_validity) %>
+              <% balance = invoice.invoice_total.to_d - invoice.amount_paid.to_d %>
+              <% days = balance.positive? && due && due < Date.today ? (Date.today - due).to_i : 0 %>
+              <tr>
+                <td class="zvn"><%= link_to invoice.invoice_number, invoice, class: "zno" %><small><%= invoice.document.to_s.capitalize %></small></td>
+                <td><%= invoice.invoice_date&.strftime("%d %b %Y") %></td>
+                <td class="zvn"><b><%= invoice.client&.name %></b><small><%= [invoice.client&.city.presence || invoice.client&.location, invoice.user&.fullname.presence || invoice.user_fullname].compact_blank.join(" · ") %></small></td>
+                <td><%= due&.strftime("%d %b") %></td>
+                <td><% if days.positive? %><%= zage(days) %><%= pluralize(days, "day") %><% end %></td>
+                <td class="r"><%= zmoney(invoice.invoice_total, invoice.currency&.name) %></td>
+                <td class="r"><%= zmoney(balance) %></td>
+                <td><%= zstatus_tag(invoice) %></td>
+                <td><%= link_to print_invoices_path(id: invoice, format: :pdf), class: "b ghost", title: "Print Invoice", target: "_blank", rel: "noopener", "aria-label": "Print Invoice #{invoice.invoice_number}" do %><i class="fas fa-print" aria-hidden="true"></i><% end %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+      <div class="zpager">
+        <span>Page <%= @page %> of <%= @pages %>, <%= number_with_delimiter(@counts[@tab]) %> invoices</span>
+        <span class="acts">
+          <%= link_to "Previous", invoices_path(keep.merge(tab: @tab, page: @page - 1)), class: "b #{'disabled' if @page <= 1}", "aria-disabled": (@page <= 1) %>
+          <%= link_to "Next", invoices_path(keep.merge(tab: @tab, page: @page + 1)), class: "b #{'disabled' if @page >= @pages}", "aria-disabled": (@page >= @pages) %>
+        </span>
+      </div>
+    <% elsif filtered %>
+      <%= zempty("No invoices match these filters", "Try another name, #{default_user_title.to_s.downcase} or currency.", link_to("Clear all", invoices_path(tab: @tab), class: "b")) %>
+    <% elsif @tab == "overdue" %>
+      <%= zempty("No overdue invoices", "Every client is fully paid or still within the due date.") %>
+    <% else %>
+      <%= zempty("No invoices here yet", "Invoices raised in the office or on the mobile app appear here.") %>
+    <% end %>
+  </section>
+</div>

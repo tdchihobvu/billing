@@ -1,9 +1,11 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
+  tenant: one
   region: one
   name: MyString
 
 two:
+  tenant: two
   region: two
   name: MyString

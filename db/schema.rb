@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_09_022348) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_16_180000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -52,6 +52,39 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_09_022348) do
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
 
+  create_table "balance_check_runs", force: :cascade do |t|
+    t.bigint "tenant_id", null: false
+    t.bigint "user_id"
+    t.string "status", default: "running", null: false
+    t.integer "invoices_checked", default: 0, null: false
+    t.integer "issues_found", default: 0, null: false
+    t.text "error"
+    t.datetime "finished_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["tenant_id"], name: "index_balance_check_runs_on_tenant_id"
+    t.index ["user_id"], name: "index_balance_check_runs_on_user_id"
+  end
+
+  create_table "balance_issues", force: :cascade do |t|
+    t.bigint "balance_check_run_id", null: false
+    t.bigint "tenant_id", null: false
+    t.bigint "invoice_id", null: false
+    t.string "kind", null: false
+    t.decimal "stored_total", precision: 18, scale: 2
+    t.decimal "calculated_total", precision: 18, scale: 2
+    t.decimal "stored_paid", precision: 18, scale: 2
+    t.decimal "calculated_paid", precision: 18, scale: 2
+    t.datetime "fixed_at"
+    t.bigint "fixed_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["balance_check_run_id", "kind"], name: "index_balance_issues_on_balance_check_run_id_and_kind"
+    t.index ["balance_check_run_id"], name: "index_balance_issues_on_balance_check_run_id"
+    t.index ["invoice_id"], name: "index_balance_issues_on_invoice_id"
+    t.index ["tenant_id"], name: "index_balance_issues_on_tenant_id"
+  end
+
   create_table "banks", force: :cascade do |t|
     t.bigint "tenant_id", null: false
     t.string "bank_name", null: false
@@ -85,6 +118,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_09_022348) do
     t.boolean "active", default: true
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "display_name"
     t.index ["client_id"], name: "index_branches_on_client_id"
     t.index ["license_category_id"], name: "index_branches_on_license_category_id"
     t.index ["license_option_id"], name: "index_branches_on_license_option_id"
@@ -386,6 +420,16 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_09_022348) do
     t.index ["user_id"], name: "index_invoices_on_user_id"
   end
 
+  create_table "license_approval_events", force: :cascade do |t|
+    t.bigint "license_id", null: false
+    t.bigint "user_id"
+    t.string "action", null: false
+    t.string "stage"
+    t.text "note"
+    t.datetime "created_at", null: false
+    t.index ["license_id"], name: "index_license_approval_events_on_license_id"
+  end
+
   create_table "license_categories", force: :cascade do |t|
     t.string "name", null: false
     t.string "description"
@@ -423,10 +467,29 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_09_022348) do
     t.boolean "is_special", default: false
     t.boolean "paid", default: false
     t.string "status", default: "Not Paid", null: false
+    t.string "approval_status", default: "pending_payment", null: false
+    t.datetime "queued_at"
+    t.bigint "finance_approved_by_id"
+    t.datetime "finance_approved_at"
+    t.bigint "manager_approved_by_id"
+    t.datetime "manager_approved_at"
+    t.bigint "rejected_by_id"
+    t.datetime "rejected_at"
+    t.string "rejected_stage"
+    t.text "rejection_reason"
+    t.index ["approval_status"], name: "index_licenses_on_approval_status"
     t.index ["client_id"], name: "index_licenses_on_client_id"
     t.index ["invoice_id"], name: "index_licenses_on_invoice_id"
     t.index ["license_category_id"], name: "index_licenses_on_license_category_id"
     t.index ["license_option_id"], name: "index_licenses_on_license_option_id"
+  end
+
+  create_table "licenses_vehicles", id: false, force: :cascade do |t|
+    t.bigint "license_id", null: false
+    t.bigint "vehicle_id", null: false
+    t.index ["license_id", "vehicle_id"], name: "index_licenses_vehicles_on_license_id_and_vehicle_id", unique: true
+    t.index ["license_id"], name: "index_licenses_vehicles_on_license_id"
+    t.index ["vehicle_id"], name: "index_licenses_vehicles_on_vehicle_id"
   end
 
   create_table "measuring_units", force: :cascade do |t|
@@ -445,6 +508,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_09_022348) do
     t.integer "user_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "decision"
+    t.datetime "decided_at"
+    t.text "decision_note"
+    t.index ["processed", "process_url"], name: "index_notifications_on_processed_and_process_url"
   end
 
   create_table "payment_forms", force: :cascade do |t|
@@ -584,6 +651,20 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_09_022348) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "roles", force: :cascade do |t|
+    t.bigint "tenant_id", null: false
+    t.string "key", null: false
+    t.string "name", null: false
+    t.text "description"
+    t.jsonb "permissions", default: [], null: false
+    t.boolean "built_in", default: false, null: false
+    t.integer "position", default: 100, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["tenant_id", "key"], name: "index_roles_on_tenant_id_and_key", unique: true
+    t.index ["tenant_id"], name: "index_roles_on_tenant_id"
+  end
+
   create_table "setting_categories", force: :cascade do |t|
     t.string "name"
   end
@@ -641,6 +722,25 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_09_022348) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["name"], name: "index_suppliers_on_name", unique: true
+  end
+
+  create_table "system_events", force: :cascade do |t|
+    t.bigint "tenant_id"
+    t.bigint "user_id"
+    t.string "kind", null: false
+    t.string "title", null: false
+    t.text "details"
+    t.string "path"
+    t.string "record_type"
+    t.bigint "record_id"
+    t.datetime "resolved_at"
+    t.bigint "resolved_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["kind"], name: "index_system_events_on_kind"
+    t.index ["tenant_id", "resolved_at", "created_at"], name: "idx_on_tenant_id_resolved_at_created_at_1e8d9198e0"
+    t.index ["tenant_id"], name: "index_system_events_on_tenant_id"
+    t.index ["user_id"], name: "index_system_events_on_user_id"
   end
 
   create_table "system_modules", force: :cascade do |t|
@@ -789,6 +889,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_09_022348) do
     t.integer "regional_office_id"
     t.string "username", null: false
     t.string "user_fullname"
+    t.boolean "must_change_password", default: false, null: false
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
@@ -803,8 +904,27 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_09_022348) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "vehicles", force: :cascade do |t|
+    t.bigint "tenant_id", null: false
+    t.bigint "client_id", null: false
+    t.string "registration_number", null: false
+    t.string "make_model"
+    t.string "description"
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["client_id"], name: "index_vehicles_on_client_id"
+    t.index ["tenant_id", "registration_number"], name: "index_vehicles_on_tenant_id_and_registration_number", unique: true
+    t.index ["tenant_id"], name: "index_vehicles_on_tenant_id"
+  end
+
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "balance_check_runs", "tenants"
+  add_foreign_key "balance_check_runs", "users"
+  add_foreign_key "balance_issues", "balance_check_runs"
+  add_foreign_key "balance_issues", "invoices"
+  add_foreign_key "balance_issues", "tenants"
   add_foreign_key "banks", "currencies"
   add_foreign_key "banks", "tenants"
   add_foreign_key "branches", "clients"
@@ -832,10 +952,13 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_09_022348) do
   add_foreign_key "invoices", "clients"
   add_foreign_key "invoices", "currencies"
   add_foreign_key "invoices", "users"
+  add_foreign_key "license_approval_events", "licenses"
   add_foreign_key "licenses", "clients"
   add_foreign_key "licenses", "invoices"
   add_foreign_key "licenses", "license_categories"
   add_foreign_key "licenses", "license_options"
+  add_foreign_key "licenses_vehicles", "licenses"
+  add_foreign_key "licenses_vehicles", "vehicles"
   add_foreign_key "products", "brands"
   add_foreign_key "products", "measuring_units"
   add_foreign_key "products", "product_categories"
@@ -851,8 +974,11 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_09_022348) do
   add_foreign_key "receipts", "users"
   add_foreign_key "regional_offices", "regions"
   add_foreign_key "regional_offices", "tenants"
+  add_foreign_key "roles", "tenants"
   add_foreign_key "shifts", "devices"
   add_foreign_key "shifts", "tenants"
+  add_foreign_key "system_events", "tenants"
+  add_foreign_key "system_events", "users"
   add_foreign_key "system_settings", "config_keys"
   add_foreign_key "system_settings", "tenants"
   add_foreign_key "tarrifs", "tenants"
@@ -861,4 +987,6 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_09_022348) do
   add_foreign_key "transactions", "clients", validate: false
   add_foreign_key "transactions", "users"
   add_foreign_key "users", "tenants"
+  add_foreign_key "vehicles", "clients"
+  add_foreign_key "vehicles", "tenants"
 end

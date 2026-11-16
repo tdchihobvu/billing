@@ -17,10 +17,10 @@ class IndustriesControllerTest < ActionDispatch::IntegrationTest
 
   test "should create industry" do
     assert_difference("Industry.count") do
-      post industries_url, params: { industry: { name: @industry.name } }
+      post industries_url, params: { industry: fresh_attributes(@industry) }
     end
 
-    assert_redirected_to industry_url(Industry.last)
+    assert_redirected_to industries_url
   end
 
   test "should show industry" do
@@ -39,8 +39,10 @@ class IndustriesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should destroy industry" do
+    record = unreferenced_copy(@industry)
+
     assert_difference("Industry.count", -1) do
-      delete industry_url(@industry)
+      delete industry_url(record)
     end
 
     assert_redirected_to industries_url

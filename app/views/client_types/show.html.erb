@@ -1,10 +1,1 @@
-<p style="color: green"><%= notice %></p>
-
-<%= render @client_type %>
-
-<div>
-  <%= link_to "Edit this client type", edit_client_type_path(@client_type) %> |
-  <%= link_to "Back to client types", client_types_path %>
-
-  <%= button_to "Destroy this client type", @client_type, method: :delete %>
-</div>
+<%= render "shared/crud_show", record: @client_type, model: ClientType, crumb: link_to("Sales / Clients / Client types", client_types_path), index_path: client_types_path %>

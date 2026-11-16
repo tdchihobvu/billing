@@ -1,2 +1,4 @@
-<h1>Reports#collection</h1>
-<p>Find me in app/views/reports/collection.html.erb</p>
+<div class="zpage">
+  <%= render "shared/zhead", title: "Collection", crumb: link_to("Insights / Reports", reports_path) %>
+  <section class="box"><%= zempty("Nothing to show here", "Use the Collections report to see receipts by period.", link_to("Open Collections", collections_reports_path, class: "b main")) %></section>
+</div>

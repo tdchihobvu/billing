@@ -1,0 +1,31 @@
+<%# A settings list in the ZIMURA design.
+    Locals: records, model, title, crumb, new_path, new_label, columns (optional), sub (optional). %>
+<% cols = local_assigns[:columns] || zcrud_columns(model) %>
+<div class="zpage">
+  <%= render "shared/zhead", title: title, crumb: crumb, sub: local_assigns[:sub] || "#{pluralize(records.size, model.model_name.human.downcase)}",
+             actions: (link_to(new_path, class: "b main") { safe_join([tag.i(class: "fas fa-plus", "aria-hidden": "true"), " ", new_label]) } if local_assigns[:new_path]) %>
+  <section class="box">
+    <% if records.any? %>
+      <div class="zwrap">
+        <table class="zt" style="min-width:560px">
+          <thead><tr><% cols.each do |c| %><th class="<%= 'r' if zcrud_numeric?(model, c) %>"><%= zcrud_label(c) %></th><% end %><th><span class="visually-hidden">Actions</span></th></tr></thead>
+          <tbody>
+            <% records.each do |record| %>
+              <tr>
+                <% cols.each_with_index do |c, k| %>
+                  <td class="<%= 'r' if zcrud_numeric?(model, c) %>"><%= k.zero? ? link_to(zcrud_value(record, c), edit_polymorphic_path(record), class: "zno") : zcrud_value(record, c) %></td>
+                <% end %>
+                <td class="r"><div class="acts" style="justify-content:flex-end">
+                  <%= link_to "Edit", edit_polymorphic_path(record), class: "b" %>
+                  <%= link_to "Show", polymorphic_path(record), class: "b ghost" %>
+                </div></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <%= zempty("Nothing here yet", "Add the first #{model.model_name.human.downcase} to start using it in forms.", (link_to(new_label, new_path, class: "b main") if local_assigns[:new_path])) %>
+    <% end %>
+  </section>
+</div>

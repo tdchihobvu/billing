@@ -13,7 +13,7 @@ class Branch < ApplicationRecord
   end
 
   def branch_name
-    "#{client.name} #{location}"
+    display_name.presence || "#{client.name} #{location}"
   end
 
   private

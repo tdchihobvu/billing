@@ -1,9 +1,3 @@
-<h1>New tarrif</h1>
-
-<%= render "form", tarrif: @tarrif %>
-
-<br>
-
-<div>
-  <%= link_to "Back to tarrifs", tarrifs_path %>
-</div>
+<%= render layout: "shared/crud_form", locals: { title: "New tariff", crumb: link_to("Sales / Clients / Tariffs", tarrifs_path), back_path: tarrifs_path, back_label: "Back to tariffs" } do %>
+  <%= render "form", tarrif: @tarrif %>
+<% end %>

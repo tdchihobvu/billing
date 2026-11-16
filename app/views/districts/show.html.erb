@@ -1,10 +1,1 @@
-<p style="color: green"><%= notice %></p>
-
-<%= render @district %>
-
-<div>
-  <%= link_to "Edit this district", edit_district_path(@district) %> |
-  <%= link_to "Back to districts", districts_path %>
-
-  <%= button_to "Destroy this district", @district, method: :delete %>
-</div>
+<%= render "shared/crud_show", record: @district, model: District, crumb: link_to("Settings / Districts", districts_path), index_path: districts_path %>

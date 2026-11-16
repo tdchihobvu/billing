@@ -1,6 +1,7 @@
 class ReceiptsController < ApplicationController
   include ActionView::Helpers::NumberHelper
   before_action :set_receipt, only: %i[ show edit update destroy print ]
+  before_action :set_form_client, only: %i[ edit update ]
 
   # Shifts actions
   def shifts
@@ -9,13 +10,26 @@ class ReceiptsController < ApplicationController
 
   # GET /receipts
   def index
-    @currencies = Currency.all
-
-    @receipts = current_user.tenant.receipts
-                             .active
-                             # .where(transaction_date: Date.current.all_month)
-                             .includes(:client, :payment_form, :currency)
-                             .order(transaction_date: :desc).limit(50)
+    @currencies = Currency.order(:name)
+    @payment_forms = PaymentForm.order(:name)
+    @users = tenant.users.order(:firstname, :lastname)
+    scope = current_user.tenant.receipts.active
+    @unlinked = params[:unlinked] == "1"
+    scope = scope.where(invoice_id: nil, transaction_date: 30.days.ago.beginning_of_day..Time.current.end_of_day) if @unlinked
+    scope = scope.where(user_id: params[:user_id]) if params[:user_id].present?
+    scope = scope.where(currency_id: params[:currency_id]) if params[:currency_id].present?
+    scope = scope.where(payment_form_id: params[:payment_form_id]) if params[:payment_form_id].present?
+    if params[:q].present?
+      scope = TextSearch.apply(scope.joins(:client), params[:q], %w[clients.name clients.client_account_number receipts.reference_number])
+    end
+    @count = scope.count
+    @totals = scope.joins(:currency).group("currencies.name").sum(:amount)
+    @per_page = 50
+    @page = [params[:page].to_i, 1].max
+    @pages = [(@count / @per_page.to_f).ceil, 1].max
+    @receipts = scope.includes(:client, :payment_form, :currency, :user, :invoice)
+                     .order(transaction_date: :desc, reference_number: :desc)
+                     .offset((@page - 1) * @per_page).limit(@per_page)
   end
 
   # GET /receipts/1
@@ -24,11 +38,15 @@ class ReceiptsController < ApplicationController
 
   # GET /receipts/new
   def new
-    @clients = Client.search(params[:search])
+    @clients = if params[:search].present?
+                 TextSearch.apply(tenant.clients, params[:search], %w[clients.name clients.trading_name clients.client_account_number clients.city clients.location]).order(:name).limit(50)
+               else
+                 []
+               end
   end
 
   def record_receipt
-    @client = Client.find(params[:client_id])
+    @client = tenant.clients.find(params[:client_id])
     @clients = Client.where(id: @client.id)
     # @client.update_client_balances
     as_at = Date.today
@@ -44,7 +62,7 @@ class ReceiptsController < ApplicationController
   def invoices
     # get the member
     @target = params[:target]
-    @client = Client.find(params[:client])
+    @client = tenant.clients.find(params[:client])
     @invoices = @client.invoices.active.order('invoice_number asc')
     puts("tiri tiiii #{@client.name}")
     respond_to do |format|
@@ -60,8 +78,10 @@ class ReceiptsController < ApplicationController
   def create
     @receipt = Receipt.new(receipt_params)
     @receipt.tenant_id = tenant.id
-    @client = Client.find_by(id: params[:receipt][:client_id])
-    @clients = Client.where(id: @client.id)
+    @client = tenant.clients.find_by(id: params[:receipt][:client_id])
+    @clients = @client ? Client.where(id: @client.id) : Client.none
+    # The receipt form is built around one client; without one, go back and pick it.
+    return redirect_to(new_receipt_path, alert: "Choose the client first, then record the receipt.") unless @client
 
     rec_no = Receipt.generate_receipt_number(current_user.tenant)
 
@@ -78,14 +98,17 @@ class ReceiptsController < ApplicationController
     else
       Rails.logger.info "RECEIPT ERRORS: #{@receipt.errors.full_messages}"
 
-      render :record_receipt, status: :unprocessable_entity
+      # Re-show the receipt form (with errors) instead of the client search page.
+      # Force HTML: Turbo submits as TURBO_STREAM, and new.turbo_stream.erb renders nothing.
+      @invoices = []
+      render :record_receipt, status: :unprocessable_entity, formats: [:html]
     end
   end
 
   # PATCH/PUT /receipts/1
   def update
     if @receipt.update(receipt_params)
-      invoice = Invoice.find(@receipt.invoice_id)
+      invoice = Invoice.find_by(id: @receipt.invoice_id)
       unless invoice.nil?
         invoice.update_attribute(:last_payment_update, @receipt.updated_at + 2.hours)
       end
@@ -95,113 +118,12 @@ class ReceiptsController < ApplicationController
     end
   end
 
-  def print 
-    pdf = Prawn::Document.new 
-    # Start of PDF
-
-      pdf.image "#{Rails.root}/public/tenant_logo/#{logo_path}", height: 100
-
-      pdf.draw_text "RECEIPT", :at => [400,700], style: :bold, size: 22
-
-      pdf.bounding_box([400,690], width: 330, height: 110, :pad => 2) do 
-        pdf.move_down 8
-        pdf.indent(0, 15) do # left and right padding
-          pdf.text "#{tenant.company_name}", size: 10, style: :bold
-        end
-        pdf.move_down 5
-        pdf.indent 0,0 do
-          pdf.text "#{tenant.address_1}", align: :left, size: 9
-          unless tenant.address_2.nil?
-            pdf.text "#{tenant.address_2}", align: :left, size: 9
-          end
-          pdf.text "#{tenant.location}", align: :left, size: 9
-          pdf.text "#{tenant.city}, #{tenant.country}", align: :left, size: 9
-          pdf.text "T: #{tenant.phone_1}, #{tenant.mobile_1}", align: :left, size: 9
-          pdf.text "E: #{tenant.sales_email}", align: :left, size: 9
-        end
-        pdf.move_down 3
-        # pdf.indent(0,0) do # left and right padding
-        #   pdf.text "VAT Number: #{tenant.vat_number}", size: 9, style: :bold
-        #   pdf.text "TIN Number: #{tenant.bp_number}", size: 9, style: :bold
-        # end
-      end
-
-      pdf.stroke_horizontal_rule
-      pdf.move_down 20
-
-      pdf.bounding_box([0,565], width: 200, height: 95, :pad => 2) do 
-        pdf.move_down 5
-        pdf.text "Receipt Details", align: :left, size: 12, style: :bold, :color => "A8A8A8"
-      end
-
-      pdf.bounding_box([320,570], width: 200, height: 95, :pad => 2) do 
-        pdf.move_down 5
-        pdf.indent 0,0 do
-          pdf.text "Receipt No: ", align: :right, size: 9
-          pdf.text "#{@receipt.reference_number}", align: :right, size: 10, style: :bold
-          pdf.fill_color "ffffff"
-          pdf.text ".", align: :right, size: 7
-          pdf.fill_color "222222"
-          pdf.text "Date: ", align: :right, size: 9
-          pdf.text "#{@receipt.transaction_date.strftime("%d/%m/%Y")}", align: :right, size: 10
-        end
-      end
-
-      pdf.bounding_box([0,480], width: 200, height: 95, :pad => 2) do 
-        pdf.move_down 5
-        pdf.text "Client Details", align: :left, size: 12, style: :bold, :color => "A8A8A8"
-      end
-
-      pdf.bounding_box([320,485], width: 200, height: 95, :pad => 2) do 
-        pdf.move_down 5
-        pdf.text "#{@receipt.client.name.upcase}", align: :right, size: 9, style: :bold
-        pdf.indent 0,0 do
-          pdf.text "#{@receipt.client.address_1}", align: :right, size: 9
-          pdf.text "#{@receipt.client.address_2} #{@receipt.client.location}", align: :right, size: 9
-          pdf.text "#{@receipt.client.city}, #{@receipt.client.country}", align: :right, size: 9
-          pdf.text "Customer VAT No: #{@receipt.client.vat_number}", align: :right, size: 9
-          pdf.text "Customer TIN No: #{@receipt.client.bp_number}", align: :right, size: 9
-        end
-      end
-      # pdf.stroke_horizontal_rule
-
-      pdf.bounding_box([0,380], width: 200, height: 95, :pad => 2) do 
-        pdf.move_down 5
-        pdf.text "Payment Details", align: :left, size: 12, style: :bold, :color => "A8A8A8"
-      end
-
-      pdf.bounding_box([320,380], width: 200, height: 95, :pad => 2) do 
-        pdf.move_down 5
-        pdf.indent 0,0 do
-          pdf.text "Payment Method: #{@receipt.payment_form.name}", align: :right, size: 10
-          pdf.fill_color "ffffff"
-          pdf.text ".", align: :right, size: 9
-          pdf.fill_color "222222"
-          pdf.text "#{@receipt.description}", align: :right, size: 10
-        end
-      end
-
-      pdf.stroke_horizontal_rule
-
-      pdf.bounding_box([0,300], width: 200, height: 95, :pad => 2) do 
-        pdf.move_down 35
-        pdf.text "Amount Paid", align: :left, size: 12, style: :bold, :color => "A8A8A8"
-      end
-
-      pdf.bounding_box([450,295], width: 200, height: 125, :pad => 2) do 
-        pdf.move_down 35
-        pdf.text "#{number_to_currency(@receipt.amount, unit: "#{@receipt.currency.symbol} ")}", align: :left, size: 12, style: :bold
-      end
-
-      pdf.text "Thank you for your payment!", align: :center, :color => "A8A8A8"
-
-      pdf.number_pages "Receipt ##{@receipt.reference_number} | Transaction By #{@receipt.user.user_fullname} | Generated from Aibes Billing System ver7.1", :start_count_at => 0, :page_filter => :all, :at => [pdf.bounds.right - 300, 8], :align => :right, :size => 7      
-      pdf.number_pages "A product of Dapsoft Solutions | <page> of <total>", :start_count_at => 0, :page_filter => :all, :at => [pdf.bounds.right - 200, 0], :align => :right, :size => 5.5  
-
-      # End of PDF
-      send_data(pdf.render, 
-        filename: "#{@receipt.client.name} - #{@receipt.reference_number}.pdf",
-        type: 'application/pdf', disposition: 'inline')   
+  def print
+    pdf = ReceiptPdf.new(@receipt, tenant: tenant, logo_file: logo_path, brand: helpers.brand_color,
+                                   user_title: helpers.default_user_title)
+    send_data(pdf.render,
+              filename: "#{@receipt.client.name} - #{@receipt.reference_number}.pdf",
+              type: "application/pdf", disposition: "inline")
   end
 
   # DELETE /receipts/1
@@ -231,9 +153,14 @@ class ReceiptsController < ApplicationController
   end
 
   private
+    def set_form_client
+      @client = @receipt.client
+      @clients = Client.where(id: @client.id)
+    end
+
     # Use callbacks to share common setup or constraints between actions.
     def set_receipt
-      @receipt = Receipt.find(params[:id])
+      @receipt = Receipt.where(tenant_id: tenant.id).find(params[:id])
     end
 
     # Only allow a list of trusted parameters through.

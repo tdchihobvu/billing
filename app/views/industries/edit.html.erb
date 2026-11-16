@@ -1,10 +1,3 @@
-<h1>Editing industry</h1>
-
-<%= render "form", industry: @industry %>
-
-<br>
-
-<div>
-  <%= link_to "Show this industry", @industry %> |
-  <%= link_to "Back to industries", industries_path %>
-</div>
+<%= render layout: "shared/crud_form", locals: { title: "Edit " + (Industry.model_name.human.downcase), crumb: link_to("Sales / Clients / Industries and tariffs", industries_path), back_path: industries_path, back_label: "Back to industries and tariffs" } do %>
+  <%= render "form", industry: @industry %>
+<% end %>

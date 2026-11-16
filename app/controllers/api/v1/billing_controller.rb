@@ -82,8 +82,8 @@ module Api
         # check if the client already exists
         unless Client.exists?(name: params[:name])
           @client = Client.new
-          @industry = Industry.find_by(name: params[:industry])
-          @client_type = ClientType.find_by(name: params[:clientType])
+          @industry = Industry.find_by_name_ignoring_case(params[:industry])
+          @client_type = ClientType.find_by_name_ignoring_case(params[:clientType])
           if @client_type.nil?
             render json: {status: "ERROR", message: "Client type is invalid"}, status: :unprocessable_entity
             return
@@ -140,7 +140,7 @@ module Api
         return render_error("Please provide client name.", :unprocessable_entity) if client_name.blank?
 
         # Find existing client under the current tenant
-        @client = tenant.clients.where("TRIM(name) = ?", client_name).first
+        @client = tenant.clients.find_by_name_ignoring_case(client_name)
 
         return render_error(
           "Client '#{client_name}' could not be found.",
@@ -150,7 +150,7 @@ module Api
         # Create branch for the existing client
         branch = @client.branches.new(branch_params)
         branch.tenant_id = current_device.tenant_id
-        branch.license_category_id = 1
+        branch.license_category_id = LicenseCategory.order(:id).first&.id
         branch.license_option_id = license_option.id
         if branch.save
           render json: {
@@ -165,6 +165,8 @@ module Api
         else
           render_error(branch.errors.full_messages, :unprocessable_entity)
         end
+      rescue ActiveRecord::RecordNotUnique
+        render_error("This branch already exists for #{@client.name}.", :conflict)
       end      
 
     	def open_shift
@@ -172,7 +174,7 @@ module Api
     		# check if the district is included
     		unless params[:District].nil? || params[:District].empty?
     			# search if the district exists in the database
-    			@district = District.find_by(name: params[:District])
+    			@district = District.find_by_name_ignoring_case(params[:District])
     			unless @district.nil?
 		    		# check if there is an open shift
 		    		# if active_shift.nil?
@@ -224,8 +226,8 @@ module Api
             # check if the shift is open
               # check if the client exists
               if Client.exists?(name: params[:clientName], tenant_id: current_device.tenant_id)
-                @client = Client.find_by(name: params[:clientName], tenant_id: current_device.tenant_id)
-                @currency = Currency.find_by(name: params[:invoiceCurrency])
+                @client = Client.find_by_name_ignoring_case(params[:clientName], tenant_id: current_device.tenant_id)
+                @currency = Currency.find_by_name_ignoring_case(params[:invoiceCurrency])
                 unless current_user.nil?
                   unless Invoice.exists?(tenant_id: current_device.tenant_id, client_id: @client.id, source_reference: params[:invoiceReference])
                     # return render json: { status: "error", message: "Renewal Month cannot be blank" } if params[:renewalMonth].nil?
@@ -262,10 +264,10 @@ module Api
 
                       invoice.save!
 
-                      option = LicenseOption.find_by(name: params[:licenseOption]) ||
+                      option = LicenseOption.find_by_name_ignoring_case(params[:licenseOption]) ||
                                LicenseOption.find_by!(name: 'Monthly')
 
-                      category = LicenseCategory.find_by(name: params[:licenseCategory]) ||
+                      category = LicenseCategory.find_by_name_ignoring_case(params[:licenseCategory]) ||
                                  LicenseCategory.first!
 
                       license = invoice.create_license!(
@@ -304,8 +306,7 @@ module Api
               # get the shift id to create a new shift
               n_shift = Shift.new
               # get the district id
-              @district = District.find_by(name: params[:district])
-              puts("***************************** the district posted from #{current_device.terminal_id} >>>> is #{params[:district]} with object #{@district}")
+              @district = District.find_by_name_ignoring_case(params[:district])
               unless @district.nil?
                 puts("status: 'SUCCESS', message: 'Creating shift with #{params[:shiftId]} for district #{@district.name}', status: :ok")
                 n_shift.shift_id = params[:shiftId]   
@@ -320,8 +321,8 @@ module Api
                 if n_shift.save 
                   # check if the client exists
                   if Client.exists?(name: params[:clientName], tenant_id: current_device.tenant_id)
-                    @client = Client.find_by(name: params[:clientName], tenant_id: current_device.tenant_id)
-                    @currency = Currency.find_by(name: params[:invoiceCurrency])
+                    @client = Client.find_by_name_ignoring_case(params[:clientName], tenant_id: current_device.tenant_id)
+                    @currency = Currency.find_by_name_ignoring_case(params[:invoiceCurrency])
                     unless current_user.nil?
                       unless Invoice.exists?(tenant_id: current_device.tenant_id, client_id: @client.id, source_reference: params[:invoiceReference])
                         invoice = Invoice.new
@@ -413,7 +414,6 @@ module Api
         source_reference = params[:invoiceReference]
         void_reason = params[:voidReason]
         @invoice = Invoice.find_by(source_reference: source_reference, user_id: current_device.user_id)
-        puts("*********** invoice #{@invoice}")
         unless @invoice.nil?
           if @invoice.deleted?
             render json: {status: "ERROR", message: "Invoice with source reference #{source_reference} is already marked as void."}, status: 404
@@ -443,7 +443,7 @@ module Api
         source_reference = params[:receiptReference]
         void_reason = params[:voidReason]
         # @receipt = Receipt.find_by(sync_reference: source_reference, user_id: current_device.user.id)
-        @receipt = Receipt.where("(source_reference = #{source_reference} AND user_id = #{current_device.user_id}) OR (sync_reference = #{source_reference} AND user_id = #{current_device.user_id})").first
+        @receipt = Receipt.where("(source_reference = :ref OR sync_reference = :ref) AND user_id = :user_id", ref: source_reference.to_s, user_id: current_device.user_id).first
         unless @receipt.nil?
           if @receipt.deleted?
             render json: {status: "ERROR", message: "Receipt with source reference #{source_reference} is already marked as void."}, status: 404
@@ -453,7 +453,7 @@ module Api
                 unless @receipt.invoice_reference.nil?
                   invoice = Invoice.find_by(source_reference: @receipt.invoice_reference)
                   unless invoice.nil?
-                    invoice.update(status: 'Not Paid', paid: false, amount_paid: invoice.total_paid)
+                    invoice.update_balance
                   end
                 end
                 user = current_device.user
@@ -493,7 +493,7 @@ module Api
         # provide client parameters
         client = params[:client_name]
         unless client.nil?
-          @client = Client.find_by(name: client)
+          @client = tenant.clients.find_by_name_ignoring_case(client)
           unless @client.nil?
             render json: @client.invoices.active, each_serializer: InvoiceSerializer, root: true
           else
@@ -508,10 +508,7 @@ module Api
         # derive the username from the device
         unless current_device.nil?
           @user = current_device.user
-          @user.invoices.joins(:license).distinct.each do |u|
-            puts("*** #{u.id},#{u.invoice_date},#{u.source_reference},#{u.sync_reference}")
-          end
-          render json: @user.invoices.active.joins(:license).distinct, each_serializer: InvoiceSerializer, root: true
+          render json: @user.invoices.active.joins(:license).distinct.preload(:client, :user, :currency, :license), each_serializer: InvoiceSerializer, root: true
         else
           render json: {status: "ERROR", message: "Device could not be found or does not exist."}, status: 203
         end
@@ -521,13 +518,38 @@ module Api
         # derive the username from the device
         unless current_device.nil?
           @user = current_device.user
-          render json: @user.receipts.active.where.not(invoice_reference: nil), each_serializer: ReceiptSerializer, root: true
+          # Website receipts link by invoice_id and have no invoice_reference.
+          render json: @user.receipts.active.where("receipts.invoice_reference IS NOT NULL OR receipts.invoice_id IS NOT NULL").preload(:client, :user, :currency, :payment_form, :invoice), each_serializer: ReceiptSerializer, root: true
         else
           render json: {status: "ERROR", message: "Device could not be found or does not exist."}, status: 203
         end
       end
 
+      # Unpaid and part-paid invoices from any inspector, so another can continue them.
+      def open_invoices
+        invoices = tenant.invoices.sales.where("invoices.invoice_total > invoices.amount_paid")
+        if params[:client_name].present?
+          client = tenant.clients.find_by_name_ignoring_case(params[:client_name])
+          return render_error("Client '#{params[:client_name]}' could not be found.", :not_found) if client.nil?
+
+          invoices = invoices.where(client_id: client.id)
+        end
+        render json: invoices.preload(:client, :user, :currency, :license).order(invoice_date: :desc).limit(200), each_serializer: InvoiceSerializer, root: true
+      end
+
+      # Lets an inspector check whether a client holds a valid licence.
+      def license_status
+        term = params[:search].to_s.strip
+        return render_error("Enter at least 2 characters to search.", :unprocessable_entity) if term.length < 2
+
+        clients = TextSearch.apply(tenant.clients, term, %w[clients.name clients.trading_name clients.client_account_number]).order(:name).limit(20)
+        licenses = License.where(client_id: clients.map(&:id)).joins(:invoice).where(invoices: { deleted: false }).preload(:license_category).order(expiry_date: :desc).group_by(&:client_id)
+
+        render json: clients.map { |client| license_summary(client, licenses[client.id]&.first) }
+      end
+
 		  def customers_list
+
 	      @clients = tenant.clients
 	      render json: @clients, each_serializer: ClientSerializer, root: false
 		  end
@@ -566,14 +588,36 @@ module Api
         render json: @client_types, each_serializer: ClientTypeSerializer, root: false        
       end
 
+      # Only the options the website offers, shortest first (Special counts in days).
       def license_options
-        @license_options = LicenseOption.all
-        render json: @license_options, each_serializer: LicenseOptionSerializer, root: false        
+        @license_options = LicenseOption.active.order(Arel.sql("CASE WHEN count_by = 'days' THEN 0 ELSE 1 END"), :months, :name)
+        render json: @license_options, each_serializer: LicenseOptionSerializer, root: false
       end
 
       def license_categories
-        @license_categories = LicenseCategory.all
-        render json: @license_categories, each_serializer: LicenseCategorySerializer, root: false        
+        @license_categories = LicenseCategory.order(:name)
+        render json: @license_categories, each_serializer: LicenseCategorySerializer, root: false
+      end
+
+      # Every client's latest licence status, for the phone's offline licence check.
+      # With ?since=<server_time from the last call> only clients whose details or licences
+      # changed since then are sent, so later syncs use very little data.
+      def license_statuses
+        server_time = Time.current
+        since = (Time.zone.parse(params[:since].to_s) rescue nil) if params[:since].present?
+
+        clients = tenant.clients
+        if since
+          changed_licences = License.joins(:invoice).where(invoices: { tenant_id: tenant.id })
+                                    .where("licenses.updated_at > :t OR invoices.updated_at > :t", t: since).select(:client_id)
+          clients = clients.where("clients.updated_at > ?", since).or(tenant.clients.where(id: changed_licences))
+        end
+        ids = clients.pluck(:id)
+        licences = License.where(client_id: ids).joins(:invoice).where(invoices: { deleted: false })
+                          .preload(:license_category).order(expiry_date: :desc).group_by(&:client_id)
+        summaries = tenant.clients.where(id: ids).order(:name).map { |client| license_summary(client, licences[client.id]&.first) }
+
+        render json: { server_time: server_time.iso8601, full: since.nil?, clients: summaries }
       end
 
       def upload_invoices    
@@ -594,17 +638,39 @@ module Api
         UserLog.create(user_id: user.id, activity: activity, ipaddress: ipaddress, device_name: device_name, perfomed_at: Time.now + 2.hours)
       end
 
+def license_summary(client, license)
+  summary = { client_name: client.name, account_number: client.client_account_number }
+  return summary.merge(license_status: "No licence") if license.nil?
+
+  status = if license.expiry_date < Date.current then "Expired"
+           elsif !license.active then "Inactive"
+           elsif !license.paid then "Unpaid"
+           elsif !license.printable? then "Awaiting approval"
+           else "Valid"
+           end
+
+  summary.merge(license_status: status, license_type: license.license_category.name, valid_from: license.renewal_date, valid_to: license.expiry_date)
+end
+
       def branch_params
-        params.require(:branch).permit(
+        source = params[:branch].respond_to?(:permit) ? params[:branch] : params
+        permitted = source.permit(
           :client_id,
           :tenant_id,
           :name,
+          :display_name,
           :address_1,
           :address_2,
           :location,
           :city,
           :country
         )
+        # The app sends "address" and its branch name as "name". Branch#name is
+        # generated from the address, so the name people typed goes on the licence.
+        permitted[:address_1] = permitted[:address_1].presence || source[:address].to_s
+        permitted[:location] = permitted[:location].to_s
+        permitted[:display_name] = permitted[:display_name].presence || permitted[:name].presence
+        permitted
       end
 
       def create_receipt
@@ -628,8 +694,8 @@ module Api
           source_reference: params[:receiptNumber]
         )
 
-        @currency = Currency.find_by(name: params[:currencyUsed])
-        @payment_form = PaymentForm.find_by(name: params[:transactionType])
+        @currency = Currency.find_by_name_ignoring_case(params[:currencyUsed])
+        @payment_form = PaymentForm.find_by_name_ignoring_case(params[:transactionType])
 
         return render_error(
           "Currency is invalid",
@@ -703,10 +769,8 @@ module Api
       def attach_invoice(receipt)
         invoice_reference = params[:invoice_reference].to_s.strip
 
-        invoice = Invoice.find_by(
-          source_reference: invoice_reference,
-          client_id: @client.id
-        )
+        # Website invoices have no mobile reference, so they are sent by number.
+        invoice = invoice_reference.blank? ? nil : @client.invoices.where("invoices.source_reference = :ref OR invoices.invoice_number = :ref", ref: invoice_reference).first
 
         if tenant.attach_invoice_to_receipt? && invoice.nil?
           render_error(
@@ -762,7 +826,7 @@ module Api
           return nil
         end
 
-        district = District.find_by(name: params[:district])
+        district = District.find_by_name_ignoring_case(params[:district])
 
         unless district
           render_error(
@@ -805,6 +869,13 @@ module Api
       end
 
       def render_error(message, status)
+        # A refused upload from a phone (invoice, receipt, client, branch) is logged for follow-up.
+        if request.post? || request.patch?
+          SystemEvent.record(kind: "mobile_upload", tenant_id: current_device&.tenant_id, user: current_device&.user,
+                             path: "#{request.method} #{request.path}",
+                             title: "Phone upload refused: #{action_name.humanize}",
+                             details: ["#{message}", "Device: #{current_device&.name || request.headers['TerminalId']}"].join("\n"))
+        end
         render json: {
           status: "ERROR",
           message: message

@@ -14,9 +14,11 @@ class Users::SessionsController < Devise::SessionsController
   end
 
   # POST /resource/sign_in
-  # def create
-  #   super
-  # end
+  def create
+    super do |user|
+      user.update_column(:must_change_password, true) if user.using_default_password?
+    end
+  end
 
   # DELETE /resource/sign_out
   # def destroy

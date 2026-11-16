@@ -1,0 +1,61 @@
+<%# The licence invoice form in the ZIMURA design, used by New and Edit. Local: invoice. %>
+  <%= form_with(model: invoice, class: "box") do |form| %>
+    <%= render "shared/form_errors", record: invoice %>
+    <%= form.hidden_field :is_proforma %>
+
+    <section class="zsect">
+      <div class="boxh"><h2>Invoice</h2></div>
+      <div class="zgrid">
+        <div class="zfield"><%= form.label :invoice_date, "Invoice Date", class: "req" %><%= form.date_field :invoice_date %></div>
+        <div class="zfield"><%= form.label :invoice_number, "Invoice Number", class: "req" %><%= form.text_field :invoice_number, readonly: true %><span class="zhint">Set automatically.</span></div>
+        <div class="zfield"><%= form.label :invoice_category_id, "Invoice Type", class: "req" %><%= form.select :invoice_category_id, InvoiceCategory.where(id: 2).pluck(:name, :id), { prompt: "Select Type" } %></div>
+        <div class="zfield wide"><%= form.label :client_id, "Client", class: "req" %><%= form.select :client_id, current_user.tenant.clients.order("name Asc").pluck(:name, :id), { include_blank: true }, { data: { controller: "slim" } } %></div>
+        <div class="zfield"><%= form.label :currency_id, "Currency", class: "req" %><%= form.select :currency_id, Currency.pluck(:name, :id), { prompt: "Select Currency" } %></div>
+        <div class="zfield wide">
+          <span class="zlabel" id="pricing-label">Define Item Pricing</span>
+          <div class="zchoices" role="radiogroup" aria-labelledby="pricing-label">
+            <label><%= form.radio_button :product_pricing, "none" %> No VAT</label>
+            <label><%= form.radio_button :product_pricing, "inclusive" %> Unit Price Includes VAT</label>
+            <label><%= form.radio_button :product_pricing, "exclusive" %> Unit Price Excludes VAT</label>
+          </div>
+        </div>
+        <div class="zfield wide"><%= form.label :description, "Invoice Description", class: "req" %><%= form.text_area :description %><span class="zhint">Appears on the client's statement.</span></div>
+      </div>
+    </section>
+
+    <section class="zsect">
+      <div class="boxh"><h2>License Details</h2></div>
+      <%= form.fields_for :license do |f| %>
+        <div class="zgrid">
+          <div class="zfield"><%= f.label :license_category_id, "License Category", class: "req" %><%= f.select :license_category_id, LicenseCategory.all.collect { |a| [a.name, a.id] }, { prompt: "Select Category" } %></div>
+          <div class="zfield"><%= f.label :renewal_date, "Renewal Date" %><%= f.date_field :renewal_date %></div>
+          <div class="zfield"><%= f.label :amount, "Invoice Amount", class: "req" %><%= f.text_field :amount, inputmode: "decimal" %></div>
+          <div class="zfield"><%= f.label :quantity, "No. of Licenses" %><%= f.text_field :quantity, inputmode: "numeric" %></div>
+          <div class="zfield wide">
+            <span class="zlabel req" id="option-label">License Option</span>
+            <div class="zchoices" role="radiogroup" aria-labelledby="option-label">
+              <% LicenseOption.active.each do |o| %>
+                <label><%= f.radio_button :license_option_id, o.id %> <%= o.name %></label>
+              <% end %>
+            </div>
+          </div>
+          <div class="zfield"><%= f.label :special_days, "Special Days" %><%= f.number_field :special_days, min: 0 %><span class="zhint">Only for a Special licence.</span></div>
+          <div class="zfield"><span class="zlabel">Auto Renewal</span><label class="zcheck"><%= f.check_box :auto_renewal %> Raise the renewal invoice automatically</label></div>
+        </div>
+      <% end %>
+    </section>
+
+    <% if can_apply_discount? %>
+      <section class="zsect">
+        <div class="boxh"><h2>Discount</h2><span>Admins only</span></div>
+        <div class="zgrid">
+          <div class="zfield"><%= form.label :discount, "Approved discount (before VAT)" %><%= form.number_field :discount, min: 0, step: "0.01" %></div>
+        </div>
+      </section>
+    <% end %>
+
+    <div class="zformfoot">
+      <%= link_to "Cancel", invoices_path, class: "b" %>
+      <%= form.submit "Save Invoice", class: "b main" %>
+    </div>
+  <% end %>

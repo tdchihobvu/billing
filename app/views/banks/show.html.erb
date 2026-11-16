@@ -1,10 +1,1 @@
-<p style="color: green"><%= notice %></p>
-
-<%= render @bank %>
-
-<div>
-  <%= link_to "Edit this bank", edit_bank_path(@bank) %> |
-  <%= link_to "Back to banks", banks_path %>
-
-  <%#= button_to "Destroy this bank", @bank, method: :delete %>
-</div>
+<%= render "shared/crud_show", record: @bank, model: Bank, crumb: link_to("Settings / Banks", banks_path), index_path: banks_path %>

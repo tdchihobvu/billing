@@ -1,10 +1,3 @@
-<h1>Editing setting category</h1>
-
-<%= render "form", setting_category: @setting_category %>
-
-<br>
-
-<div>
-  <%= link_to "Show this setting category", @setting_category %> |
-  <%= link_to "Back to setting categories", setting_categories_path %>
-</div>
+<%= render layout: "shared/crud_form", locals: { title: "Edit " + (SettingCategory.model_name.human.downcase), crumb: link_to("Settings / Setting categories", setting_categories_path), back_path: setting_categories_path, back_label: "Back to setting categories" } do %>
+  <%= render "form", setting_category: @setting_category %>
+<% end %>

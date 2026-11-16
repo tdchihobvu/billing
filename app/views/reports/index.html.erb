@@ -1,2 +1,23 @@
-<h1>Reports#index</h1>
-<p>Find me in app/views/reports/index.html.erb</p>
+<%
+  t = default_user_title
+  reports = [
+    ["#{t} report", inspector_report_reports_path, "Every invoice and receipt per #{t}, with totals per currency. Excel."],
+    ["Overdue invoices", overdue_invoices_reports_path, "Unpaid invoices past their due date, by age. Excel."],
+    ["Expiring licences", upcoming_renewals_reports_path, "Licences ending in a period you choose, with the amount last invoiced. Excel."],
+    ["Sales", sales_reports_path, "Invoices raised by #{t} and licence category. Excel."],
+    ["Collections", collections_reports_path, "Payments received by Payment Form and #{t}. Excel."],
+    ["VAT", vat_sales_reports_path(format: :xlsx), "VAT on invoices for the tax return."]
+  ]
+%>
+<div class="zpage">
+  <%= render "shared/zhead", title: "Reports" %>
+  <div class="zcards">
+    <% reports.each do |title, path, desc| %>
+      <%= link_to path, class: "zrcard" do %>
+        <h3><%= title %></h3>
+        <p><%= desc %></p>
+        <span class="zlink">Open report</span>
+      <% end %>
+    <% end %>
+  </div>
+</div>

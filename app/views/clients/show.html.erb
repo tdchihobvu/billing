@@ -1,78 +1,207 @@
-<!-- Page Heading -->
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800"><%= @client.name %></h1>
-    <div style="float: right;">
-      <%= link_to edit_client_path, class: "d-none d-sm-inline-block btn btn-sm btn-outline text-dark" do %>
-      <i class="fas fa-edit fa-sm text-dark"></i> Edit
-      <% end %> |
-      <%= link_to print_clients_path(id: @client, format: :pdf), class: "d-none d-sm-inline-block btn btn-sm btn-outline text-dark", target: "_blank" do %>
-      <i class="fas fa-print fa-sm text-dark"></i> Print
-      <% end %> |
-      <%= link_to @client, data: {turbo_method: :delete, turbo_confirm: 'Are you sure?' }, class: "btn btn-outline btn-sm rounded-0 text-dark" do %>
-        <i class="fas fa-trash text-dark"></i> Delete
-      <% end %> |
-      <%= link_to :back, class: "btn btn-outline btn-sm rounded-0" do %><i class="fas fa-backward text-dark"></i> Back <% end %> 
+<%
+  c = @client
+  tabs = [["general", "General"], ["contacts", "Contacts"], ["contact_person", "Contact Person"], ["branches", "Branches"], ["vehicles", "Vehicles"], ["invoices", "Invoices"], ["receipts", "Receipts"], ["licenses", "Licenses"], ["statement", "Statement"]]
+  tab = tabs.map(&:first).include?(params[:tab]) ? params[:tab] : "general"
+  cur = @currency
+  transactions = c.transactions.where(deleted: false).order(transaction_date: :asc, debit: :desc)
+  balance = transactions.sum { |t| (t.debit? ? 1 : -1) * t.rated_amount(@target_currency).to_d }
+  year_paid = c.receipts.active.where(transaction_date: Date.current.beginning_of_year.beginning_of_day..Date.current.end_of_day).sum { |r| r.rated_amount(@target_currency).to_d }
+  active_licences = c.licenses.joins(:invoice).where(invoices: { deleted: false }).where("licenses.expiry_date >= ?", Date.current).count
+  branches = c.branches.active
+  overdue_n = c.invoices.sales.where(paid: false).where("invoices.invoice_total > invoices.amount_paid").where("COALESCE(invoices.due_date, invoices.invoice_date + CAST(#{invoice_validity.to_i} AS integer)) < ?", Date.current).count
+  vehicles = c.vehicles.ordered.to_a
+  counts = { "branches" => branches.size, "vehicles" => vehicles.count(&:active),"invoices" => c.invoices.active.between_dates(@start_date, @end_date).count, "receipts" => c.receipts.between_dates(@start_date, @end_date).count }
+  detail = ->(pairs) { safe_join(pairs.map { |k, v| content_tag(:div) { content_tag(:small, k, class: "muted") + content_tag(:div, content_tag(:b, v.presence || "Not given")) } }) }
+%>
+<div class="zpage">
+  <div class="zvhead">
+    <span class="zmono" aria-hidden="true"><%= zinitials(c.name) %></span>
+    <div>
+      <div class="zcrumb"><%= link_to "Clients", clients_path %></div>
+      <h1><%= c.name %></h1>
+      <small class="muted"><%= [c.client_type&.name, c.industry&.name, c.city.presence || c.location].compact_blank.join(", ") %><%= ". #{c.mobile}" if c.mobile.present? %></small>
     </div>
-</div>
-
-<p style="color: green"><%= notice %></p>
-
-<div class="card border-0">
-  <div class="card-body">
-
-    <ul class="nav nav-tabs">
-      <li class="nav-item">
-        <a class="nav-link active" aria-current="page" href="#general" data-bs-toggle="tab">General</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="#contacts" data-bs-toggle="tab">Contacts</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="#contacts_person" data-bs-toggle="tab">Contact Person</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="#branches" data-bs-toggle="tab">Branches</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="#invoices" data-bs-toggle="tab">Invoices</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="#client_receipts" data-bs-toggle="tab">Receipts</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="#client_licenses" data-bs-toggle="tab">Licenses</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="#statement" data-bs-toggle="tab">Statement</a>
-      </li>
-    </ul>
-    <div id="<%= dom_id @client %>">
-      <div class="tab-content">
-        <div class="active tab-pane" id="general">
-          <%= render 'general', client: @client %>
-        </div>
-        <div class="tab-pane" id="contacts">
-          <%= render 'contacts', client: @client %>
-        </div>
-        <div class="tab-pane" id="contacts_person">
-          <%= render 'contact_person', client: @client %>
-        </div>
-        <div class="tab-pane" id="branches">
-          <%= render 'branches', client: @client %>
-        </div>
-        <div class="tab-pane" id="invoices">
-          <%= render 'invoices', client: @client %>
-        </div>
-        <div class="tab-pane" id="client_receipts">
-          <%= render 'receipts', client: @client %>
-        </div>
-        <div class="tab-pane" id="client_licenses">
-          <%= render 'licenses', client: @client %>
-        </div>
-        <div class="tab-pane" id="statement">
-          <%= render 'statement', client: @client %>
-        </div>
-      </div>
+    <div class="acts">
+      <%= link_to record_receipt_receipts_path(client_id: c.id), class: "b" do %><i class="fas fa-dollar-sign" aria-hidden="true"></i> Record Receipt<% end %>
+      <%= zmore_menu([["Edit", edit_client_path(c)], ["Print", print_clients_path(id: c, format: :pdf), { target: "_blank", rel: "noopener" }], :divider,
+                      ["Delete", client_path(c), { data: { turbo_method: :delete, turbo_confirm: "Delete #{c.name}? This can't be undone." } }]]) %>
+      <%= link_to (default_module == "licensing" ? license_invoices_path(client_id: c.id) : new_invoice_path), class: "b main" do %><i class="fas fa-plus" aria-hidden="true"></i> New Invoice<% end %>
     </div>
   </div>
+
+  <% if notice.present? %><div class="znote ok"><span><i class="fas fa-check" aria-hidden="true"></i></span><div><%= notice %></div></div><% end %>
+
+  <div class="zstats">
+    <div class="box zstat <%= 'owe' if balance.positive? %>"><small>Balance</small><b><span class="cur"><%= cur&.name %></span><%= number_with_precision(balance, precision: 2, delimiter: ",") %></b><em><%= overdue_n.positive? ? "#{pluralize(overdue_n, 'invoice')} overdue" : "nothing overdue" %></em></div>
+    <div class="box zstat"><small>Paid this year</small><b><span class="cur"><%= cur&.name %></span><%= number_with_precision(year_paid, precision: 2, delimiter: ",") %></b><em>receipts since 1 January</em></div>
+    <div class="box zstat"><small>Licences</small><b><%= active_licences %> active</b><em><%= link_to "View licences", client_path(c, tab: "licenses"), class: "zlink" %></em></div>
+    <div class="box zstat"><small>Branches</small><b><%= branches.size %></b><em><%= link_to "Add/Edit Branches", add_branches_clients_path(id: c), class: "zlink" %></em></div>
+  </div>
+
+  <section class="box">
+    <nav class="ztabs" aria-label="Client details">
+      <% tabs.each do |key, label| %>
+        <%= link_to client_path(c, tab: key), "aria-current": (tab == key ? "page" : nil) do %><%= label %><% if counts[key] %><em><%= counts[key] %></em><% end %><% end %>
+      <% end %>
+    </nav>
+
+    <% case tab %>
+    <% when "general" %>
+      <div class="zdetails"><%= detail.call([["Client Type", c.client_type&.name], ["Industry", c.industry&.name], ["Client Name", c.name], ["Trading Name", c.trading_name], ["BP Number", c.bp_number], ["VAT Number", c.vat_number], ["Account Number", c.client_account_number], ["Currency", cur&.name]]) %></div>
+      <div class="zfilters" style="padding-top:0"><%= link_to "Edit", edit_client_path(c), class: "b" %></div>
+
+    <% when "contacts" %>
+      <div class="zdetails"><%= detail.call([["Address", [c.address_1, c.address_2].compact_blank.join(", ")], ["Location", c.location], ["City", c.city], ["Country", c.country], ["Website", c.website], ["Mobile", c.mobile], ["Phone", c.phone], ["Email", c.email]]) %></div>
+      <div class="zfilters" style="padding-top:0"><%= link_to "Edit", edit_client_path(c), class: "b" %></div>
+
+    <% when "contact_person" %>
+      <div class="zdetails"><%= detail.call([["Contact Person", c.cp_name], ["Mobile", c.cp_mobile], ["Email", c.cp_email], ["Active", c.active ? "Yes" : "No"]]) %></div>
+      <div class="zfilters" style="padding-top:0"><%= link_to "Edit", edit_client_path(c), class: "b" %></div>
+
+    <% when "branches" %>
+      <div class="zfilters"><%= link_to add_branches_clients_path(id: c), class: "b" do %><i class="fas fa-edit" aria-hidden="true"></i> Add/Edit Branches<% end %></div>
+      <% if branches.any? %>
+        <div class="zwrap"><table class="zt">
+          <thead><tr><th>#</th><th>Branch Name</th><th>Address</th><th></th></tr></thead>
+          <tbody>
+            <% branches.each_with_index do |branch, i| %>
+              <tr><td class="muted"><%= i + 1 %></td><td><b><%= branch.branch_name %></b></td><td><%= branch.full_address %></td>
+                <td class="r"><%= button_to "Delete", delete_branch_clients_path(client_id: c, branch_id: branch), method: :delete, class: "b", form: { class: "button_to" }, data: { turbo_confirm: "Delete #{branch.branch_name}?" } %></td></tr>
+            <% end %>
+          </tbody>
+        </table></div>
+      <% else %>
+        <%= zempty("No branches", "A client with one site needs none. Add branches if the client licenses several locations.") %>
+      <% end %>
+
+    <% when "vehicles" %>
+      <% if can?("clients.manage") %>
+        <%= form_with model: Vehicle.new(client_id: c.id), url: vehicles_path, class: "zvehicleadd" do |f| %>
+          <%= f.hidden_field :client_id %>
+          <div class="zfield"><%= f.label :registration_number, "Registration number(s)", class: "req" %>
+            <%= f.text_area :registration_number, rows: 1, placeholder: "e.g. ABX 8409", required: true, autocapitalize: "characters" %>
+            <span class="zhint">Adding a fleet? Put one plate per line, or separate them with commas.</span></div>
+          <div class="zfield"><%= f.label :make_model, "Make and model" %><%= f.text_field :make_model, placeholder: "e.g. Toyota Quantum" %></div>
+          <div class="zfield"><%= f.label :description, "Notes" %><%= f.text_field :description, placeholder: "e.g. Route 3 kombi" %></div>
+          <div class="zfield" style="align-self:start;padding-top:22px"><%= f.submit "Add vehicle", class: "b main" %></div>
+        <% end %>
+      <% end %>
+      <% if vehicles.any? %>
+        <div class="zwrap"><table class="zt">
+          <thead><tr><th>Registration</th><th>Make and model</th><th>Notes</th><th>Licences</th><th>Status</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
+          <tbody>
+            <% vehicles.each do |v| %>
+              <% lic_count = v.licenses.size %>
+              <tr<%= ' class="zmuted"'.html_safe unless v.active %>>
+                <td><span class="zplate"><%= v.registration_number %></span></td>
+                <td><%= v.make_model %></td>
+                <td><%= v.description %></td>
+                <td><%= lic_count.positive? ? pluralize(lic_count, "licence") : content_tag(:span, "None yet", class: "muted") %></td>
+                <td><span class="ztag <%= v.active ? 'paid' : '' %>"><%= v.active ? "Active" : "Inactive" %></span></td>
+                <td class="r">
+                  <% if can?("clients.manage") %>
+                    <% if v.active %>
+                      <%= button_to "Remove", vehicle_path(v), method: :delete, class: "b", form: { class: "button_to" }, data: { turbo_confirm: "Remove #{v.registration_number}?" } %>
+                    <% else %>
+                      <%= button_to "Reactivate", vehicle_path(v), method: :patch, params: { vehicle: { active: true } }, class: "b", form: { class: "button_to" } %>
+                    <% end %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table></div>
+      <% else %>
+        <%= zempty("No vehicles", "Add the client's vehicles (e.g. buses and kombis that play music). Each one covered by an approved licence gets its own licence disc.") %>
+      <% end %>
+
+    <% when "invoices" %>
+      <% list = c.invoices.active.between_dates(@start_date, @end_date).order(invoice_date: :desc) %>
+      <% if list.any? %>
+        <div class="zwrap"><table class="zt">
+          <thead><tr><th>Invoice No.</th><th>Date</th><th>Currency</th><th>Category</th><th class="r">VAT</th><th class="r">Total</th><th class="r">Balance</th><th>Status</th></tr></thead>
+          <tbody>
+            <% list.each do |invoice| %>
+              <tr><td><%= link_to invoice.invoice_number, invoice, class: "zno" %></td><td><%= invoice.invoice_date.strftime("%d %b %Y") %></td><td><%= invoice.currency.name %></td><td><%= invoice.invoice_category&.name %></td>
+                <td class="r money"><%= number_with_precision(invoice.invoice_vat(cur), precision: 2, delimiter: ",") %></td><td class="r money"><%= number_with_precision(invoice.total_invoice(cur), precision: 2, delimiter: ",") %></td>
+                <td class="r money"><%= number_with_precision(invoice.balance, precision: 2, delimiter: ",") %></td><td><%= zstatus_tag(invoice) %></td></tr>
+            <% end %>
+          </tbody>
+        </table></div>
+      <% else %>
+        <%= zempty("No invoices", "Invoices for #{c.name} since #{@start_date.strftime('%d %b %Y')} appear here.") %>
+      <% end %>
+
+    <% when "receipts" %>
+      <% list = c.receipts.between_dates(@start_date, @end_date).order(transaction_date: :desc) %>
+      <% if list.any? %>
+        <div class="zwrap"><table class="zt">
+          <thead><tr><th>Receipt No.</th><th>Date</th><th>Description</th><th>Payment Form</th><th class="r">Amount</th><th class="r">Rate</th><th></th></tr></thead>
+          <tbody>
+            <% list.each do |receipt| %>
+              <tr><td><%= link_to receipt.reference_number, receipt, class: "zno" %></td><td><%= receipt.transaction_date.strftime("%d %b %Y") %></td><td><%= receipt.description %></td><td><%= receipt.payment_form&.name %></td>
+                <td class="r"><%= zmoney(receipt.amount, receipt.currency&.name) %></td><td class="r money"><%= receipt.rate %></td>
+                <td class="r"><%= link_to receipt, class: "b ghost", title: "Print Receipt", "aria-label": "Print Receipt #{receipt.reference_number}" do %><i class="fas fa-print" aria-hidden="true"></i><% end %></td></tr>
+            <% end %>
+          </tbody>
+        </table></div>
+      <% else %>
+        <%= zempty("No receipts", "Payments from #{c.name} since #{@start_date.strftime('%d %b %Y')} appear here.") %>
+      <% end %>
+
+    <% when "licenses" %>
+      <% list = c.licenses.joins(:invoice).where(invoices: { deleted: false }).preload(:license_option, :invoice).order(expiry_date: :desc) %>
+      <% if list.any? %>
+        <div class="zwrap"><table class="zt">
+          <thead><tr><th>Period</th><th>Option</th><th>Status</th><th>Invoice</th><th>Print</th></tr></thead>
+          <tbody>
+            <% list.each do |license| %>
+              <% active = license.expiry_date && license.expiry_date >= Date.current %>
+              <tr><td><%= license.long_period %></td><td><%= license.license_option&.name %></td>
+                <td><span class="ztag <%= active ? 'paid' : 'late' %>"><%= active ? "Active" : "Expired" %></span> <small class="muted"><%= license.status %></small></td>
+                <td><%= link_to license.invoice.invoice_number, license.invoice, class: "zno" %></td>
+                <td><% if license.printable? %>
+                  <% if branches.empty? %>
+                    <%= link_to "Print License", print_licenses_path(id: license, format: :pdf), class: "b", target: "_blank", rel: "noopener" %>
+                  <% else %>
+                    <%= link_to "Print Multiple", print_multiple_licenses_path(id: license, client_id: c.id), class: "b", target: "_blank", rel: "noopener" %>
+                  <% end %>
+                <% else %>
+                  <%= zlicense_approval_tag(license) %>
+                <% end %></td></tr>
+            <% end %>
+          </tbody>
+        </table></div>
+      <% else %>
+        <%= zempty("No licences", "Licences come with licence invoices once they're paid.") %>
+      <% end %>
+
+    <% when "statement" %>
+      <div class="zfilters">
+        <span style="margin-right:auto"><b>Account Statement</b> <small class="muted">in <%= cur&.name %></small></span>
+        <%= link_to "Takeon Balance", takeon_balances_clients_path(id: c), class: "b" %>
+        <%= link_to reset_statement_clients_path(id: c), class: "b", title: "The statement updates by itself. Use this only if a line looks wrong.", data: { turbo_confirm: "Rebuild the statement from scratch? Invoice and receipt lines are rebuilt; journals are kept." } do %><i class="fas fa-sync-alt" aria-hidden="true"></i> Rebuild<% end %>
+        <%= link_to account_statement_clients_path(id: c, as_at: Date.today, format: :pdf), class: "b", target: "_blank", rel: "noopener" do %><i class="fas fa-print" aria-hidden="true"></i> Print<% end %>
+        <%= link_to print_by_date_clients_path(id: c), class: "b" do %><i class="fas fa-print" aria-hidden="true"></i> Print As At<% end %>
+      </div>
+      <% if transactions.any? %>
+        <% run = 0 %>
+        <div class="zwrap"><table class="zt">
+          <thead><tr><th>#</th><th>Date</th><th>Ref No</th><th>Description</th><th class="r">Debit</th><th class="r">Credit</th><th class="r">Balance</th><th></th></tr></thead>
+          <tbody>
+            <% transactions.each_with_index do |t, i| %>
+              <% amount = t.rated_amount(@target_currency).to_d; run += t.debit? ? amount : -amount %>
+              <tr><td class="muted"><%= i + 1 %></td><td><%= t.transaction_date&.strftime("%d %b %Y") %></td><td><%= t.reference_number %></td><td><%= t.description %></td>
+                <td class="r money"><%= number_with_precision(amount, precision: 2, delimiter: ",") if t.debit? %></td>
+                <td class="r money" style="color:var(--paid)"><%= number_with_precision(amount, precision: 2, delimiter: ",") unless t.debit? %></td>
+                <td class="r money"><b><%= number_with_precision(run, precision: 2, delimiter: ",") %></b></td>
+                <td><% if t.journal? %><%= link_to "View", { controller: :clients, action: :edit_journal, id: t, client_id: c }, class: "zlink" %><% elsif t.source.present? %><%= link_to "View", { controller: t.source.downcase, action: :show, id: t.source_id }, class: "zlink" %><% end %></td></tr>
+            <% end %>
+          </tbody>
+        </table></div>
+      <% else %>
+        <%= zempty("Nothing on the statement yet", "This client has no invoices, receipts or take-on balances yet.") %>
+      <% end %>
+    <% end %>
+  </section>
 </div>

@@ -1,68 +1,87 @@
-<!-- Page Heading -->
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Overdue Invoices - Ageing</h1>
-    <div class="float-end">
-      <%= link_to overdue_invoices_reports_path(format: :xlsx), class: "d-none d-sm-inline-block btn btn-sm btn-outline text-dark" do %>
-      <i class="fas fa-file fa-sm text-dark"></i> Download Excel
+<% title = default_user_title.presence || "Inspector" %>
+<% bands = ReportsController::OVERDUE_BANDS %>
+<% base = request.query_parameters.except("age") %>
+<% filtered = %w[q user_id currency_id from to over].any? { |k| params[k].present? } %>
+
+<div class="zpage">
+  <%= render "shared/zhead", title: "Overdue invoices", crumb: link_to("Reports", reports_path),
+             sub: "Unpaid invoices past their due date, as at #{Date.current.strftime('%d %b %Y')}. Invoices with no due date fall due #{pluralize(invoice_validity, 'day')} after they are raised.",
+             actions: link_to("Download Excel", overdue_invoices_reports_path(request.query_parameters.merge(format: :xlsx)), data: { turbo: false }, class: "b main") %>
+
+  <div class="zstats">
+    <div class="zstat"><small>Overdue invoices</small><b><%= number_with_delimiter(@count) %></b></div>
+    <% @totals.sort.each do |currency, amount| %>
+      <div class="zstat owe"><small>Outstanding (<%= currency %>)</small><b><%= number_with_precision(amount.round(2), precision: 2, delimiter: ",") %></b></div>
+    <% end %>
+  </div>
+
+  <section class="box">
+    <nav class="ztabs" aria-label="How long overdue">
+      <%= link_to overdue_invoices_reports_path(base), "aria-current": (@band ? nil : "page") do %>All overdue<em><%= number_with_delimiter(@all_count) %></em><% end %>
+      <% bands.each do |key, (label, *)| %>
+        <%= link_to overdue_invoices_reports_path(base.merge(age: key)), "aria-current": (@band == key ? "page" : nil) do %><%= label %><em><%= number_with_delimiter(@band_counts[key]) %></em><% end %>
       <% end %>
-      <%= link_to :back, class: "btn btn-outline btn-sm rounded-0" do %><i class="fas fa-backward text-dark"></i> Back <% end %> 
-    </div>
-</div>
+    </nav>
 
-<p style="color: green"><%= notice %></p>
+    <%= form_with url: overdue_invoices_reports_path, method: :get, class: "zfilters", data: { turbo_action: "advance" } do |f| %>
+      <%= hidden_field_tag :age, @band if @band %>
+      <%= hidden_field_tag :over, @over if @over.to_i.positive? %>
+      <% if @over.to_i.positive? %>
+        <%= link_to overdue_invoices_reports_path(request.query_parameters.except("over", "page")), class: "zchip on", title: "Remove this filter" do %>More than <%= @over %> days overdue <span aria-hidden="true">×</span><span class="visually-hidden">(remove)</span><% end %>
+      <% end %>
+      <label class="zsearch"><span class="visually-hidden">Client or invoice number</span><i class="fas fa-search" aria-hidden="true"></i>
+        <%= f.search_field :q, value: params[:q], placeholder: "Client or invoice number" %></label>
+      <%= f.select :user_id, options_from_collection_for_select(@users, :id, :fullname, params[:user_id]), { include_blank: "Any #{title}" }, class: "zsel #{'on' if params[:user_id].present?}", "aria-label": title %>
+      <%= f.select :currency_id, options_from_collection_for_select(@currencies, :id, :name, params[:currency_id]), { include_blank: "Any currency" }, class: "zsel #{'on' if params[:currency_id].present?}", "aria-label": "Currency" %>
+      <label class="zdate">Invoiced from <%= f.date_field :from, value: @from, class: "zsel" %></label>
+      <label class="zdate">To <%= f.date_field :to, value: @to, class: "zsel" %></label>
+      <%= f.submit "Apply", name: nil, class: "b main" %>
+      <% if filtered %><div class="right"><%= link_to "Clear all", overdue_invoices_reports_path(@band ? { age: @band } : {}), class: "zlink", style: "color:var(--soft)" %></div><% end %>
+    <% end %>
 
-<% if @invoices.any? %>
-  <table id="dataTable" class="table table-striped small" width="100%" cellspacing="0">
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Customer Name</th>
-        <th>Invoice Date</th>
-        <th>Invoice No.</th>
-        <th>Invoice Amount</th>
-        <th>Currency</th>
-        <th>Due Date</th>
-        <th>Ageing</th>
-        <th>Balance</th>
-        <th></th>
-      </tr>
-    </thead>
-
-    <tbody>
-      <% @invoices.each_with_index do |invoice, i| %>
-        <tr>
-          <td><%= @pagy.offset + i + 1 %></td>
-          <td><%= invoice.client&.name %></td>
-          <td><%= invoice.invoice_date&.strftime("%d/%m/%Y") %></td>
-          <td><%= invoice.invoice_number %></td>
-          <td><%= number_to_currency(invoice.total) %></td>
-          <td><%= invoice.currency&.name %></td>
-          <td><%= invoice.due_date&.strftime("%d/%m/%Y") %></td>
-          <td><%= invoice.debtors_age %></td>
-          <td><strong><%= number_to_currency(invoice.balance) %></strong></td>
-          <td>
-            <%= link_to sms_reminder_invoices_path(id: invoice),
-                class: "btn btn-outline text-dark small",
-                title: "SMS Reminder" do %>
-              <i class="fas fa-paper-plane fa-sm text-dark"></i>
+    <% if @invoices.any? %>
+      <div class="zwrap">
+        <table class="zt">
+          <thead>
+            <tr><th>Invoice</th><th>Date</th><th>Client</th><th>Due</th><th>How late</th><th class="r">Total</th><th class="r">Balance</th><th>Contact</th></tr>
+          </thead>
+          <tbody>
+            <% @invoices.each do |invoice| %>
+              <% due = invoice.effective_due_date(invoice_validity) %>
+              <% days = invoice.days_overdue(invoice_validity) %>
+              <tr>
+                <td class="zvn"><%= link_to invoice.invoice_number, invoice, class: "zno" %><small><%= invoice.document.to_s.capitalize %></small></td>
+                <td class="money"><%= invoice.invoice_date&.strftime("%d %b %Y") %></td>
+                <td class="zvn"><b style="font-weight:500"><%= invoice.client&.name %></b><small><%= invoice.user&.fullname || invoice.user_fullname %></small></td>
+                <td class="money"><%= due&.strftime("%d %b %Y") %></td>
+                <td><%= zage(days) %></td>
+                <td class="r money"><span class="cur"><%= invoice.currency.name %></span> <%= number_with_precision(invoice.invoice_total.to_d.round(2), precision: 2, delimiter: ",") %></td>
+                <td class="r money"><b><%= number_with_precision((invoice.invoice_total.to_d - invoice.amount_paid.to_d).round(2), precision: 2, delimiter: ",") %></b></td>
+                <td>
+                  <%# Automatic SMS/email reminders are not built yet, so staff call the client directly. %>
+                  <% phone = invoice.client&.mobile.presence || invoice.client&.phone.presence %>
+                  <% if phone && phone.gsub(/\D/, "").length >= 7 && phone !~ /\A0+\z/ %>
+                    <%= link_to "tel:#{phone.gsub(/[^\d+]/, '')}", class: "zlink", style: "white-space:nowrap", title: "Call #{invoice.client.name}" do %><i class="fas fa-phone" aria-hidden="true"></i> <%= phone %><% end %>
+                  <% else %>
+                    <span class="muted" style="font-size:12.5px">No number</span>
+                  <% end %>
+                </td>
+              </tr>
             <% end %>
-          </td>
-        </tr>
+          </tbody>
+        </table>
+      </div>
+      <% if @pagy.pages > 1 %>
+        <div class="zpager">
+          <span>Showing <%= number_with_delimiter(@pagy.from) %>–<%= number_with_delimiter(@pagy.to) %> of <%= number_with_delimiter(@pagy.count) %> invoices</span>
+          <span class="acts">
+            <%= link_to "Previous", overdue_invoices_reports_path(request.query_parameters.merge(page: @pagy.prev || 1)), class: "b #{'disabled' unless @pagy.prev}", "aria-disabled": @pagy.prev.nil? %>
+            <%= link_to "Next", overdue_invoices_reports_path(request.query_parameters.merge(page: @pagy.next || @pagy.last)), class: "b #{'disabled' unless @pagy.next}", "aria-disabled": @pagy.next.nil? %>
+          </span>
+        </div>
       <% end %>
-    </tbody>
-  </table>
-
-  <div class="d-flex justify-content-between align-items-center mt-3">
-    <small class="text-muted">
-      Showing <%= @pagy.from %> - <%= @pagy.to %>
-      of <%= @pagy.count %> invoices
-    </small>
-
-    <%== pagy_bootstrap_nav(@pagy) %>
-  </div>
-
-<% else %>
-  <div class="alert alert-warning text-center border-0">
-    There is nothing to display.
-  </div>
-<% end %>
+    <% else %>
+      <%= zempty("No overdue invoices match these filters", "Clear a filter or pick another age band.") %>
+    <% end %>
+  </section>
+</div>

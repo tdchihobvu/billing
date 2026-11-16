@@ -22,7 +22,7 @@
             <% @client.branches.active.each_with_index do |branch,i| %>
               <tr>
                 <td><%= i+=1 %></td>
-                <td><%= branch.name %></td>
+                <td><%= branch.branch_name %></td>
                 <td><%= branch.full_address %></td>
                 <td><%= button_to delete_branch_clients_path(client_id: @client, branch_id: branch), data: { confirm: "Are you sure?", turbo_confirm: "Are you sure? You want to delete." }, method: :delete, class: "d-none d-sm-inline-block btn btn-sm btn-outline" do %><i class="fas fa-trash fa-sm"></i><% end %></td>
               </tr>

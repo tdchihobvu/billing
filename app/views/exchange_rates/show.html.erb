@@ -1,10 +1,12 @@
-<p style="color: green"><%= notice %></p>
-
-<%= render @exchange_rate %>
-
-<div>
-  <%= link_to "Edit this exchange rate", edit_exchange_rate_path(@exchange_rate) %> |
-  <%= link_to "Back to exchange rates", exchange_rates_path %>
-
-  <%#= button_to "Destroy this exchange rate", @exchange_rate, method: :delete %>
+<% r = @exchange_rate %>
+<div class="zpage">
+  <%= render "shared/zhead", title: "Exchange rate, #{r.transaction_date&.strftime('%d %b %Y')}", crumb: link_to("Settings / Exchange Rates", exchange_rates_path),
+             actions: safe_join([link_to("Back to exchange rates", exchange_rates_path, class: "b"), link_to("Edit this exchange rate", edit_exchange_rate_path(r), class: "b main")], " ") %>
+  <section class="box">
+    <div class="zdetails">
+      <% (ExchangeRate.column_names - %w[id created_at updated_at tenant_id]).each do |c| %>
+        <div><small class="muted"><%= zcrud_label(c) %></small><div><b><%= zcrud_value(r, c).presence || "Not given" %></b></div></div>
+      <% end %>
+    </div>
+  </section>
 </div>

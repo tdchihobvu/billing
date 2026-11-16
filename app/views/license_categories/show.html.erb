@@ -1,10 +1,1 @@
-<p style="color: green"><%= notice %></p>
-
-<%= render @license_category %>
-
-<div>
-  <%= link_to "Edit this license category", edit_license_category_path(@license_category) %> |
-  <%= link_to "Back to license categories", license_categories_path %>
-
-  <%= button_to "Destroy this license category", @license_category, method: :delete %>
-</div>
+<%= render "shared/crud_show", record: @license_category, model: LicenseCategory, crumb: link_to("Licensing / License categories", license_categories_path), index_path: license_categories_path %>

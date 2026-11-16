@@ -1,0 +1,15 @@
+<li class="nav-item">
+  <button type="button" class="nav-link collapsed" data-bs-toggle="collapse" data-bs-target="#<%= id %>" aria-expanded="false" aria-controls="<%= id %>" data-nav-label="<%= label %>">
+    <i class="fas fa-fw <%= icon %>" aria-hidden="true"></i>
+    <span class="nav-label"><%= label %></span>
+    <% if local_assigns[:count].to_i.positive? %>
+      <span class="znav-count nav-label" title="<%= number_with_delimiter(count) %> <%= local_assigns[:count_label] %>"><%= number_with_delimiter(count) %><span class="visually-hidden"> <%= local_assigns[:count_label] %></span></span>
+    <% end %>
+    <i class="fas fa-chevron-right nav-chevron" aria-hidden="true"></i>
+  </button>
+  <div id="<%= id %>" class="collapse" data-bs-parent="#accordionSidebar">
+    <div class="collapse-inner" data-title="<%= label %>">
+      <%= yield %>
+    </div>
+  </div>
+</li>

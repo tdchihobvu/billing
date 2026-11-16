@@ -17,7 +17,7 @@ class VatTypesControllerTest < ActionDispatch::IntegrationTest
 
   test "should create vat_type" do
     assert_difference("VatType.count") do
-      post vat_types_url, params: { vat_type: { name: @vat_type.name, rate: @vat_type.rate } }
+      post vat_types_url, params: { vat_type: fresh_attributes(@vat_type) }
     end
 
     assert_redirected_to vat_type_url(VatType.last)
@@ -39,8 +39,10 @@ class VatTypesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should destroy vat_type" do
+    record = unreferenced_copy(@vat_type)
+
     assert_difference("VatType.count", -1) do
-      delete vat_type_url(@vat_type)
+      delete vat_type_url(record)
     end
 
     assert_redirected_to vat_types_url

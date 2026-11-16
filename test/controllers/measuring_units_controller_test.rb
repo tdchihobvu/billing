@@ -17,7 +17,7 @@ class MeasuringUnitsControllerTest < ActionDispatch::IntegrationTest
 
   test "should create measuring_unit" do
     assert_difference("MeasuringUnit.count") do
-      post measuring_units_url, params: { measuring_unit: { name: @measuring_unit.name, symbol: @measuring_unit.symbol } }
+      post measuring_units_url, params: { measuring_unit: fresh_attributes(@measuring_unit) }
     end
 
     assert_redirected_to measuring_unit_url(MeasuringUnit.last)
@@ -39,8 +39,10 @@ class MeasuringUnitsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should destroy measuring_unit" do
+    record = unreferenced_copy(@measuring_unit)
+
     assert_difference("MeasuringUnit.count", -1) do
-      delete measuring_unit_url(@measuring_unit)
+      delete measuring_unit_url(record)
     end
 
     assert_redirected_to measuring_units_url

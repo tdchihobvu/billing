@@ -1,0 +1,23 @@
+<%# Shared by Takeon Balance and Update Journal. Locals: url, title, submit_label. %>
+<div class="zpage">
+  <%= render "shared/zhead", title: title, crumb: link_to("Clients", clients_path) + " / " + link_to(@client.name, client_path(@client, tab: "statement")),
+             sub: "Appears on #{@client.name}'s statement as a journal.", actions: link_to("Back to statement", client_path(@client, tab: "statement"), class: "b") %>
+
+  <%= form_for @transaction, url: url, html: { class: "box" } do |form| %>
+    <%= render "shared/form_errors", record: @transaction %>
+    <%= form.hidden_field :client_id %>
+    <section class="zsect">
+      <div class="boxh"><h2>Journal</h2><span>Fields marked <span class="req"></span> are required</span></div>
+      <div class="zgrid">
+        <div class="zfield"><%= form.label :transaction_date, "Transaction Date", class: "req" %><%= form.date_field :transaction_date %></div>
+        <div class="zfield"><%= form.label :amount, "Amount", class: "req" %><%= form.text_field :amount, inputmode: "decimal" %></div>
+        <div class="zfield"><%= form.label :currency_id, "Currency", class: "req" %><%= form.select :currency_id, Currency.pluck(:name, :id), { prompt: "Select Currency" } %></div>
+        <div class="zfield wide"><%= form.label :description, "Description", class: "req" %><%= form.text_field :description %></div>
+      </div>
+    </section>
+    <div class="zformfoot">
+      <%= link_to "Cancel", client_path(@client, tab: "statement"), class: "b" %>
+      <%= form.submit submit_label, class: "b main" %>
+    </div>
+  <% end %>
+</div>

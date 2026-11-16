@@ -1,0 +1,17 @@
+<%# One settings record in the ZIMURA design. Locals: record, model, crumb, index_path, columns (optional). %>
+<% cols = local_assigns[:columns] || zcrud_columns(model) %>
+<% name = model.model_name.human %>
+<div class="zpage">
+  <%= render "shared/zhead", title: (record.respond_to?(:name) && record.name.present? ? record.name : name), crumb: crumb,
+             actions: safe_join([link_to("Back to #{name.pluralize.downcase}", index_path, class: "b"), link_to("Edit", edit_polymorphic_path(record), class: "b main")], " ") %>
+  <section class="box">
+    <div class="zdetails">
+      <% cols.each do |c| %>
+        <div><small class="muted"><%= zcrud_label(c) %></small><div><b><%= zcrud_value(record, c).presence || "Not given" %></b></div></div>
+      <% end %>
+    </div>
+    <div class="zformfoot">
+      <%= button_to "Delete this #{name.downcase}", polymorphic_path(record), method: :delete, class: "b danger", form: { class: "button_to" }, data: { turbo_confirm: "Delete this #{name.downcase}? This can't be undone." } %>
+    </div>
+  </section>
+</div>

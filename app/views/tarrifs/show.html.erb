@@ -1,10 +1,1 @@
-<p style="color: green"><%= notice %></p>
-
-<%= render @tarrif %>
-
-<div>
-  <%= link_to "Edit this tarrif", edit_tarrif_path(@tarrif) %> |
-  <%= link_to "Back to tarrifs", tarrifs_path %>
-
-  <%= button_to "Destroy this tarrif", @tarrif, method: :delete %>
-</div>
+<%= render "shared/crud_show", record: @tarrif, model: Tarrif, crumb: link_to("Sales / Clients / Tariffs", tarrifs_path), index_path: tarrifs_path %>

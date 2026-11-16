@@ -1,10 +1,14 @@
-<h1>Editing receipt</h1>
+<div class="zpage">
+  <div class="zhead">
+    <div>
+      <div class="zcrumb"><%= link_to "Sales / Receipting", receipts_path %></div>
+      <h1>Edit Receipt <%= @receipt.reference_number %></h1>
+    </div>
+    <div class="acts">
+      <%= link_to "Show this receipt", @receipt, class: "b" %>
+      <%= link_to "Back to receipts", receipts_path, class: "b" %>
+    </div>
+  </div>
 
-<%= render "form", receipt: @receipt %>
-
-<br>
-
-<div>
-  <%= link_to "Show this receipt", @receipt %> |
-  <%= link_to "Back to receipts", receipts_path %>
+  <%= render "form", receipt: @receipt %>
 </div>

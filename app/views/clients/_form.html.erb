@@ -1,151 +1,52 @@
-<h6>All fields marked with <span class="required_field"></span> are mandatory</h6>
-<%= form_with(model: client) do |form| %>
-  <% if client.errors.any? %>
-    <div style="color: red">
-      <h2><%= pluralize(client.errors.count, "error") %> prohibited this client from being saved:</h2>
-
-      <ul>
-        <% client.errors.each do |error| %>
-          <li><%= error.full_message %></li>
-        <% end %>
-      </ul>
-    </div>
-  <% end %>
+<%= form_with(model: client, class: "box") do |form| %>
+  <%= render "shared/form_errors", record: client %>
   <%= form.hidden_field :tenant_id %>
 
-  <div class="form-group">
-    <%= form.label :name, style: "display: block", class: "required_field" %>
-    <%= form.text_field :name, class: "form-control form-control-sm" %>
-  </div>
+  <section class="zsect">
+    <div class="boxh"><h2>Client</h2><span>Fields marked <span class="req"></span> are required</span></div>
+    <div class="zgrid">
+      <div class="zfield wide"><%= form.label :name, "Name", class: "req" %><%= form.text_field :name %></div>
+      <div class="zfield"><%= form.label :trading_name, "Trading Name" %><%= form.text_field :trading_name %></div>
+      <div class="zfield"><%= form.label :client_type_id, "Client Type", class: "req" %><%= form.select :client_type_id, ClientType.pluck(:name, :id), { prompt: "Select Type" } %></div>
+      <div class="zfield"><%= form.label :industry_id, "Industry", class: "req" %><%= form.select :industry_id, tenant.industries.order("name Asc").pluck(:name, :id), { prompt: "Select Industry" } %></div>
+      <div class="zfield"><%= form.label :bp_number, "Business Partner/TIN" %><%= form.text_field :bp_number %></div>
+      <div class="zfield"><%= form.label :vat_number, "VAT Number" %><%= form.text_field :vat_number %></div>
+      <div class="zfield"><%= form.label :currency_id, "Default Statement Currency", class: "req" %><%= form.select :currency_id, Currency.order("name Asc").pluck(:name, :id), { prompt: "Select Currency" } %></div>
+    </div>
+  </section>
 
-  <div class="form-group">
-    <%= form.label :trading_name, "Trading Name", style: "display: block" %>
-    <%= form.text_field :trading_name, class: "form-control form-control-sm" %>
-  </div>
-  <div class="row">
-    <div class="col-sm-6">
-      <div class="form-group">
-        <%= form.label :client_type_id, "Client Type", style: "display: block", class: "required_field" %>
-        <%= form.select :client_type_id, ClientType.pluck(:name, :id), {prompt: "Select Type"}, class: "form-select form-select-sm" %>
-      </div>
+  <section class="zsect">
+    <div class="boxh"><h2>Address</h2></div>
+    <div class="zgrid">
+      <div class="zfield wide"><%= form.label :address_1, "Address Line 1", class: "req" %><%= form.text_field :address_1 %></div>
+      <div class="zfield wide"><%= form.label :address_2, "Address Line 2" %><%= form.text_field :address_2 %></div>
+      <div class="zfield"><%= form.label :location, "Location", class: "req" %><%= form.text_field :location %></div>
+      <div class="zfield"><%= form.label :city, "City", class: "req" %><%= form.text_field :city %></div>
+      <div class="zfield"><%= form.label :country, "Country", class: "req" %><%= form.text_field :country %></div>
     </div>
-    <div class="col-sm-6">
-      <div class="form-group">
-        <%= form.label :industry_id, style: "display: block", class: "required_field" %>
-        <%= form.select :industry_id, tenant.industries.order('name Asc').pluck(:name, :id), {prompt: "Select Industry"}, class: "form-select form-select-sm" %>
-      </div>
-    </div>
-  </div>
-  <div class="row">
-    <div class="col-sm-6">
-      <div class="form-group">
-        <%= form.label :bp_number,"Business Partner/TIN", style: "display: block" %>
-        <%= form.text_field :bp_number, class: "form-control form-control-sm" %>
-      </div>
-    </div>
-    <div class="col-sm-6">
-      <div class="form-group">
-        <%= form.label :vat_number, "VAT Number", style: "display: block" %>
-        <%= form.text_field :vat_number, class: "form-control form-control-sm" %>
-      </div>
-    </div>
-  </div>
+  </section>
 
-  <div class="form-group">
-    <%= form.label :address_1,"Address Line 1", style: "display: block", class: "required_field" %>
-    <%= form.text_field :address_1, class: "form-control form-control-sm" %>
-  </div>
+  <section class="zsect">
+    <div class="boxh"><h2>Contacts</h2></div>
+    <div class="zgrid">
+      <div class="zfield"><%= form.label :mobile, "Mobile Number" %><%= form.text_field :mobile, inputmode: "tel" %></div>
+      <div class="zfield"><%= form.label :phone, "Phone Number", class: "req" %><%= form.text_field :phone, inputmode: "tel" %></div>
+      <div class="zfield"><%= form.label :email, "Email", class: "req" %><%= form.email_field :email %></div>
+      <div class="zfield"><%= form.label :website, "Website" %><%= form.text_field :website %></div>
+    </div>
+  </section>
 
-  <div class="form-group">
-    <%= form.label :address_2, "Address Line 2", style: "display: block" %>
-    <%= form.text_field :address_2, class: "form-control form-control-sm" %>
-  </div>
+  <section class="zsect">
+    <div class="boxh"><h2>Contact Person Details</h2></div>
+    <div class="zgrid">
+      <div class="zfield"><%= form.label :cp_name, "Full Name" %><%= form.text_field :cp_name %></div>
+      <div class="zfield"><%= form.label :cp_mobile, "Mobile Number" %><%= form.text_field :cp_mobile, inputmode: "tel" %></div>
+      <div class="zfield"><%= form.label :cp_email, "Email" %><%= form.text_field :cp_email %></div>
+    </div>
+  </section>
 
-  <div class="row">
-    <div class="col-sm-4">
-      <div class="form-group">
-        <%= form.label :location, style: "display: block", class: "required_field" %>
-        <%= form.text_field :location, class: "form-control form-control-sm" %>
-      </div>
-    </div>
-    <div class="col-sm-4">
-      <div class="form-group">
-        <%= form.label :city, style: "display: block", class: "required_field" %>
-        <%= form.text_field :city, class: "form-control form-control-sm" %>
-      </div>
-    </div>
-    <div class="col-sm-4">
-      <div class="form-group">
-        <%= form.label :country, style: "display: block", class: "required_field" %>
-        <%= form.text_field :country, class: "form-control form-control-sm" %>
-      </div>
-    </div>
-  </div>
-
-  <div class="row">
-    <div class="col-sm-6">
-      <div class="form-group">
-        <%= form.label :mobile, "Mobile Number", style: "display: block" %>
-        <%= form.text_field :mobile, class: "form-control form-control-sm" %>
-      </div>
-    </div>
-    <div class="col-sm-6">
-      <div class="form-group">
-        <%= form.label :phone, "Phone Number", style: "display: block", class: "required_field" %>
-        <%= form.text_field :phone, class: "form-control form-control-sm" %>
-      </div>
-    </div>
-  </div>
-
-  <div class="row">
-    <div class="col-sm-6">
-      <div class="form-group">
-        <%= form.label :email, style: "display: block", class: "required_field" %>
-        <%= form.email_field :email, class: "form-control form-control-sm" %>
-      </div>
-    </div>
-    <div class="col-sm-6">
-      <div class="form-group">
-        <%= form.label :website, "Website", style: "display: block" %>
-        <%= form.text_field :website, class: "form-control form-control-sm" %>
-      </div>
-    </div>
-  </div>
-
-  <div class="row">
-    <div class="col-sm-6">
-      <div class="form-group">
-        <%= form.label :currency_id, "Default Statement Currency", style: "display: block", class: "required_field" %>
-        <%= form.select :currency_id, Currency.order('name Asc').pluck(:name, :id), {prompt: "Select Currency"}, class: "form-select form-select-sm" %>
-      </div>
-    </div>
-    <div class="col-sm-6">
-    </div>
-  </div>
-
-  <br/>
-  <h6><strong class="required_field">Contact Person Details</strong></h6>
-  <div class="row">
-    <div class="col-sm-4">
-      <div class="form-group">
-        <%= form.label :cp_name, "Full Name", style: "display: block" %>
-        <%= form.text_field :cp_name, class: "form-control form-control-sm"  %>
-      </div>
-    </div>
-    <div class="col-sm-4">
-      <div class="form-group">
-        <%= form.label :cp_mobile, "Mobile Number", style: "display: block" %>
-        <%= form.text_field :cp_mobile, class: "form-control form-control-sm"  %>
-      </div>
-    </div>
-    <div class="col-sm-4">
-      <div class="form-group">
-        <%= form.label :cp_email, "Email", style: "display: block" %>
-        <%= form.text_field :cp_email, class: "form-control form-control-sm"  %>
-      </div>
-    </div>
-  </div>
-  <div class="text-center">
-    <%= form.submit "Save Client", class:'btn btn-lg btn-success' %>
+  <div class="zformfoot">
+    <%= link_to "Cancel", (client.persisted? ? client_path(client) : clients_path), class: "b" %>
+    <%= form.submit "Save Client", class: "b main" %>
   </div>
 <% end %>

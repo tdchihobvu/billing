@@ -17,7 +17,7 @@ class DistrictsControllerTest < ActionDispatch::IntegrationTest
 
   test "should create district" do
     assert_difference("District.count") do
-      post districts_url, params: { district: { name: @district.name, region_id: @district.region_id } }
+      post districts_url, params: { district: fresh_attributes(@district) }
     end
 
     assert_redirected_to district_url(District.last)
@@ -39,8 +39,10 @@ class DistrictsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should destroy district" do
+    record = unreferenced_copy(@district)
+
     assert_difference("District.count", -1) do
-      delete district_url(@district)
+      delete district_url(record)
     end
 
     assert_redirected_to districts_url

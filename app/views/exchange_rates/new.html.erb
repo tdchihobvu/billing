@@ -1,9 +1,4 @@
-<h1>New exchange rate</h1>
-
-<%= render "form", exchange_rate: @exchange_rate %>
-
-<br>
-
-<div>
-  <%= link_to "Back to exchange rates", exchange_rates_path %>
+<div class="zpage">
+  <%= render "shared/zhead", title: "New exchange rate", crumb: link_to("Settings / Exchange rates", exchange_rates_path) %>
+  <%= render "form", exchange_rate: @exchange_rate %>
 </div>

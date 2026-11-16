@@ -23,7 +23,7 @@
                 <td><%= license.license_option.name %></td>
                 <td><%= license.status %></td>
                 <td> 
-                  <% if license.paid? %> 
+                  <% if license.printable? %> 
                     <% if license.client.branches.empty? %>        
                       <%= link_to print_licenses_path(id: license, format: :pdf), target: '_blank', class: "btn btn-outline text-dark small", title: "Print Receipt" do %>
                         <i class="fas fa-print fa-sm text-dark"></i> 
@@ -49,8 +49,3 @@
   </div>
 </div>
 
-<script type="text/javascript">
-  $(document).ready(function() {
-    $('#dataTable').DataTable();
-  });
-</script>

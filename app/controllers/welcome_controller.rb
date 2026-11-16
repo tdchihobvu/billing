@@ -9,67 +9,14 @@ class WelcomeController < ApplicationController
   def index
     @from = Date.today.beginning_of_month
     @to = Date.today
-    @start_date = @from  
+    @start_date = @from
     @end_date = @to
 
-    Receipt.where('actual_paid = 0').each do |r|
-      r.update_attribute(:actual_paid, r.amount_paid)
-    end
-
-    Invoice.where(invoice_total: 0).find_each do |v|
-      begin
-        # Only update if needed (avoid unnecessary writes)
-        next if v.invoice_total == v.total
-
-        v.update!(invoice_total: v.total)
-      rescue ActiveRecord::RecordNotUnique => e
-        Rails.logger.warn("Skipped duplicate invoice ID=#{v.id}: #{e.message}")
-        next
-      rescue StandardError => e
-        Rails.logger.error("❌ Unexpected error for invoice ID=#{v.id}: #{e.message}")
-        next
-      end
-    end
-
     populate_missing_settings
-    # check if other parameters like banks exists
-    if Bank.all.empty?
-      redirect_to new_bank_url, notice: "Please add banks"
-    end
-    # update user_fullname to invoice and receipts
-    # Invoice.where('user_fullname IS NULL').each do |invoice|
-    #   unless invoice.user_id.nil?
-    #     invoice.update_attribute(:user_fullname, invoice.user.user_fullname)
+    return redirect_to(new_bank_url, notice: "Please add banks") if Bank.all.empty?
 
-    #   end
-    # end
-
-    Invoice.where(user_fullname: nil).find_each do |invoice|
-      next if invoice.user_id.nil?
-      begin
-        invoice.update!(user_fullname: invoice.user.user_fullname)
-      rescue ActiveRecord::RecordNotUnique, Mysql2::Error => e
-        Rails.logger.warn "⚠️ Skipped duplicate invoice ID=#{invoice.id}: #{e.message}"
-        next
-      end
-    end
-
-    Receipt.where('user_fullname IS NULL').each do |receipt|
-      unless receipt.user_id.nil?
-        receipt.update_attribute(:user_fullname, receipt.user.user_fullname)
-      end
-    end
-    User.where("user_fullname IS NULL").each do |user|
-      user.update_attribute(:user_fullname, user.fullname)
-    end
-    CreditNote.where("tenant_id IS NULL").each do |credit_note|
-      credit_note.update_attribute(:tenant_id, credit_note.user.tenant_id)
-    end
-
-    licenses = License.find_by_sql("SELECT * FROM licenses l WHERE NOT EXISTS (SELECT 1 FROM invoices i WHERE i.id = l.invoice_id); ")
-    licenses.each_with_index do |license|
-      license.destroy
-    end
+    # Read-only. The data repairs that used to run here now live in `bin/rails maintenance:repair`.
+    @summary = DashboardSummary.new(tenant, validity_days: invoice_validity, frequency: exchange_rate_update_frequency)
   end
 
   def dashboard
@@ -116,7 +63,6 @@ class WelcomeController < ApplicationController
       puts("*** #{license.client_id}")
       begin
         c = Client.find(license.client_id)
-        puts("********** #{license.validate_paid}")
       rescue ActiveRecord::RecordNotFound => e
         puts("client does not exist")
       end
@@ -195,7 +141,6 @@ class WelcomeController < ApplicationController
       end      
     end
     if background_color.present?
-      puts("************ background color present #{background_color.name}")
       background_theme = SystemSetting.find_by(tenant_id: tenant.id, config_key_id: background_color.id)
       if background_theme.nil?
         SystemSetting.create(tenant_id: tenant.id, config_key_id: background_color.id, config_value: '#4e73df')

@@ -5,5 +5,5 @@ one:
   description: MyString
 
 two:
-  name: MyString
+  name: name_two
   description: MyString

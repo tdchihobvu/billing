@@ -1,10 +1,55 @@
 class InvoicesController < ApplicationController
   include ActionView::Helpers::NumberHelper
+  helper_method :can_apply_discount?
   before_action :set_invoice, only: %i[ show edit update fiscalise save_fiscal_invoice destroy print receipt delivery_note disable edit_license sms_reminder email_reminder assign_branches setoff]
 
   # GET /invoices
+  INVOICE_TABS = %w[all unpaid overdue paid].freeze
+  PER_PAGE = 50
+
   def index
-    @invoices = tenant.invoices.active.includes(:client, :currency, :invoice_items).order('invoice_date Desc').where("invoice_date BETWEEN '#{statement_start_date}' AND '#{Date.today}'")
+    respond_to do |format|
+      format.html do
+        @tab = INVOICE_TABS.include?(params[:tab]) ? params[:tab] : "all"
+        @users = tenant.users.order(:firstname, :lastname)
+        @currencies = Currency.order(:name)
+        due = "COALESCE(invoices.due_date, invoices.invoice_date + CAST(#{invoice_validity.to_i} AS integer))"
+        base = tenant.invoices.active.where(invoice_date: statement_start_date..Date.today)
+        base = base.where(user_id: params[:user_id]) if params[:user_id].present?
+        base = base.where(currency_id: params[:currency_id]) if params[:currency_id].present?
+        if params[:q].present?
+          base = TextSearch.apply(base.joins(:client), params[:q], %w[clients.name clients.client_account_number invoices.invoice_number])
+        end
+        unpaid = base.where("invoices.invoice_total > invoices.amount_paid")
+        scopes = {
+          "all" => base,
+          "unpaid" => unpaid,
+          "overdue" => base.overdue_after(invoice_validity),
+          "paid" => base.where("invoices.invoice_total <= invoices.amount_paid")
+        }
+        @counts = scopes.transform_values(&:count)
+        scope = scopes[@tab]
+        scope = @tab == "overdue" ? scope.order(Arel.sql("#{due} ASC")) : scope.order(invoice_date: :desc, invoice_number: :desc)
+        @page = [params[:page].to_i, 1].max
+        @pages = [(@counts[@tab] / PER_PAGE.to_f).ceil, 1].max
+        @invoices = scope.preload(:client, :currency, :user).offset((@page - 1) * PER_PAGE).limit(PER_PAGE)
+        @window_start = statement_start_date
+      end
+      format.json do
+        scope = tenant.invoices.active.joins(:currency).preload(:client, :currency).where(invoice_date: statement_start_date..Date.today)
+        columns = [nil,
+                   { sort: "invoices.invoice_date", search: "to_char(invoices.invoice_date, 'DD/MM/YYYY')" },
+                   "invoices.invoice_number",
+                   { sort: "invoices.is_proforma" },
+                   "clients.name", "currencies.name", { sort: "invoices.invoice_total", search: "invoices.invoice_total" }, "invoices.status", nil]
+        vc = view_context
+        render_server_side_table(scope, columns: columns) do |invoice, number|
+          [number, invoice.invoice_date.strftime("%d/%m/%Y"), ERB::Util.html_escape(invoice.invoice_number), invoice.document,
+           ERB::Util.html_escape(invoice.client.name), ERB::Util.html_escape(invoice.currency.name), vc.number_to_currency(invoice.invoice_total, unit: ""),
+           vc.content_tag(:strong, invoice.status), vc.render(partial: "invoices/row_actions", formats: [:html], locals: { invoice: invoice })]
+        end
+      end
+    end
     # tenant.invoices.where('due_date IS NULL').each do |i|
     #   puts("dealing with #{i.invoice_number}")
     #   i.update_attribute(:due_date, (i.invoice_date + invoice_validity.days))
@@ -21,16 +66,10 @@ class InvoicesController < ApplicationController
     @statement_start_date = statement_start_date
   end
 
+  # Old void-request links (sent by phones, and in existing alerts) pointed here and voided the
+  # invoice in one click. Voiding is now a decision on the Void requests page, so this only redirects.
   def void_invoice
-    @invoice = Invoice.find(params[:id])
-    void_reason = "#{params[:void_reason]}"
-    notification = Notification.find(params[:notification_id])
-    if @invoice.update(deleted: true, void_date: Date.today, void_reason: void_reason, status: 'Void')
-      unless notification.nil?
-        notification.update(processed: true, processed_by: current_user.id, read: true)
-      end
-      redirect_to @invoice, notice: "Invoice was successfully voided."
-    end
+    redirect_to void_requests_path, notice: "Void requests are now approved or rejected here.", status: :see_other
   end
 
   # GET /invoices/new
@@ -58,7 +97,7 @@ class InvoicesController < ApplicationController
   end
 
   def duplicate
-    @quotation = Invoice.find(params[:id])
+    @quotation = Invoice.where(tenant_id: tenant.id).find(params[:id])
     @invoice = Invoice.new
     @invoice.invoice_date = Date.today
     @invoice.is_proforma = true
@@ -119,7 +158,7 @@ class InvoicesController < ApplicationController
     @invoice.tenant_id = tenant.id
     category = params[:invoice][:invoice_category_id]
     if @invoice.save
-      @invoice.update_attribute(:invoice_total, @invoice.total)
+      @invoice.update_balance
       @invoice.update_attribute(:due_date, (@invoice.invoice_date + invoice_validity.days))
       redirect_to @invoice, notice: "Invoice was successfully created."
     else
@@ -135,6 +174,7 @@ class InvoicesController < ApplicationController
   # PATCH/PUT /invoices/1
   def update
     if @invoice.update(invoice_params)
+      @invoice.update_balance
       @invoice.update_attribute(:due_date, (@invoice.invoice_date + invoice_validity.days))
       redirect_to @invoice, notice: "Invoice was successfully updated.", status: :see_other
     else
@@ -181,8 +221,11 @@ class InvoicesController < ApplicationController
 
   # DELETE /invoices/1
   def destroy
-    @invoice.update_attribute(:deleted, true)
-    redirect_to invoices_url, notice: "Invoice was successfully destroyed.", status: :see_other
+    if @invoice.update_attribute(:deleted, true)
+      redirect_to invoices_url, notice: "Invoice was successfully destroyed.", status: :see_other
+    else
+      redirect_to invoices_url, alert: "Invoice could not be deleted.", status: :see_other
+    end
   end
 
   def disable
@@ -236,7 +279,8 @@ class InvoicesController < ApplicationController
       invoice_category_id: 2,
       product_pricing: 'none',
       description: 'Music Copyright License',
-      invoice_number: next_invoice_number
+      invoice_number: next_invoice_number,
+      client_id: (tenant.clients.find_by(id: params[:client_id])&.id if params[:client_id].present?)
     )
 
     @invoice.build_license
@@ -611,7 +655,7 @@ class InvoicesController < ApplicationController
   
     # Use callbacks to share common setup or constraints between actions.
     def set_invoice
-      @invoice = Invoice.find(params[:id])
+      @invoice = Invoice.where(tenant_id: tenant.id).find(params[:id])
     end
 
     def next_invoice_number
@@ -631,8 +675,14 @@ class InvoicesController < ApplicationController
     #   params.require(:invoice).permit(:client_id, :user_id, :invoice_date, :invoice_number,:description, :order_number, :currency_id, :bank_id, :invoice_category_id, :deleted, :is_proforma, :sent, :paid, :product_pricing, :unit_price, :quantity, invoice_items_attributes: [:id, :description, :quantity, :unit_price, :vat_type_id], license_attributes: [:id, :invoice_id, :client_id, :license_category_id, :license_option_id, :renewal_date, :auto_renewal, :amount, :quantity, :special_days])
     # end
 
+    def can_apply_discount?
+      current_user.can?("invoices.discount")
+    end
+
     def invoice_params
-      params.require(:invoice).permit(:client_id, :user_id, :invoice_date, :invoice_number,:description, :order_number, :currency_id, :bank_id, :invoice_category_id, :deleted, :is_proforma, :sent, :paid, :product_pricing, :unit_price, :quantity, :special_days, invoice_items_attributes: [:id, :item_code, :description, :quantity, :unit_price, :vat_type_id], license_attributes: [:id, :client_id, :invoice_id, :license_category_id, :license_option_id, :renewal_date, :auto_renewal, :amount, :quantity, :special_days, :is_special], branch_ids: [])
+      permitted = params.require(:invoice).permit(:discount, :client_id, :user_id, :invoice_date, :invoice_number,:description, :order_number, :currency_id, :bank_id, :invoice_category_id, :deleted, :is_proforma, :sent, :paid, :product_pricing, :unit_price, :quantity, :special_days, invoice_items_attributes: [:id, :item_code, :description, :quantity, :unit_price, :vat_type_id], license_attributes: [:id, :client_id, :invoice_id, :license_category_id, :license_option_id, :renewal_date, :auto_renewal, :amount, :quantity, :special_days, :is_special], branch_ids: [])
+      permitted.delete(:discount) unless can_apply_discount?
+      permitted
     end
 
     def credit_note_params

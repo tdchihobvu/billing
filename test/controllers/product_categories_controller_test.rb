@@ -17,7 +17,7 @@ class ProductCategoriesControllerTest < ActionDispatch::IntegrationTest
 
   test "should create product_category" do
     assert_difference("ProductCategory.count") do
-      post product_categories_url, params: { product_category: { name: @product_category.name } }
+      post product_categories_url, params: { product_category: fresh_attributes(@product_category) }
     end
 
     assert_redirected_to product_category_url(ProductCategory.last)
@@ -39,8 +39,10 @@ class ProductCategoriesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should destroy product_category" do
+    record = unreferenced_copy(@product_category)
+
     assert_difference("ProductCategory.count", -1) do
-      delete product_category_url(@product_category)
+      delete product_category_url(record)
     end
 
     assert_redirected_to product_categories_url

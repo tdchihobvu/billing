@@ -9,6 +9,7 @@ class Client < ApplicationRecord
   has_many :transactions#, -> {where(deleted: false)}
   has_many :receipts#, -> {where(deleted: false)}
   has_many :branches, dependent: :destroy
+  has_many :vehicles, dependent: :destroy
   # has_many :journal_debits, through: :transactions, class: 'transaction', -> {where(journal: true, debit: true)}
   # has_many :journal_credits, through: :transactions, class: 'transaction', -> {where(journal: true, debit: false)}
 
@@ -55,8 +56,9 @@ class Client < ApplicationRecord
   def self.search(search)
     return [] if search.blank?
 
-    Client.where("name ILIKE ?", "%#{search.split.join('%')}%")
-          .order(name: :asc)
+    # Each word matches separately ("bottle store" finds "Bottle Gumbo Store"); % and _ typed by the user are literal.
+    words = search.to_s.split.map { |w| sanitize_sql_like(w) }
+    Client.where("name ILIKE ?", "%#{words.join('%')}%").order(name: :asc)
   end
 
   def journal_debits
@@ -67,12 +69,17 @@ class Client < ApplicationRecord
     transactions.where(journal: true, debit: false)
   end
 
+  def settle_licenses_from_statement
+    update_statement(tenant)
+    licenses.active.where(paid: false).find_each(&:validate_paid)
+  end
+
   def update_statement(tenant)
     config = ConfigKey.find_by(name: 'Exchange Rate Update Frequency')
     exchange_rate_update_frequency = tenant.system_settings.find_by(config_key_id: config.id).config_value
     # get invoices and post them as debits
     invoices.active.each do |i|
-      i.update(amount_paid: i.total_paid, invoice_total: i.total)
+      i.sync_balance
       unless i.client.nil?
         transaction_date = i.invoice_date
         unless Transaction.exists?(client_id: i.client_id, source: 'Invoices', source_id: i.id, reference_number: i.invoice_number)
@@ -114,6 +121,20 @@ class Client < ApplicationRecord
             )
         end
       end
+    end
+    sync_deleted_statement_lines
+  end
+
+  # Hides statement lines whose invoice or receipt was deleted or voided, and shows them
+  # again if it was restored. Journals are entered by hand and are left alone.
+  def sync_deleted_statement_lines
+    lines = Transaction.where(client_id: id, journal: [false, nil])
+    now = Time.current
+    { "Invoices" => invoices, "Receipts" => receipts }.each do |source, documents|
+      lines.where(source: source, deleted: [false, nil], source_id: documents.where(deleted: true).select(:id))
+           .update_all(deleted: true, updated_at: now)
+      lines.where(source: source, deleted: true, source_id: documents.where(deleted: false).select(:id))
+           .update_all(deleted: false, updated_at: now)
     end
   end
 

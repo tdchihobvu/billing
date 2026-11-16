@@ -1,10 +1,1 @@
-<p style="color: green"><%= notice %></p>
-
-<%= render @payment_form %>
-
-<div>
-  <%= link_to "Edit this payment form", edit_payment_form_path(@payment_form) %> |
-  <%= link_to "Back to payment forms", payment_forms_path %>
-
-  <%= button_to "Destroy this payment form", @payment_form, method: :delete %>
-</div>
+<%= render "shared/crud_show", record: @payment_form, model: PaymentForm, crumb: link_to("Settings / Payment forms", payment_forms_path), index_path: payment_forms_path %>

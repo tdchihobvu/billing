@@ -1,48 +1,43 @@
-<div class= "row">
-  <div class="col-md-12">
-    <!-- Filter Form -->
-    <div class="card">
-      <div class="card-body">
-        <%= form_with url: sales_reports_path, method: :get, local: true do %>
-        <div class="form-group row">
-          <div class="col-2">
-            <%= label_tag :start_date, 'Filter From:', class: 'form-label small' %>
-            <%= date_field_tag :start_date, params[:start_date], class: 'form-control form-control-sm' %>
-          </div>
-          <div class="col-2">
-            <%= label_tag :end_date, 'To:', class: 'form-label small' %>
-            <%= date_field_tag :end_date, params[:end_date], class: 'form-control form-control-sm' %>
-          </div>
-          <div class="col-3">
-            <%= label_tag :currency_id, 'Filter By Currency', class: 'form-label small' %>
-            <%= select_tag :currency_id, options_from_collection_for_select(Currency.all, :id, :name, params[:currency_id]), {prompt: "Select Currency", class:"form-select form-select-sm" } %>
-          </div>
-          <div class="col-3">
-            <%= label_tag :user_id, "Filter By #{default_user_title}", class: 'form-label small' %>
-            <%= select_tag :user_id, options_from_collection_for_select(@users, :id, :user_fullname, params[:user_id]), {prompt: "Select #{default_user_title}", class:"form-select form-select-sm" } %>
-          </div>
-          <div class="col-2">
-            <%= submit_tag "Submit", class: 'btn btn-primary btn-sm mt-4 p-2' %>
-          </div>
-        </div>
-        <% end %>
-      </div>
-    </div>
-  </div>
+<% exp = { start_date: @start_date, end_date: @end_date, currency_id: @currency, user_id: @user, format: :xlsx } %>
+<div class="zpage">
+  <%= render "shared/zhead", title: "Sales", crumb: link_to("Reports", reports_path),
+             actions: safe_join([
+               link_to("Export By #{default_user_title}", sales_by_user_reports_path(exp.except(:user_id)), class: "b"),
+               link_to("VAT Sales", vat_sales_reports_path(exp), class: "b"),
+               link_to("Export", sales_reports_path(exp), class: "b main")
+             ]) %>
 
-</div>
+  <%= render "report_filters", url: sales_reports_path, from_key: :start_date, to_key: :end_date %>
 
-<div class="row mt-3">
-  <div class="col-12">
-    <div class="card">
-      <div class="card-body">
-        <div class="float-right mb-2">
-          <%= link_to sales_reports_path(start_date: @start_date, end_date: @end_date, currency_id: @currency, user_id: @user, format: :xlsx), class: "btn btn-primary btn-sm rounded-0" do %><i class="fas fa-file"></i> Export <% end %>
-          <%= link_to vat_sales_reports_path(start_date: @start_date, end_date: @end_date, currency_id: @currency, user_id: @user, format: :xlsx), class: "btn btn-primary btn-sm rounded-0" do %><i class="fas fa-file"></i> VAT Sales <% end %>
-          <%= link_to sales_by_user_reports_path(start_date: @start_date, end_date: @end_date, currency_id: @currency, format: :xlsx), class: "btn btn-primary btn-sm rounded-0" do %><i class="fas fa-file"></i> Export By <%= default_user_title %> <% end %>
-        </div>  
-        <%= render 'chart_by_inspector' %>
-      </div>
-    </div>
-  </div>
+  <section class="box">
+    <div class="boxh"><h2>By <%= default_user_title %></h2><span><%= @start_date.to_date.strftime("%d %b %Y") %> to <%= @end_date.to_date.strftime("%d %b %Y") %></span></div>
+    <% if @by_user.any? %>
+      <div class="zwrap"><table class="zt">
+        <thead><tr><th><%= default_user_title %></th><th class="r">Invoices</th><% @currencies.each do |c| %><th class="r"><%= c.name %></th><% end %></tr></thead>
+        <tbody>
+          <% @by_user.each do |name, count, totals| %>
+            <tr><td><%= name %></td><td class="r"><%= count %></td><% @currencies.each do |c| %><td class="r money"><%= totals[c.id] ? number_with_precision(totals[c.id], precision: 2, delimiter: ",") : "" %></td><% end %></tr>
+          <% end %>
+        </tbody>
+      </table></div>
+    <% else %>
+      <%= zempty("No invoices in this period", "Invoices appear here as they're raised.") %>
+    <% end %>
+  </section>
+
+  <section class="box">
+    <div class="boxh"><h2>By licence category</h2></div>
+    <% if @by_category.any? %>
+      <div class="zwrap"><table class="zt">
+        <thead><tr><th>Licence category</th><% @currencies.each do |c| %><th class="r"><%= c.name %></th><% end %></tr></thead>
+        <tbody>
+          <% @by_category.each do |name, totals| %>
+            <tr><td><%= name %></td><% @currencies.each do |c| %><td class="r money"><%= totals[c.id] ? number_with_precision(totals[c.id], precision: 2, delimiter: ",") : "" %></td><% end %></tr>
+          <% end %>
+        </tbody>
+      </table></div>
+    <% else %>
+      <%= zempty("No licences invoiced in this period", "Licence invoices appear here by category.") %>
+    <% end %>
+  </section>
 </div>

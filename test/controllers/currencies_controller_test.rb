@@ -17,7 +17,7 @@ class CurrenciesControllerTest < ActionDispatch::IntegrationTest
 
   test "should create currency" do
     assert_difference("Currency.count") do
-      post currencies_url, params: { currency: { name: @currency.name, origin: @currency.origin, symbol: @currency.symbol } }
+      post currencies_url, params: { currency: fresh_attributes(@currency) }
     end
 
     assert_redirected_to currency_url(Currency.last)
@@ -39,8 +39,10 @@ class CurrenciesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should destroy currency" do
+    record = unreferenced_copy(@currency)
+
     assert_difference("Currency.count", -1) do
-      delete currency_url(@currency)
+      delete currency_url(record)
     end
 
     assert_redirected_to currencies_url

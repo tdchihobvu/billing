@@ -17,7 +17,7 @@ class ClientTypesControllerTest < ActionDispatch::IntegrationTest
 
   test "should create client_type" do
     assert_difference("ClientType.count") do
-      post client_types_url, params: { client_type: { name: @client_type.name } }
+      post client_types_url, params: { client_type: fresh_attributes(@client_type) }
     end
 
     assert_redirected_to client_type_url(ClientType.last)
@@ -39,8 +39,10 @@ class ClientTypesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should destroy client_type" do
+    record = unreferenced_copy(@client_type)
+
     assert_difference("ClientType.count", -1) do
-      delete client_type_url(@client_type)
+      delete client_type_url(record)
     end
 
     assert_redirected_to client_types_url

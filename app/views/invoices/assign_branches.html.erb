@@ -1,48 +1,24 @@
-<!-- Page Heading -->
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Assign Branches <small class="fw-6">#<%= @invoice.invoice_number %></small></h1>
-    <div class="float-end">
-      <%= link_to invoices_path, class: "d-none d-sm-inline-block btn btn-sm btn-outline text-dark" do %>
-      <i class="fas fa-file fa-sm text-dark"></i> Invoices
-      <% end %> |
-      <%= link_to :back, class: "btn btn-outline btn-sm rounded-0" do %><i class="fas fa-backward text-dark"></i> Back <% end %> 
-    </div>
-</div>
+<div class="zpage">
+  <%= render "shared/zhead", title: "Assign Branches", crumb: link_to("Sales / Invoices / #{@invoice.invoice_number}", invoice_path(@invoice)),
+             sub: "Choose which of #{@invoice.client.name}'s branches this invoice covers." %>
 
-<div class="card border-0">
-  <div class="card-body">
-    <h6>All fields marked with <span class="required_field"></span> are mandatory</h6>
-    <%= form_with(model: @invoice) do |form| %>
-      <% if @invoice.errors.any? %>
-        <div style="color: red">
-          <h2><%= pluralize(@invoice.errors.count, "error") %> prohibited this invoice from being saved:</h2>
-
-          <ul>
-            <% @invoice.errors.each do |error| %>
-              <li><%= error.full_message %></li>
-            <% end %>
-          </ul>
+  <%= form_with(model: @invoice, class: "box") do |form| %>
+    <%= render "shared/form_errors", record: @invoice %>
+    <%= form.hidden_field :is_proforma %>
+    <div class="boxh"><h2>Branches</h2><span><%= pluralize(@invoice.client.branches.size, "branch") %></span></div>
+    <% if @invoice.client.branches.any? %>
+      <%= form.collection_check_boxes(:branch_ids, @invoice.client.branches, :id, :name) do |b| %>
+        <div class="zsetrow" style="grid-template-columns:auto minmax(0,1fr)">
+          <%= b.check_box(class: "zbox") %>
+          <%= b.label(style: "margin:0;font-weight:500;cursor:pointer") %>
         </div>
       <% end %>
-
-      <%= form.hidden_field :is_proforma %>
-      <div class="row">
-        <div class="col-sm-6">
-         <div class="form-group">
-          <%= form.label :branches %>
-          <%= form.collection_check_boxes(:branch_ids, @invoice.client.branches, :id, :name) do |b| %>
-            <div>
-              <%= b.check_box %>
-              <%= b.label %>
-            </div>
-          <% end %>
-          </div>
-        </div>
-      </div>
-
-      <div class="text-left">
-        <%= form.submit "Save Invoice", class:'btn btn-lg btn-success' %>
-      </div>
+    <% else %>
+      <%= zempty("No branches", "This client has no branches yet.", link_to("Add branches", add_branches_clients_path(id: @invoice.client), class: "b")) %>
     <% end %>
-  </div>
+    <div class="zformfoot">
+      <%= link_to "Cancel", invoice_path(@invoice), class: "b" %>
+      <%= form.submit "Save Invoice", class: "b main" %>
+    </div>
+  <% end %>
 </div>

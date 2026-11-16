@@ -1,13 +1,61 @@
 class LicensesController < ApplicationController
-  before_action :set_license, only: %i[ show edit update destroy print print_plain ]
+  before_action :set_license, only: %i[ show edit update destroy print print_plain assign_vehicles vehicle_discs ]
+  # No licence can be printed until Finance and the Manager have approved it.
+  before_action :require_approved_license, only: %i[ print print_plain vehicle_discs ]
+
+  # PATCH /licenses/1/vehicles  Chooses which of the client's vehicles this licence covers.
+  def assign_vehicles
+    ids = Array(params[:vehicle_ids]).reject(&:blank?)
+    @license.vehicle_ids = @license.client.vehicles.where(id: ids).pluck(:id)
+    count = @license.vehicles.size
+    note = count > @license.quantity.to_i && @license.quantity.to_i.positive? ? " This is more than the #{@license.quantity} licence(s) invoiced." : ""
+    redirect_to license_path(@license, anchor: "vehicles"), notice: "This licence now covers #{count} #{'vehicle'.pluralize(count)}.#{note}", status: :see_other
+  end
+
+  # GET /licenses/1/vehicle_discs.pdf  One licence disc page per covered vehicle (or just ?vehicle_id=).
+  def vehicle_discs
+    vehicles = @license.vehicles.active.ordered
+    vehicles = vehicles.where(id: params[:vehicle_id]) if params[:vehicle_id].present?
+    if vehicles.empty?
+      return redirect_to(license_path(@license, anchor: "vehicles"), alert: "Choose the vehicles this licence covers first.")
+    end
+
+    respond_to do |format|
+      format.pdf do
+        pdf = VehicleDiscPdf.new(@license, vehicles.to_a, logo_path)
+        name = vehicles.size == 1 ? vehicles.first.registration_number : "#{@license.client.name} vehicle discs"
+        send_data pdf.render, filename: "#{name.parameterize}.pdf", type: "application/pdf", disposition: "inline"
+      end
+    end
+  end
 
   # GET /licenses
   def index
     # @licenses = License.active.select("invoices.*").joins("LEFT OUTER JOIN invoices ON (licenses.invoice_id = invoices.id AND invoices.deleted = false)")
-    @licenses = License.active.includes(:invoice, :client, :license_option) #.select("invoices.*, COUNT(licenses.id) AS count").joins("LEFT OUTER JOIN licenses ON (licenses.invoice_id = invoices.id)")
-    @licenses.each do |l|
-      if l.invoice.balance.to_i <= 0
-        l.update_attribute(:paid, true)
+    respond_to do |format|
+      format.html do
+        mark_settled_licenses_paid
+        scope = License.active.joins(:client, :invoice).where(invoices: { deleted: false, tenant_id: tenant.id })
+        if params[:q].present?
+          scope = TextSearch.apply(scope, params[:q], %w[clients.name clients.client_account_number invoices.invoice_number])
+        end
+        scope = scope.where(paid: params[:paid] == "yes") if %w[yes no].include?(params[:paid])
+        @count = scope.count
+        @per_page = 50
+        @page = [params[:page].to_i, 1].max
+        @pages = [(@count / @per_page.to_f).ceil, 1].max
+        @licenses = scope.preload(:invoice, :license_option, client: :branches).order(:expiry_date).offset((@page - 1) * @per_page).limit(@per_page)
+      end
+      format.json do
+        scope = License.active.joins(:client, :license_option, :invoice).where(invoices: { deleted: false }).preload(:invoice, :license_option, client: :branches)
+        columns = [nil, "clients.name",
+                   { sort: "licenses.renewal_date", search: "to_char(licenses.renewal_date, 'DD Mon YYYY') || ' to ' || to_char(licenses.expiry_date, 'DD Mon YYYY')" },
+                   "license_options.name", "licenses.status", nil]
+        vc = view_context
+        render_server_side_table(scope, columns: columns) do |license, number|
+          [number, ERB::Util.html_escape(license.client.name), license.long_period, ERB::Util.html_escape(license.license_option.name), ERB::Util.html_escape(license.status),
+           vc.render(partial: "licenses/row_actions", formats: [:html], locals: { license: license })]
+        end
       end
     end
   end
@@ -17,12 +65,21 @@ class LicensesController < ApplicationController
   end
 
   # GET /licenses/new
+  # Generate License: find a client by name or account number, with their current licence.
   def new
-    @clients = Client.search(params[:search])
+    term = params[:search].to_s.strip
+    @clients = []
+    return if term.length < 2
+
+    @clients = TextSearch.apply(tenant.clients, term, %w[clients.name clients.trading_name clients.client_account_number clients.city clients.location])
+                         .order(:name).limit(50).to_a
+    # Each client's latest licence, to show its status in the results.
+    @latest = License.joins(:invoice).where(client_id: @clients.map(&:id), invoices: { deleted: false })
+                     .preload(:license_category).order(expiry_date: :desc).group_by(&:client_id).transform_values(&:first)
   end
 
   def generate
-    @client = Client.find(params[:client_id])
+    @client = tenant.clients.find(params[:client_id])
     # get the last invoice generated
     last_invoice = @client.invoices.active.order('invoice_date Asc').last
     @license = nil
@@ -35,19 +92,20 @@ class LicensesController < ApplicationController
   end
 
   def generate_new
-    @client = Client.find(params[:client_id])
+    @client = tenant.clients.find(params[:client_id])
     @license = License.new
     @license.client_id = @client.id
   end
 
   # GET /licenses/1/edit
   def edit
+    @client = @license.client
   end
 
   # POST /licenses
   def create
     @license = License.new(license_params)
-    @client = Client.find(params[:license][:client_id])
+    @client = tenant.clients.find(params[:license][:client_id])
     if @license.save
       redirect_to @license, notice: "License was successfully created."
     else
@@ -60,6 +118,7 @@ class LicensesController < ApplicationController
     if @license.update(license_params)
       redirect_to @license, notice: "License was successfully updated.", status: :see_other
     else
+      @client = @license.client
       render :edit, status: :unprocessable_entity
     end
   end
@@ -118,8 +177,9 @@ class LicensesController < ApplicationController
   end
 
   def print_multiple
-    @license = License.find(params[:id])
-    @client = Client.find(params[:client_id])
+    @client = tenant.clients.find(params[:client_id])
+    @license = @client.licenses.find(params[:id])
+    return unless require_approved_license
     @branches = @client.branches
     unless @license.invoice.branches.empty?
       @branches = @license.invoice.branches
@@ -127,8 +187,9 @@ class LicensesController < ApplicationController
   end
 
   def branch_license
-    @license = License.find(params[:license_id])
-    @branch = Branch.find(params[:branch_id])
+    @license = tenant_licenses.find(params[:license_id])
+    return unless require_approved_license
+    @branch = @license.client.branches.find(params[:branch_id])
     respond_to do |format|
       format.html
       format.pdf do 
@@ -140,8 +201,9 @@ class LicensesController < ApplicationController
   end
 
   def download_all
-    @license = License.find(params[:id])
-    @client = Client.find(params[:client])
+    @license = tenant_licenses.find(params[:id])
+    return unless require_approved_license
+    @client = tenant.clients.find(params[:client])
 
     respond_to do |format|
       format.html
@@ -160,13 +222,33 @@ class LicensesController < ApplicationController
   end
 
   private
+    # Only looks at unpaid licenses whose invoice is settled, not every license.
+    def mark_settled_licenses_paid
+      License.active.where(paid: false).joins(:invoice).where(invoices: { tenant_id: tenant.id }).where("invoices.invoice_total - invoices.amount_paid < 1").find_each do |license|
+        license.update_attribute(:paid, true)
+      end
+    end
+
     # Use callbacks to share common setup or constraints between actions.
     def set_license
-      @license = License.find(params[:id])
+      @license = tenant_licenses.find(params[:id])
+    end
+
+    def tenant_licenses
+      License.joins(:invoice).where(invoices: { tenant_id: tenant.id })
+    end
+
+    # Returns true when printing may go ahead; otherwise explains why and sends the user back.
+    def require_approved_license
+      return true if @license.printable?
+
+      message = "This licence can't be printed yet: #{@license.approval_label.downcase}. #{@license.approval_hint}"
+      redirect_to license_path(@license), alert: message
+      false
     end
 
     # Only allow a list of trusted parameters through.
     def license_params
-      params.require(:license).permit(:client_id, :invoice_id, :license_category_id, :renewal_date, :expiry_date, :auto_renewal, :license_option_id, :printed, :active, :qr_code, :special_days, :is_special)
+      params.require(:license).permit(:client_id, :invoice_id, :amount, :license_category_id, :renewal_date, :expiry_date, :auto_renewal, :license_option_id, :printed, :active, :qr_code, :special_days, :is_special)
     end
 end

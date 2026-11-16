@@ -25,7 +25,7 @@ module Api
       end
 
       def current_user
-        user = User.find_by(username: params[:username])
+        user = User.find_by(username: params[:username].to_s.strip.downcase)
         if user.nil? 
           nil
         end

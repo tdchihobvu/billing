@@ -1,10 +1,1 @@
-<p style="color: green"><%= notice %></p>
-
-<%= render @vat_type %>
-
-<div>
-  <%= link_to "Edit this vat type", edit_vat_type_path(@vat_type) %> |
-  <%= link_to "Back to vat types", vat_types_path %>
-
-  <%= button_to "Destroy this vat type", @vat_type, method: :delete %>
-</div>
+<%= render "shared/crud_show", record: @vat_type, model: VatType, crumb: link_to("Settings / Taxes", vat_types_path), index_path: vat_types_path %>

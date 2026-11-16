@@ -1,0 +1,91 @@
+<% money = ->(v) { number_with_precision(v.to_d, precision: 2, delimiter: ",") } %>
+<div class="zpage">
+  <%= render "shared/zhead", title: "Void requests", crumb: link_to("Sales / Invoices", invoices_path),
+             sub: "#{default_user_title.pluralize} can't void invoices from their phones themselves. They ask, and you decide here." %>
+
+  <section class="box">
+    <nav class="ztabs" aria-label="Void requests">
+      <%= link_to void_requests_path, "aria-current": (@tab == "waiting" ? "page" : nil) do %>Waiting<em><%= @waiting.size %></em><% end %>
+      <%= link_to void_requests_path(tab: "decided"), "aria-current": (@tab == "decided" ? "page" : nil) do %>Decided<% end %>
+    </nav>
+
+    <% if @tab == "waiting" %>
+      <% if @waiting.any? %>
+        <ul class="zvoidlist">
+          <% @waiting.each do |req| %>
+            <% inv = @invoices[req.invoice_id] %>
+            <% copies = req.copies.count %>
+            <li id="request-<%= req.id %>">
+              <span class="zdot r"><i class="fas fa-ban" aria-hidden="true"></i></span>
+              <div class="zvoid__main">
+                <% if inv %>
+                  <b>Void <%= link_to inv.invoice_number, inv, class: "zno" %>, <%= inv.client&.name %>,
+                     <span class="cur"><%= inv.currency&.name %></span> <%= money.(inv.invoice_total) %></b>
+                  <small>
+                    Raised <%= inv.invoice_date&.strftime("%d %b %Y") %> by <%= inv.user&.fullname || inv.user_fullname %>.
+                    <% paid = inv.amount_paid.to_d %>
+                    <%= paid.positive? ? "#{inv.currency&.name} #{money.(paid)} already paid on it." : "Nothing paid on it yet." %>
+                    <% if inv.deleted? %><b style="color:var(--late)">Already void.</b><% end %>
+                  </small>
+                <% else %>
+                  <b><%= req.message %></b>
+                  <small style="color:var(--late)">The invoice in this request can't be found. Reject it to close it.</small>
+                <% end %>
+                <p class="zvoid__reason">“<%= req.void_reason.presence || "No reason given" %>”
+                  <span>— <%= req.user&.fullname || "Inspector" %>, <%= time_ago_in_words(req.created_at) %> ago<%= " · sent #{copies} times" if copies > 1 %></span></p>
+                <% if inv && inv.amount_paid.to_d.positive? %>
+                  <p class="zhint" style="margin:4px 0 0;color:var(--late)">Payments were recorded on this invoice. Voiding it removes it from balances, so check those receipts afterwards.</p>
+                <% end %>
+              </div>
+              <div class="zvoid__acts">
+                <% if inv %><%= link_to "View invoice", inv, class: "b" %><% end %>
+                <details class="zvoid__reject">
+                  <summary class="b">Reject</summary>
+                  <%= form_with url: reject_void_request_path(req), method: :post, class: "zvoid__form" do %>
+                    <label class="visually-hidden" for="note-<%= req.id %>">Reason for rejecting</label>
+                    <%= text_field_tag :note, nil, id: "note-#{req.id}", placeholder: "Why? e.g. Client has paid; invoice is correct", required: true %>
+                    <%= submit_tag "Reject request", class: "b danger" %>
+                  <% end %>
+                </details>
+                <% if inv && !inv.deleted? %>
+                  <%= button_to "Approve void", approve_void_request_path(req), class: "b main", form: { class: "button_to" },
+                                data: { turbo_confirm: "Void invoice #{inv.invoice_number} for #{inv.client&.name}? It will no longer count towards balances or reports." } %>
+                <% elsif inv %>
+                  <%= button_to "Close request", approve_void_request_path(req), class: "b", form: { class: "button_to" } %>
+                <% end %>
+              </div>
+            </li>
+          <% end %>
+        </ul>
+      <% else %>
+        <%= zempty("No requests waiting", "When an #{default_user_title} asks to void an invoice from their phone, it appears here for you to approve or reject.") %>
+      <% end %>
+
+    <% else %>
+      <% if @decided.any? %>
+        <div class="zwrap">
+          <table class="zt">
+            <thead><tr><th>Decided</th><th>Invoice</th><th>Requested by</th><th>Reason given</th><th>Decision</th></tr></thead>
+            <tbody>
+              <% @decided.each do |req| %>
+                <% inv = @invoices[req.invoice_id] %>
+                <tr>
+                  <td class="money"><%= req.decided_at&.strftime("%d %b %Y, %H:%M") %><small class="muted" style="display:block"><%= req.decider&.fullname %></small></td>
+                  <td class="zvn"><% if inv %><%= link_to inv.invoice_number, inv, class: "zno" %><small><%= inv.client&.name %></small><% else %>—<% end %></td>
+                  <td><%= req.user&.fullname %></td>
+                  <td>“<%= req.void_reason %>”</td>
+                  <td>
+                    <span class="ztag <%= req.decision == 'approved' ? 'late' : 'paid' %>"><%= req.decision == "approved" ? "Voided" : "Rejected" %></span>
+                    <% if req.decision_note.present? %><small class="muted" style="display:block;margin-top:3px"><%= req.decision_note %></small><% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% else %>
+        <%= zempty("Nothing decided yet", "Requests you approve or reject appear here.") %>
+      <% end %>
+    <% end %>
+  </section>
+</div>

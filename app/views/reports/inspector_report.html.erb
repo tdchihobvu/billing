@@ -1,0 +1,119 @@
+<%
+  title = default_user_title.presence || "Inspector"
+  today = Date.current
+  periods = {
+    "this_month" => ["This month", today.beginning_of_month, today.end_of_month],
+    "last_month" => ["Last month", today.prev_month.beginning_of_month, today.prev_month.end_of_month],
+    "this_week"  => ["This week", today.beginning_of_week, today.end_of_week],
+    "last_7"     => ["Last 7 days", today - 6, today],
+    "last_30"    => ["Last 30 days", today - 29, today],
+    "this_year"  => ["This year", today.beginning_of_year, today.end_of_year]
+  }
+  period = periods.find { |_, (_, f, t)| f == @start_date && t == @end_date }&.first || "custom"
+  ranges = periods.transform_values { |(_, f, t)| [f.iso8601, t.iso8601] }
+  money = ->(v) { number_with_precision(v.to_d.round(2), precision: 2, delimiter: ",") }
+
+  counted = @invoices.reject(&:void?)
+  invoiced = counted.group_by { |i| i.currency.name }.transform_values { |l| l.sum { |i| i.invoice_total.to_d } }
+  received = @receipts.group_by { |r| r.currency.name }.transform_values { |l| l.sum { |r| r.amount.to_d } }
+
+  rows = []
+  rows += @invoices.map { |i| [i.invoice_date, 0, i] } unless @show == "receipts"
+  rows += @receipts.map { |r| [r.transaction_date.to_date, 1, r] } unless @show == "invoices"
+  rows.sort_by! { |d, o, rec| [d || Date.new(1900), o, rec.is_a?(Invoice) ? rec.invoice_number.to_s : rec.reference_number.to_s] }
+
+  base = request.query_parameters.except("show")
+  who = @inspector ? @inspector.fullname : "All #{title.pluralize.downcase}"
+%>
+
+<div class="zpage">
+  <%= render "shared/zhead", title: "#{title} report", crumb: link_to("Reports", reports_path),
+             sub: "#{who} · #{@start_date.strftime('%d %b %Y')} to #{@end_date.strftime('%d %b %Y')}",
+             actions: link_to("Download Excel", inspector_report_reports_path(base.merge(from: @start_date, to: @end_date, format: :xlsx)), data: { turbo: false }, class: "b main") %>
+
+  <section class="box">
+    <%= form_with url: inspector_report_reports_path, method: :get, class: "zfilters",
+                  data: { controller: "period-filter", period_filter_ranges_value: ranges.to_json, turbo_action: "advance" } do |f| %>
+      <%= hidden_field_tag :show, @show unless @show == "all" %>
+      <%= f.select :user_id, options_from_collection_for_select(@users, :id, :fullname, params[:user_id]), { include_blank: "All #{title.pluralize}" }, class: "zsel on", "aria-label": title %>
+      <%= select_tag :period, options_for_select(periods.map { |k, (label, *)| [label, k] } + [["Custom dates", "custom"]], period),
+                     class: "zsel", "aria-label": "Period", data: { period_filter_target: "period", action: "change->period-filter#pick" } %>
+      <label class="zdate">From <%= f.date_field :from, value: @start_date, class: "zsel", data: { period_filter_target: "from", action: "change->period-filter#custom" } %></label>
+      <label class="zdate">To <%= f.date_field :to, value: @end_date, class: "zsel", data: { period_filter_target: "to", action: "change->period-filter#custom" } %></label>
+      <%= f.submit "Show", name: nil, class: "b main" %>
+      <%= link_to "Reset", inspector_report_reports_path, class: "b" %>
+    <% end %>
+
+    <div class="zstats" style="padding:0 18px 14px">
+      <div class="zstat"><small>Invoices raised</small><b><%= number_with_delimiter(counted.size) %></b></div>
+      <% invoiced.sort.each do |cur, amt| %><div class="zstat"><small>Invoiced (<%= cur %>)</small><b><%= money.(amt) %></b></div><% end %>
+      <div class="zstat"><small>Receipts issued</small><b><%= number_with_delimiter(@receipts.size) %></b></div>
+      <% received.sort.each do |cur, amt| %><div class="zstat"><small>Received (<%= cur %>)</small><b><%= money.(amt) %></b></div><% end %>
+    </div>
+
+    <nav class="ztabs" aria-label="Show">
+      <%= link_to inspector_report_reports_path(base.merge(from: @start_date, to: @end_date)), "aria-current": (@show == "all" ? "page" : nil) do %>Invoices and receipts<em><%= number_with_delimiter(@invoices.size + @receipts.size) %></em><% end %>
+      <%= link_to inspector_report_reports_path(base.merge(from: @start_date, to: @end_date, show: "invoices")), "aria-current": (@show == "invoices" ? "page" : nil) do %>Invoices only<em><%= number_with_delimiter(@invoices.size) %></em><% end %>
+      <%= link_to inspector_report_reports_path(base.merge(from: @start_date, to: @end_date, show: "receipts")), "aria-current": (@show == "receipts" ? "page" : nil) do %>Receipts only<em><%= number_with_delimiter(@receipts.size) %></em><% end %>
+    </nav>
+
+    <% if rows.any? %>
+      <div class="zwrap">
+        <table class="zt">
+          <thead>
+            <tr><th>Date</th><th>Document</th><th>Client</th><th>Details</th><th class="r">Invoiced</th><th class="r">Received</th><th class="r">Balance</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            <% rows.each do |date, _, rec| %>
+              <% if rec.is_a?(Invoice) %>
+                <% items = rec.invoice_items.reject(&:deleted) %>
+                <tr class="<%= 'zmuted' if rec.void? %>">
+                  <td class="money"><%= date&.strftime("%d %b %Y") %></td>
+                  <td class="zdoc-cell"><span class="ztag info">Invoice</span><%= link_to rec.invoice_number, rec, class: "zno" %></td>
+                  <td class="zvn"><b><%= rec.client&.name %></b><% unless @inspector %><small><%= rec.user&.fullname || rec.user_fullname %></small><% end %></td>
+                  <td>
+                    <% items.first(3).each do |item| %>
+                      <div><%= item.quantity.to_i %> × <%= item.description %> <span class="muted">@ <%= money.(item.unit_price) %></span></div>
+                    <% end %>
+                    <% if items.size > 3 %><div class="muted">+ <%= items.size - 3 %> more</div><% end %>
+                    <% if items.empty? && (lic = rec.license) %>
+                      <% qty = lic.quantity.to_i.positive? ? lic.quantity.to_i : 1 %>
+                      <div><%= qty %> × <%= [lic.license_category&.name, "licence"].compact.join(" ") %><%= " (#{lic.license_option.name})" if lic.license_option %>
+                        <span class="muted">@ <%= money.((lic.amount.presence || rec.invoice_total).to_d / qty) %></span></div>
+                    <% end %>
+                    <% if rec.license&.expiry_date %><div class="muted">Valid <%= rec.license.renewal_date&.strftime("%d %b %Y") %> – <%= rec.license.expiry_date.strftime("%d %b %Y") %></div><% end %>
+                    <% if rec.description.present? %><div class="muted"><%= rec.description %></div><% end %>
+                    <% if rec.vat_amount.to_d.nonzero? %><div class="muted">VAT <%= money.(rec.vat_amount) %></div><% end %>
+                  </td>
+                  <td class="r money"><span class="cur"><%= rec.currency.name %></span> <%= money.(rec.invoice_total) %></td>
+                  <td class="r money"></td>
+                  <td class="r money"><%= money.(rec.invoice_total.to_d - rec.amount_paid.to_d) %></td>
+                  <td><%= zstatus_tag(rec) %></td>
+                </tr>
+              <% else %>
+                <tr>
+                  <td class="money"><%= date.strftime("%d %b %Y") %></td>
+                  <td class="zdoc-cell"><span class="ztag paid"><%= rec.receipt_type.present? && !rec.payment? ? rec.receipt_type.humanize : "Receipt" %></span><%= link_to rec.reference_number, rec, class: "zno" %></td>
+                  <td class="zvn"><b><%= rec.client&.name %></b><% unless @inspector %><small><%= rec.user&.fullname || rec.user_fullname %></small><% end %></td>
+                  <td>
+                    <div><%= rec.payment_form&.name %></div>
+                    <% inv_no = rec.invoice&.invoice_number || rec.invoice_reference %>
+                    <div class="muted"><%= inv_no.present? ? "For invoice #{inv_no}" : "On account" %></div>
+                    <% if rec.description.present? %><div class="muted"><%= rec.description %></div><% end %>
+                    <% if rec.reason.present? %><div class="muted"><%= rec.reason %></div><% end %>
+                  </td>
+                  <td class="r money"></td>
+                  <td class="r money"><span class="cur"><%= rec.currency.name %></span> <%= money.(rec.amount) %></td>
+                  <td class="r money"></td>
+                  <td><span class="ztag">Issued</span></td>
+                </tr>
+              <% end %>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <%= zempty("Nothing in this period", "No invoices or receipts here. Pick a longer period or another #{title.downcase}.") %>
+    <% end %>
+  </section>
+</div>

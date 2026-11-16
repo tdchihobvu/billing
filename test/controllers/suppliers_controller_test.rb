@@ -17,7 +17,7 @@ class SuppliersControllerTest < ActionDispatch::IntegrationTest
 
   test "should create supplier" do
     assert_difference("Supplier.count") do
-      post suppliers_url, params: { supplier: { active: @supplier.active, address_1: @supplier.address_1, address_2: @supplier.address_2, bp_number: @supplier.bp_number, contact_mobile: @supplier.contact_mobile, contact_person: @supplier.contact_person, country: @supplier.country, email: @supplier.email, location: @supplier.location, name: @supplier.name, phone: @supplier.phone, vat_number: @supplier.vat_number } }
+      post suppliers_url, params: { supplier: fresh_attributes(@supplier) }
     end
 
     assert_redirected_to supplier_url(Supplier.last)
@@ -39,8 +39,10 @@ class SuppliersControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should destroy supplier" do
+    record = unreferenced_copy(@supplier)
+
     assert_difference("Supplier.count", -1) do
-      delete supplier_url(@supplier)
+      delete supplier_url(record)
     end
 
     assert_redirected_to suppliers_url

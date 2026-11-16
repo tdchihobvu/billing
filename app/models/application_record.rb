@@ -1,6 +1,11 @@
 class ApplicationRecord < ActiveRecord::Base
   primary_abstract_class
 
+  # PostgreSQL compares text case-sensitively; MySQL's collation did not.
+  def self.find_by_name_ignoring_case(name, **conditions)
+    where("LOWER(TRIM(#{table_name}.name)) = LOWER(TRIM(?))", name.to_s).find_by(conditions)
+  end
+
   def base_currency
     # Example: pull from config, ENV, or DB
     @base_currency ||= Currency.find_by(name: 'USD')

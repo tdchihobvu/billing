@@ -19,11 +19,26 @@ application.register("modal", ModalController)
 import RemovalsController from "./removals_controller"
 application.register("removals", RemovalsController)
 
+import ZmenuController from "./zmenu_controller"
+application.register("zmenu", ZmenuController)
+
+import SigninController from "./signin_controller"
+application.register("signin", SigninController)
+
+import PeriodFilterController from "./period_filter_controller"
+application.register("period-filter", PeriodFilterController)
+
+import PeopleFilterController from "./people_filter_controller"
+application.register("people-filter", PeopleFilterController)
+
 import ReportsController from "./reports_controller"
 application.register("reports", ReportsController)
 
 import SelectonchangeController from "./selectonchange_controller"
 application.register("selectonchange", SelectonchangeController)
+
+import ServerTableController from "./server_table_controller"
+application.register("server-table", ServerTableController)
 
 import SlimController from "./slim_controller"
 application.register("slim", SlimController)
@@ -33,3 +48,9 @@ application.register("task", TaskController)
 
 import TimesheetController from "./timesheet_controller"
 application.register("timesheet", TimesheetController)
+
+import PermissionsController from "./permissions_controller"
+application.register("permissions", PermissionsController)
+
+import AutosubmitController from "./autosubmit_controller"
+application.register("autosubmit", AutosubmitController)

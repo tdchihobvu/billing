@@ -39,3 +39,8 @@
 
 /node_modules
 
+
+# Database backups and client documents must never be committed (the repo is public)
+*.dump
+*.sql
+/vehicle disc licensesS.pdf

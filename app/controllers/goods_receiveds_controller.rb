@@ -13,7 +13,7 @@ class GoodsReceivedsController < ApplicationController
   # GET /goods_receiveds/new
   def new
     @goods_received = GoodsReceived.new
-    @goods_received.user_id = current_user
+    @goods_received.user_id = current_user.id
     last = tenant.goods_receiveds[-1]
     if last.nil?
       @goods_received.grv_number = "001"
@@ -31,6 +31,7 @@ class GoodsReceivedsController < ApplicationController
   # POST /goods_receiveds
   def create
     @goods_received = GoodsReceived.new(goods_received_params)
+    @goods_received.tenant_id = tenant.id
 
     if @goods_received.save
       redirect_to @goods_received, notice: "Goods received was successfully created."

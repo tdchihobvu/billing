@@ -1,7 +1,1 @@
-<p style="color: green"><%= notice %></p>
-
-<h1>Devices</h1>
-
-<%= render 'devices' %>
-
-<%= link_to "New device", new_device_path %>
+<%= render "shared/crud_index", records: @devices, model: Device, title: "Apps and devices", crumb: "Integrations", new_path: new_device_path, new_label: "New device" %>

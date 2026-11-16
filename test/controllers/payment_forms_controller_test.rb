@@ -17,7 +17,7 @@ class PaymentFormsControllerTest < ActionDispatch::IntegrationTest
 
   test "should create payment_form" do
     assert_difference("PaymentForm.count") do
-      post payment_forms_url, params: { payment_form: { name: @payment_form.name } }
+      post payment_forms_url, params: { payment_form: fresh_attributes(@payment_form) }
     end
 
     assert_redirected_to payment_form_url(PaymentForm.last)
@@ -39,8 +39,10 @@ class PaymentFormsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should destroy payment_form" do
+    record = unreferenced_copy(@payment_form)
+
     assert_difference("PaymentForm.count", -1) do
-      delete payment_form_url(@payment_form)
+      delete payment_form_url(record)
     end
 
     assert_redirected_to payment_forms_url

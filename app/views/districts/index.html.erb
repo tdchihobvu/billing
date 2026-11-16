@@ -1,14 +1,1 @@
-<p style="color: green"><%= notice %></p>
-
-<h1>Districts</h1>
-
-<div id="districts">
-  <% @districts.each do |district| %>
-    <%= render district %>
-    <p>
-      <%= link_to "Show this district", district %>
-    </p>
-  <% end %>
-</div>
-
-<%= link_to "New district", new_district_path %>
+<%= render "shared/crud_index", records: @districts, model: District, title: "Districts", crumb: "Settings", new_path: new_district_path, new_label: "New district" %>

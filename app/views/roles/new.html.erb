@@ -1,0 +1,18 @@
+<div class="zpage">
+  <%= render "shared/zhead", title: "New role", crumb: link_to("Administration / Roles", roles_path),
+             sub: "Name the role, then switch on what it may do. You can add people after saving." %>
+
+  <% copyable = @roles.reject(&:superadmin?) %>
+  <% if params[:copy].blank? && @role.errors.empty? %>
+    <section class="box">
+      <div class="boxh"><h2>Start from an existing role?</h2><span>Optional</span></div>
+      <div class="zchips" style="padding:0 18px 16px">
+        <% copyable.each do |r| %>
+          <%= link_to "Copy #{r.name}", new_role_path(copy: r.id), class: "b" %>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+
+  <%= render "form", role: @role %>
+</div>

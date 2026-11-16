@@ -2,12 +2,17 @@
 
 one:
   tenant: one
-  setting_category: one
-  config_key: MyString
+  config_key: one
   config_value: MyString
 
 two:
   tenant: two
-  setting_category: two
-  config_key: MyString
+  config_key: two
   config_value: MyString
+
+<% { 0 => "INV", 1 => "PRO", 2 => "REC", 3 => "QUO", 4 => "monthly", 5 => "exclusive", 6 => "Tax Invoice", 7 => "User", 8 => "30", 9 => "billing", 10 => "NO", 11 => "logo.png", 12 => "USD", 13 => "#4e73df", 14 => "#FFFFFF", 15 => "default" }.each do |i, value| %>
+setting_<%= i %>:
+  tenant: one
+  config_key: key_<%= i %>
+  config_value: "<%= value %>"
+<% end %>

@@ -1,10 +1,3 @@
-<h1>Editing vat type</h1>
-
-<%= render "form", vat_type: @vat_type %>
-
-<br>
-
-<div>
-  <%= link_to "Show this vat type", @vat_type %> |
-  <%= link_to "Back to vat types", vat_types_path %>
-</div>
+<%= render layout: "shared/crud_form", locals: { title: "Edit " + (VatType.model_name.human.downcase), crumb: link_to("Settings / Taxes", vat_types_path), back_path: vat_types_path, back_label: "Back to taxes" } do %>
+  <%= render "form", vat_type: @vat_type %>
+<% end %>

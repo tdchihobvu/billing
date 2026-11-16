@@ -1,25 +1,41 @@
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Search Client</h1>
-    <div class="float-end">
-      <%= link_to :back, class: "btn btn-outline btn-sm rounded-0" do %><i class="fas fa-backward text-dark"></i> Back <% end %> 
+<div class="zpage">
+  <div class="zhead">
+    <div>
+      <div class="zcrumb"><%= link_to "Sales / Receipting", receipts_path %></div>
+      <h1>New Receipt</h1>
+      <p>Find the client who paid.</p>
     </div>
-</div>
+    <div class="acts"><%= link_to "View receipts", receipts_path, class: "b" %></div>
+  </div>
 
-<p style="color: green"><%= notice %></p>
-
-<div class="card border-0">
-  <div class="card-body">
-    <%= render "search_client_form" %>
-
-    <% unless @clients.empty? %>
-    <ul>
-        <% @clients.each_with_index do |client,i| %>
-        <li><%= link_to "#{i+=1} - #{client.name}", record_receipt_receipts_path(client_id: client) %></li>
-        <% end %>
-    </ul>
-    <% else %>
-    <div class="alert alert-warning text-center border-0" role="alert">There is nothing to display.</div>
+  <section class="box">
+    <%= form_tag(new_receipt_path, method: :get, class: "zfilters", data: { turbo_action: "advance" }) do %>
+      <label class="zsearch" style="max-width:480px"><span class="visually-hidden">Client name</span><i class="fas fa-search" aria-hidden="true"></i>
+        <%= search_field_tag :search, params[:search], placeholder: "Enter client name", autofocus: true %></label>
+      <%= submit_tag "Search", name: nil, class: "b main" %>
     <% end %>
 
-  </div>
+    <% if @clients.any? %>
+      <div class="zwrap">
+        <table class="zt" style="min-width:520px">
+          <thead><tr><th>Client</th><th>Town</th><th>Mobile</th><th></th></tr></thead>
+          <tbody>
+            <% @clients.each do |client| %>
+              <tr>
+                <td><b><%= client.name %></b></td>
+                <td><%= client.city.presence || client.location %></td>
+                <td><%= client.mobile %></td>
+                <td class="r"><%= link_to "Record Receipt", record_receipt_receipts_path(client_id: client), class: "b" %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+      <% if @clients.size == 50 %><div class="zpager"><span>Showing the first 50 matches. Type more of the name to narrow it down.</span></div><% end %>
+    <% elsif params[:search].present? %>
+      <%= zempty("No client matches “#{params[:search]}”", "Check the spelling, or register the client first.", link_to("New client", new_client_path, class: "b")) %>
+    <% else %>
+      <%= zempty("Search for a client", "Type part of the client's name, then choose Record Receipt.") %>
+    <% end %>
+  </section>
 </div>

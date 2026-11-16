@@ -1,0 +1,19 @@
+<div class="zpage">
+  <%= render "shared/zhead", title: @role.name, crumb: link_to("Administration / Roles", roles_path),
+             sub: "The Super admin role always has every permission and can't be changed, so the system can never be locked out." %>
+
+  <div class="znote ok"><span><i class="fas fa-crown" aria-hidden="true"></i></span><div><b>Every permission, always</b>Super admins can do everything, including managing roles. Give this role only to the people who run the system.</div></div>
+
+  <section class="box">
+    <div class="boxh"><h2>Super admins</h2><span><%= @people.size %></span></div>
+    <ul class="zpeople">
+      <% @people.each do |u| %>
+        <li>
+          <span class="zav" aria-hidden="true"><%= zinitials(u.fullname.strip.presence || u.username) %></span>
+          <span><b><%= link_to (u.fullname.strip.presence || u.username), details_user_management_index_path(id: u) %></b><small>@<%= u.username %></small></span>
+        </li>
+      <% end %>
+    </ul>
+    <p class="zhint" style="padding:0 18px 16px;margin:0">To make someone a Super admin, open them on the <%= link_to "People", user_management_index_path %> page and change their role.</p>
+  </section>
+</div>

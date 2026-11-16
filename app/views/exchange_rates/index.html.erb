@@ -1,64 +1,55 @@
-<!-- Page Heading -->
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Exchange Rates</h1>
-    <div class="float-end">
-      <%= link_to new_license_path, class: "d-none d-sm-inline-block btn btn-sm btn-outline text-dark" do %>
-      <i class="fas fa-file fa-sm text-dark"></i> Generate New
-      <% end %> |
-      <%= link_to :back, class: "btn btn-outline btn-sm rounded-0" do %><i class="fas fa-backward text-dark"></i> Back <% end %> 
+<%
+  freq = exchange_rate_update_frequency.to_s
+  valid_until = ->(d) {
+    case freq
+    when "weekly" then d + 6
+    when "monthly" then d + 1.month - 1.day
+    when "skip day" then d + 1
+    else d
+    end
+  }
+  today = Date.current
+%>
+<div class="zpage">
+  <%= render "shared/zhead", title: "Exchange rates", crumb: "Settings",
+             sub: "Exchange Rate Update Frequency: #{freq.presence || 'not set'}. A rate is used for receipts until it expires.",
+             actions: link_to(new_exchange_rate_path, class: "b main") { safe_join([tag.i(class: "fas fa-plus", "aria-hidden": "true"), " Generate New"]) } %>
+
+  <%= form_with(model: @exchange_rate, class: "box") do |form| %>
+    <%= render "shared/form_errors", record: @exchange_rate %>
+    <div class="boxh"><h2>Quick add</h2><span>Set today's rate</span></div>
+    <div class="zfilters">
+      <label class="zdate">Date <%= form.date_field :transaction_date, class: "zsel" %></label>
+      <%= form.select :currency_id, Currency.non_base.pluck(:name, :id), { prompt: "Select Currency" }, class: "zsel", "aria-label": "Currency" %>
+      <%= form.text_field :selling_rate, placeholder: "Selling Rate", required: true, inputmode: "decimal", class: "zsel", "aria-label": "Selling Rate" %>
+      <%= form.text_field :alternative_rate, placeholder: "Alternative Rate", required: true, inputmode: "decimal", class: "zsel", "aria-label": "Alternative Rate" %>
+      <%= form.submit "Submit", class: "b main" %>
     </div>
-</div>
+  <% end %>
 
-<p style="color: green"><%= notice %></p>
-<div class="card">
-  <div class="card-body">
-    <%= render "form", exchange_rate: @exchange_rate %>
-  </div>
-</div>
-
-<div class="card border-0">
-  <div class="card-body">
-    <% unless @exchange_rates.empty? %>
-    <div class="table-responsive">
-      <table class="table table-striped small" id="dataTable">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Transaction Date</th>
-            <th>Currency</th>
-            <th>Selling Rate</th>
-            <th>Alternative Rate</th>
-            <th>Active</th>
-          </tr>
-        </thead>
-        <tbody>
-          <div id="clients">
-            <% @exchange_rates.each_with_index do |exchange,i| %>
+  <section class="box">
+    <% if @exchange_rates.any? %>
+      <div class="zwrap">
+        <table class="zt">
+          <thead><tr><th>Date</th><th>Currency</th><th class="r">Selling Rate</th><th class="r">Alternative Rate</th><th>Valid until</th><th>Status</th><th><span class="visually-hidden">Open</span></th></tr></thead>
+          <tbody>
+            <% @exchange_rates.each do |rate| %>
+              <% until_date = valid_until.(rate.transaction_date) %>
               <tr>
-                <td><%= i+=1 %></td>
-                <td><%= exchange.transaction_date.strftime("%d %B %Y") %></td>
-                <td><%= exchange.currency.name %></td>
-                <td><%= exchange.selling_rate %></td>
-                <td><%= exchange.alternative_rate %></td>
-                <td>          
-                  <%= link_to exchange, class: "btn btn-outline text-dark small", title: "Print Receipt" do %>
-                    <i class="fas fa-eye fa-sm text-dark"></i>
-                  <% end %>
-                </td>
+                <td class="money"><%= rate.transaction_date.strftime("%d %b %Y") %></td>
+                <td><%= rate.currency&.name %></td>
+                <td class="r money"><%= number_with_precision(rate.selling_rate, precision: 4, strip_insignificant_zeros: true, delimiter: ",") %></td>
+                <td class="r money"><%= number_with_precision(rate.alternative_rate, precision: 4, strip_insignificant_zeros: true, delimiter: ",") %></td>
+                <td class="money"><%= until_date.strftime("%d %b %Y") %></td>
+                <td><% if until_date >= today %><span class="ztag paid">Valid</span><% else %><span class="ztag">Expired</span><% end %></td>
+                <td style="text-align:right"><div class="acts" style="justify-content:flex-end"><%= link_to "View", rate, class: "b" %><%= link_to "Edit", edit_exchange_rate_path(rate), class: "b" %></div></td>
               </tr>
             <% end %>
-          </div>
-        </tbody>
-      </table>
-    </div>
+          </tbody>
+        </table>
+      </div>
     <% else %>
-      <div class="alert alert-warning text-center border-0" role="alert">There is nothing to display.</div>
+      <%= zempty("No exchange rates yet", "Set a rate above so receipts in other currencies can be saved.") %>
     <% end %>
-  </div>
+  </section>
 </div>
-
-<script type="text/javascript">
-  $(document).ready(function() {
-    $('#dataTable').DataTable();
-  });
-</script>

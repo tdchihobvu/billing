@@ -1,6 +1,9 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
+  user: one
+  validity: 1
+  product_pricing: exclusive
   client: one
   quotation_date: 2024-01-16
   quotation_number: MyString
@@ -10,6 +13,9 @@ one:
   deleted: false
 
 two:
+  user: two
+  validity: 1
+  product_pricing: exclusive
   client: two
   quotation_date: 2024-01-16
   quotation_number: MyString

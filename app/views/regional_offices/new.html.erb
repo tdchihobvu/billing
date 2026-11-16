@@ -1,9 +1,3 @@
-<h1>New regional office</h1>
-
-<%= render "form", regional_office: @regional_office %>
-
-<br>
-
-<div>
-  <%= link_to "Back to regional offices", regional_offices_path %>
-</div>
+<%= render layout: "shared/crud_form", locals: { title: "New regional office", crumb: link_to("Settings / Regional offices", regional_offices_path), back_path: regional_offices_path, back_label: "Back to regional offices" } do %>
+  <%= render "form", regional_office: @regional_office %>
+<% end %>

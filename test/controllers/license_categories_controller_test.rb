@@ -17,7 +17,7 @@ class LicenseCategoriesControllerTest < ActionDispatch::IntegrationTest
 
   test "should create license_category" do
     assert_difference("LicenseCategory.count") do
-      post license_categories_url, params: { license_category: { description: @license_category.description, name: @license_category.name } }
+      post license_categories_url, params: { license_category: fresh_attributes(@license_category) }
     end
 
     assert_redirected_to license_category_url(LicenseCategory.last)
@@ -39,8 +39,10 @@ class LicenseCategoriesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should destroy license_category" do
+    record = unreferenced_copy(@license_category)
+
     assert_difference("LicenseCategory.count", -1) do
-      delete license_category_url(@license_category)
+      delete license_category_url(record)
     end
 
     assert_redirected_to license_categories_url

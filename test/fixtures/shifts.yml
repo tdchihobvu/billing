@@ -1,6 +1,8 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
+  tenant_id: <%= ActiveRecord::FixtureSet.identify(:one) %>
+  district_id: <%= ActiveRecord::FixtureSet.identify(:one) %>
   shift_id: MyString
   username: MyString
   region_id: 1
@@ -12,7 +14,7 @@ one:
   close_shift_synced: false
   declared_amount: 9.99
   cash_collected: 9.99
-  total-collected: 9.99
+  total_collected: 9.99
   total_cashed: 9.99
   epayments: 9.99
   usd_epayments: 9.99
@@ -20,6 +22,8 @@ one:
   shift_supervisor: MyString
 
 two:
+  tenant_id: <%= ActiveRecord::FixtureSet.identify(:two) %>
+  district_id: <%= ActiveRecord::FixtureSet.identify(:two) %>
   shift_id: MyString
   username: MyString
   region_id: 1
@@ -31,7 +35,7 @@ two:
   close_shift_synced: false
   declared_amount: 9.99
   cash_collected: 9.99
-  total-collected: 9.99
+  total_collected: 9.99
   total_cashed: 9.99
   epayments: 9.99
   usd_epayments: 9.99

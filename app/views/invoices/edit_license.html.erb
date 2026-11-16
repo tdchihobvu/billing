@@ -1,18 +1,14 @@
-<!-- Page Heading -->
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Edit License Invoice</h1>
-    <div class="float-end">
-      <%= link_to invoices_path, class: "d-none d-sm-inline-block btn btn-sm btn-outline text-dark" do %>
-      <i class="fas fa-file fa-sm text-dark"></i> Invoices
-      <% end %> |
-      <%= link_to :back, class: "btn btn-outline btn-sm rounded-0" do %><i class="fas fa-backward text-dark"></i> Back <% end %> 
+<div class="zpage">
+  <div class="zhead">
+    <div>
+      <div class="zcrumb"><%= link_to "Sales / Invoices", invoices_path %></div>
+      <h1>Edit License Invoice <%= @invoice.invoice_number %></h1>
+      <p>Fields marked <span class="req"></span> are required.</p>
     </div>
-</div>
-
-<p style="color: green"><%= notice %></p>
-
-<div class="card border-0">
-  <div class="card-body">
-    <%= render "license_invoice", invoice: @invoice %>
+    <div class="acts"><%= link_to "Back to invoice", @invoice, class: "b" %></div>
   </div>
+
+  <% if notice.present? %><div class="znote ok"><span><i class="fas fa-check" aria-hidden="true"></i></span><div><%= notice %></div></div><% end %>
+
+  <%= render "license_form", invoice: @invoice %>
 </div>

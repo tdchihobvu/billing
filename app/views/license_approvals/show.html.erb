@@ -1,0 +1,127 @@
+<%
+  lic = @license
+  inv = lic.invoice
+  cur = inv.currency&.name
+  bal = lic.invoice_balance
+  paid_in_full = lic.fully_paid_invoice?
+  money = ->(v) { number_with_precision(v.to_d, precision: 2, delimiter: ",") }
+  receipts = inv.receipts.active.order(:transaction_date).preload(:payment_form)
+  tab = { "awaiting_finance" => "finance", "awaiting_manager" => "manager", "rejected" => "rejected", "approved" => "approved" }[lic.approval_status] || "finance"
+  steps = [
+    ["Fully paid", lic.queued_at || (lic.paid? ? lic.updated_at : nil), lic.paid?],
+    ["Finance confirmed payment", lic.finance_approved_at, lic.finance_approved_at.present?],
+    ["Manager approved", lic.manager_approved_at, lic.approval_status == "approved"]
+  ]
+%>
+<div class="zpage">
+  <%= render "shared/zhead", title: "Licence for #{lic.client.name}", crumb: link_to("Licensing / Licence approvals", license_approvals_path(tab: tab)),
+             sub: "#{lic.license_category&.name}, #{lic.license_option&.name}. Valid #{lic.long_period}.",
+             actions: safe_join([link_to("Client", client_path(lic.client), class: "b"), link_to("Invoice #{inv.invoice_number}", invoice_path(inv), class: "b"),
+                                 (lic.printable? ? link_to(print_licenses_path(id: lic, format: :pdf), class: "b main", target: "_blank", rel: "noopener") { safe_join([tag.i(class: "fas fa-print", "aria-hidden": "true"), " Print License"]) } : nil)].compact) %>
+
+  <ol class="zsteps" aria-label="Approval progress">
+    <% steps.each_with_index do |(label, at, done), i| %>
+      <% current = !done && (i.zero? || steps[i - 1][2]) && lic.approval_status != "rejected" %>
+      <li class="<%= 'done' if done %> <%= 'now' if current %>">
+        <span class="zsteps__dot" aria-hidden="true"><% if done %><i class="fas fa-check"></i><% else %><%= i + 1 %><% end %></span>
+        <div><b><%= label %></b><small><%= done && at ? at.strftime("%d %b %Y, %H:%M") : (current ? "Waiting" : "Not yet") %></small></div>
+      </li>
+    <% end %>
+  </ol>
+
+  <% if lic.approval_status == "rejected" %>
+    <div class="znote err" role="status"><span><i class="fas fa-times" aria-hidden="true"></i></span><div><b>Rejected by <%= lic.rejecter&.fullname || "Finance" %> on <%= lic.rejected_at&.strftime("%d %b %Y") %></b><%= lic.rejection_reason %></div></div>
+  <% elsif lic.approval_status == "awaiting_finance" && lic.rejected_stage == "manager" %>
+    <div class="znote warn" role="status"><span><i class="fas fa-undo" aria-hidden="true"></i></span><div><b>Returned by <%= lic.rejecter&.fullname || "the Manager" %> on <%= lic.rejected_at&.strftime("%d %b %Y") %></b><%= lic.rejection_reason %></div></div>
+  <% elsif lic.printable? %>
+    <div class="znote ok" role="status"><span><i class="fas fa-check" aria-hidden="true"></i></span><div><b>Approved</b>This licence can be printed.</div></div>
+  <% end %>
+
+  <div class="zsplit">
+    <section class="box">
+      <div class="boxh"><h2>Payment</h2><span>Invoice <%= link_to inv.invoice_number, inv, class: "zno" %></span></div>
+      <dl class="ztotals" style="margin:0 18px">
+        <dt>Invoiced</dt><dd><%= cur %> <%= money.(inv.invoice_total) %></dd>
+        <% receipts.each do |r| %>
+          <dt class="pay">Receipt <%= link_to r.reference_number, r %>, <%= r.payment_form&.name %>, <%= r.transaction_date&.strftime("%d %b %Y") %></dt><dd class="pay">-<%= money.(r.amount_paid) %></dd>
+        <% end %>
+        <dt class="tot">Balance</dt><dd class="tot"><%= cur %> <%= money.(bal) %></dd>
+      </dl>
+      <div style="padding:12px 18px 18px">
+        <% if paid_in_full %>
+          <span class="ztag paid">Paid in full</span>
+        <% else %>
+          <span class="ztag late"><%= cur %> <%= money.(bal) %> still owed</span>
+          <% if receipts.empty? %><small class="muted" style="display:block;margin-top:6px">No receipts are linked to this invoice. The client may have paid on account: check the <%= link_to "statement", client_path(lic.client, tab: "statement") %>.</small><% end %>
+        <% end %>
+      </div>
+    </section>
+
+    <section class="box">
+      <div class="boxh"><h2>Your decision</h2></div>
+      <div style="padding:0 18px 18px;display:grid;gap:16px">
+        <% if lic.finance_can_act?(current_user) %>
+          <%= form_with url: approve_license_approval_path(lic), method: :post, class: "zdecide" do %>
+            <%= hidden_field_tag :return_tab, "finance" %>
+            <label class="zcheck"><%= check_box_tag :payment_confirmed, "1", false, required: true %> I confirm full payment of <%= cur %> <%= money.(inv.invoice_total) %> was received</label>
+            <div class="zfield"><%= label_tag :note_approve, "Note (optional)" %><%= text_area_tag :note, nil, id: "note_approve", rows: 2 %></div>
+            <% unless paid_in_full %><p class="zhint" style="margin:0;color:var(--late)">The invoice still shows a balance, so approval will be refused until it is fully paid.</p><% end %>
+            <%= submit_tag "Confirm payment and send to Manager", class: "b main", data: { turbo_submits_with: "Saving…" } %>
+          <% end %>
+        <% elsif lic.manager_can_act?(current_user) %>
+          <p style="margin:0">Payment confirmed by <b><%= lic.finance_approver&.fullname %></b> on <%= lic.finance_approved_at&.strftime("%d %b %Y") %>.</p>
+          <%= form_with url: approve_license_approval_path(lic), method: :post, class: "zdecide" do %>
+            <%= hidden_field_tag :return_tab, "manager" %>
+            <div class="zfield"><%= label_tag :note_approve, "Note (optional)" %><%= text_area_tag :note, nil, id: "note_approve", rows: 2 %></div>
+            <%= submit_tag "Approve licence", class: "b main", data: { turbo_submits_with: "Approving…", turbo_confirm: "Approve #{lic.client.name}'s licence? It can be printed straight away." } %>
+          <% end %>
+        <% elsif lic.approval_status == "awaiting_manager" && current_user.id == lic.finance_approved_by_id %>
+          <p style="margin:0">You confirmed the payment, so another Manager or Super admin must give the final approval.</p>
+        <% elsif lic.can_resubmit?(current_user) %>
+          <%= form_with url: resubmit_license_approval_path(lic), method: :post, class: "zdecide" do %>
+            <p style="margin:0">Fixed the problem? Send it back to the Finance queue.</p>
+            <div class="zfield"><%= label_tag :note_resubmit, "What was fixed (optional)" %><%= text_area_tag :note, nil, id: "note_resubmit", rows: 2 %></div>
+            <%= submit_tag "Send back for approval", class: "b main" %>
+          <% end %>
+        <% else %>
+          <p style="margin:0" class="muted">
+            <%= { "awaiting_finance" => "Waiting for a Finance Officer to confirm the payment.",
+                  "awaiting_manager" => "Waiting for a Manager's final approval.",
+                  "approved" => "Nothing to do: this licence is approved.",
+                  "rejected" => "Rejected. A Finance Officer can send it back for approval.",
+                  "pending_payment" => "Not fully paid yet. It joins the queue automatically once paid." }[lic.approval_status] %>
+          </p>
+        <% end %>
+
+        <% if lic.finance_can_act?(current_user) || lic.manager_can_act?(current_user) %>
+          <details class="zreject">
+            <summary><%= lic.approval_status == "awaiting_manager" ? "Return to Finance…" : "Reject…" %></summary>
+            <%= form_with url: reject_license_approval_path(lic), method: :post, class: "zdecide" do %>
+              <%= hidden_field_tag :return_tab, tab %>
+              <div class="zfield"><%= label_tag :reason, "Reason", class: "req" %><%= text_area_tag :reason, nil, rows: 2, required: true, placeholder: "e.g. Receipt 008120 is not in the bank statement" %></div>
+              <%= submit_tag (lic.approval_status == "awaiting_manager" ? "Return to Finance" : "Reject licence"), class: "b danger" %>
+            <% end %>
+          </details>
+        <% end %>
+      </div>
+    </section>
+  </div>
+
+  <section class="box">
+    <div class="boxh"><h2>History</h2></div>
+    <% if @events.any? %>
+      <ul class="zfeed">
+        <% @events.each do |e| %>
+          <% tone, icon = { "manager_approved" => ["g", "fa-check-double"], "finance_approved" => ["g", "fa-check"], "rejected" => ["r", "fa-times"],
+                            "returned" => ["r", "fa-undo"], "reset" => ["s", "fa-pen"] }.fetch(e.action, ["m", "fa-hourglass-half"]) %>
+          <li>
+            <span class="zdot <%= tone %>"><i class="fas <%= icon %>" aria-hidden="true"></i></span>
+            <div><b><%= e.label %></b><small><%= e.user ? "#{e.user.fullname}, " : "" %><%= e.created_at.strftime("%d %b %Y, %H:%M") %><%= ": #{e.note}" if e.note.present? %></small></div>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <%= zempty("No history yet", lic.printable? ? "This licence was already paid when approvals started, so it counts as approved." : "Steps appear here as the licence moves through approval.") %>
+    <% end %>
+  </section>
+</div>

@@ -1,65 +1,69 @@
-<!-- Page Heading -->
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Receipts</h1>
-    <div class="float-end">
-      <%= link_to new_receipt_path, class: "d-none d-sm-inline-block btn btn-sm btn-outline text-dark" do %>
-      <i class="fas fa-file fa-sm text-dark"></i> New Receipt
-      <% end %> |
-      <%= link_to :back, class: "btn btn-outline btn-sm rounded-0" do %><i class="fas fa-backward text-dark"></i> Back <% end %> 
+<%
+  keep = request.query_parameters.slice("q", "user_id", "currency_id", "payment_form_id")
+  filtered = keep.values.any?(&:present?)
+%>
+<div class="zpage">
+  <div class="zhead">
+    <div>
+      <div class="zcrumb">Sales / Receipting</div>
+      <h1>Receipts</h1>
+      <p><%= number_with_delimiter(@count) %> receipts<%= " match these filters" if filtered %>: <%= safe_join(@totals.sort.map { |cur, amt| "#{cur} #{number_with_precision(amt, precision: 2, delimiter: ',')}" }, ", ") %></p>
     </div>
-</div>
-
-<p style="color: green"><%= notice %></p>
-
-<div class="card border-0">
-  <div class="card-body">
-    <div class="table-responsive">
-      <table class="table table-striped small" id="dataTable">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Date</th>
-            <th>Reference Number</th>
-            <th>Client Name</th>
-            <th>Payment Form</th>
-            <th>Comment</th>
-            <% Currency.all.each do |currency| %>
-              <th><%= currency.name %></th>
-            <% end %>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-            <% @receipts.each_with_index do |r,i| %>
-            <tr>
-              <td><%= i+=1 %></td>
-              <td><%= r.transaction_date.strftime("%d/%m/%Y") %></td>
-              <td><%= r.reference_number %></td>
-              <td><%= r.client.name %></td>
-              <td><%= r.payment_form.name %></td>
-              <td><%= r.description %></td>
-              <% Currency.all.each do |currency| %>
-                <td>
-                  <% if r.currency_id == currency.id %>
-                    <%= number_to_currency(r.amount, unit: "") %>
-                  <% end %>
-                </td>
-              <% end %>
-              <td>
-                <%= link_to r, class: "btn btn-outline text-dark small", title: "Print Receipt" do %>
-                  <i class="fas fa-print fa-sm text-dark"></i>
-                <% end %>
-              </td>
-            </tr>
-            <% end %>
-        </tbody>
-      </table>
+    <div class="acts">
+      <%= link_to "Shifts", shifts_receipts_path, class: "b" %>
+      <%= link_to new_receipt_path, class: "b main" do %><i class="fas fa-plus" aria-hidden="true"></i> New Receipt<% end %>
     </div>
   </div>
-</div>
 
-<script type="text/javascript">
-  $(document).ready(function() {
-    $('#dataTable').DataTable();
-  });
-</script>
+  <% if notice.present? %><div class="znote ok"><span><i class="fas fa-check" aria-hidden="true"></i></span><div><%= notice %></div></div><% end %>
+
+  <section class="box" aria-label="Receipt list">
+    <%= form_with url: receipts_path, method: :get, class: "zfilters", data: { turbo_action: "advance" } do |f| %>
+      <label class="zsearch"><span class="visually-hidden">Search receipts</span><i class="fas fa-search" aria-hidden="true"></i>
+        <%= f.search_field :q, value: params[:q], placeholder: "Client or receipt number" %></label>
+      <% if @unlinked %>
+        <%= hidden_field_tag :unlinked, "1" %>
+        <%= link_to receipts_path(request.query_parameters.except("unlinked", "page")), class: "zchip on", title: "Remove this filter" do %>Not linked to an invoice, last 30 days <span aria-hidden="true">×</span><span class="visually-hidden">(remove)</span><% end %>
+      <% end %>
+      <%= f.select :payment_form_id, options_from_collection_for_select(@payment_forms, :id, :name, params[:payment_form_id]), { include_blank: "Any Payment Form" }, class: "zsel #{'on' if params[:payment_form_id].present?}", "aria-label": "Payment Form", onchange: "this.form.requestSubmit()" %>
+      <%= f.select :currency_id, options_from_collection_for_select(@currencies, :id, :name, params[:currency_id]), { include_blank: "Any currency" }, class: "zsel #{'on' if params[:currency_id].present?}", "aria-label": "Currency", onchange: "this.form.requestSubmit()" %>
+      <%= f.select :user_id, options_from_collection_for_select(@users, :id, :fullname, params[:user_id]), { include_blank: "Any #{default_user_title}" }, class: "zsel #{'on' if params[:user_id].present?}", "aria-label": default_user_title, onchange: "this.form.requestSubmit()" %>
+      <%= f.submit "Search", name: nil, class: "b" %>
+      <div class="right"><% if filtered %><%= link_to "Clear all", receipts_path, class: "zlink", style: "color:var(--soft)" %><% end %></div>
+    <% end %>
+
+    <% if @receipts.any? %>
+      <div class="zwrap">
+        <table class="zt">
+          <thead><tr><th>Receipt No.</th><th>Date</th><th>Client</th><th>Invoice</th><th>Payment Form</th><th>Comment</th><th class="r">Amount</th><th><%= default_user_title %></th><th><span class="visually-hidden">Print</span></th></tr></thead>
+          <tbody>
+            <% @receipts.each do |r| %>
+              <tr>
+                <td><%= link_to r.reference_number, r, class: "zno" %></td>
+                <td><%= r.transaction_date.strftime("%d %b %Y") %></td>
+                <td class="zvn"><b><%= link_to r.client.name, r.client, style: "color:inherit;text-decoration:none" %></b></td>
+                <td><%= r.invoice ? link_to(r.invoice.invoice_number, r.invoice, class: "zno") : content_tag(:span, "On account", class: "muted") %></td>
+                <td><%= r.payment_form&.name %></td>
+                <td class="zvn"><small><%= r.description %></small></td>
+                <td class="r"><%= zmoney(r.amount, r.currency&.name) %></td>
+                <td><%= r.user&.fullname || r.user_fullname %></td>
+                <td><%= link_to print_receipts_path(id: r), class: "b ghost", title: "Print Receipt", "aria-label": "Print Receipt #{r.reference_number}" do %><i class="fas fa-print" aria-hidden="true"></i><% end %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+      <div class="zpager">
+        <span>Page <%= @page %> of <%= @pages %></span>
+        <span class="acts">
+          <%= link_to "Previous", receipts_path(keep.merge(page: @page - 1)), class: "b #{'disabled' if @page <= 1}" %>
+          <%= link_to "Next", receipts_path(keep.merge(page: @page + 1)), class: "b #{'disabled' if @page >= @pages}" %>
+        </span>
+      </div>
+    <% elsif filtered %>
+      <%= zempty("No receipts match these filters", "Try another name, Payment Form or currency.", link_to("Clear all", receipts_path, class: "b")) %>
+    <% else %>
+      <%= zempty("No receipts yet", "Receipts saved in the office or processed on the mobile app appear here.") %>
+    <% end %>
+  </section>
+</div>

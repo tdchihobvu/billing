@@ -17,7 +17,7 @@ class SettingCategoriesControllerTest < ActionDispatch::IntegrationTest
 
   test "should create setting_category" do
     assert_difference("SettingCategory.count") do
-      post setting_categories_url, params: { setting_category: { name: @setting_category.name } }
+      post setting_categories_url, params: { setting_category: fresh_attributes(@setting_category) }
     end
 
     assert_redirected_to setting_category_url(SettingCategory.last)
@@ -39,8 +39,10 @@ class SettingCategoriesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should destroy setting_category" do
+    record = unreferenced_copy(@setting_category)
+
     assert_difference("SettingCategory.count", -1) do
-      delete setting_category_url(@setting_category)
+      delete setting_category_url(record)
     end
 
     assert_redirected_to setting_categories_url

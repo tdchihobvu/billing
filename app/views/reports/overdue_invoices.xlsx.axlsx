@@ -1,21 +1,46 @@
 wb = xlsx_package.workbook
+title = default_user_title.presence || "Inspector"
 
-wb.add_worksheet(name: "Overdue Invoices") do |sheet|
-  sheet.add_row ["","Overdue Invoices as at #{Date.today.strftime("%d/%m/%Y")}"]
-  sheet.add_row [""]
-  sheet.add_row ["#","Customer Name", "Invoice Date", "Invoice No.","invoice Amount", "Currency","Invoice Due Date","Age","Balance"]
-  i = 0
-  @invoices.each do |invoice|
-    sheet.add_row [
-    i+=1,
-    invoice.client.name,
-    invoice.invoice_date.strftime("%d/%m/%Y"),
-    invoice.invoice_number,
-    "#{format_amount(invoice.total)}",
-    invoice.currency.name,
-    invoice.due_date.strftime("%d/%m/%Y"),
-    invoice.debtors_age,
-    "#{format_amount(invoice.balance)}"
-    ]
+s_title = wb.styles.add_style b: true, sz: 14
+s_sub   = wb.styles.add_style i: true, fg_color: "666666"
+s_head  = wb.styles.add_style b: true, bg_color: "DDE4EE", border: { style: :thin, color: "AAAAAA", edges: [:bottom] }
+s_money = wb.styles.add_style num_fmt: 4
+s_total = wb.styles.add_style b: true, bg_color: "F2F2F2"
+s_totm  = wb.styles.add_style b: true, bg_color: "F2F2F2", num_fmt: 4
+
+filters = []
+filters << "Overdue #{ReportsController::OVERDUE_BANDS[@band].first}" if @band
+filters << "#{title}: #{@users.find { |u| u.id.to_s == params[:user_id].to_s }&.fullname}" if params[:user_id].present?
+filters << "Currency: #{@currencies.find { |c| c.id.to_s == params[:currency_id].to_s }&.name}" if params[:currency_id].present?
+filters << "Invoiced from #{@from.strftime("%d/%m/%Y")}" if @from
+filters << "Invoiced to #{@to.strftime("%d/%m/%Y")}" if @to
+filters << "Search \"#{params[:q]}\"" if params[:q].present?
+
+wb.add_worksheet(name: "Overdue invoices") do |sheet|
+  sheet.add_row ["Overdue invoices as at #{Date.current.strftime("%d/%m/%Y")}"], style: s_title
+  sheet.add_row [(filters.presence || ["All overdue invoices"]).join("   |   ")], style: s_sub
+  sheet.add_row []
+  sheet.add_row ["#", "Client", "Invoice date", "Invoice No.", "Currency", "Invoice total", "Paid", "Balance", "Due date", "Days overdue", title], style: s_head
+  header_row = 4
+
+  @invoices.each_with_index do |invoice, i|
+    sheet.add_row [i + 1, invoice.client&.name, invoice.invoice_date&.strftime("%d/%m/%Y"), invoice.invoice_number, invoice.currency.name,
+                   invoice.invoice_total.to_d.round(2).to_f, invoice.amount_paid.to_d.round(2).to_f,
+                   (invoice.invoice_total.to_d - invoice.amount_paid.to_d).round(2).to_f,
+                   invoice.effective_due_date(invoice_validity)&.strftime("%d/%m/%Y"), invoice.days_overdue(invoice_validity),
+                   invoice.user&.fullname || invoice.user_fullname],
+                  types: [:integer, :string, :string, :string, :string, :float, :float, :float, :string, :integer, :string],
+                  style: [nil] * 5 + [s_money] * 3 + [nil] * 3
   end
+
+  @totals.sort.each do |currency, balance|
+    list = @invoices.select { |i| i.currency.name == currency }
+    sheet.add_row [nil, "Total (#{list.size})", nil, nil, currency, list.sum { |i| i.invoice_total.to_d }.round(2).to_f,
+                   list.sum { |i| i.amount_paid.to_d }.round(2).to_f, balance.round(2).to_f, nil, nil, nil],
+                  style: [s_total] * 5 + [s_totm] * 3 + [s_total] * 3
+  end
+
+  sheet.auto_filter = "A#{header_row}:K#{header_row}"
+  sheet.sheet_view.pane { |p| p.top_left_cell = "A#{header_row + 1}"; p.state = :frozen; p.y_split = header_row }
+  sheet.column_widths 6, 34, 12, 14, 9, 14, 14, 14, 12, 12, 24
 end

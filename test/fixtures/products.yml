@@ -1,6 +1,8 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
+  brand: one
+  measuring_unit: one
   code: MyString
   name: MyString
   description: MyString
@@ -10,6 +12,8 @@ one:
   active: false
 
 two:
+  brand: two
+  measuring_unit: two
   code: MyString
   name: MyString
   description: MyString

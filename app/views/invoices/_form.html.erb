@@ -1,84 +1,58 @@
-<h6>All fields marked with <span class="required_field"></span> are mandatory</h6>
-<%= form_with(model: invoice) do |form| %>
-  <% if invoice.errors.any? %>
-    <div style="color: red">
-      <h2><%= pluralize(invoice.errors.count, "error") %> prohibited this invoice from being saved:</h2>
-
-      <ul>
-        <% invoice.errors.each do |error| %>
-          <li><%= error.full_message %></li>
-        <% end %>
-      </ul>
-    </div>
-  <% end %>
-
+<%= form_with(model: invoice, class: "box") do |form| %>
+  <%= render "shared/form_errors", record: invoice %>
   <%= form.hidden_field :is_proforma %>
-  <div class="row">
-    <div class="col-sm-4">
-     <div class="form-group">
-        <%= form.label :invoice_date, "Invoice Date", style: "display: block", class: "required_field" %>
-        <%= form.date_field :invoice_date, class: "form-control form-control-sm" %>
+
+  <section class="zsect">
+    <div class="boxh"><h2><%= invoice.is_proforma ? "Proforma invoice" : "Invoice" %></h2><span>Fields marked <span class="req"></span> are required</span></div>
+    <div class="zgrid">
+      <div class="zfield"><%= form.label :invoice_date, "Invoice Date", class: "req" %><%= form.date_field :invoice_date %></div>
+      <div class="zfield"><%= form.label :invoice_number, "Invoice Number", class: "req" %><%= form.text_field :invoice_number, readonly: false %></div>
+      <div class="zfield"><%= form.label :invoice_category_id, "Invoice Type", class: "req" %><%= form.select :invoice_category_id, InvoiceCategory.pluck(:name, :id), { prompt: "Select Type" } %></div>
+      <div class="zfield wide"><%= form.label :client_id, "Client", class: "req" %><%= form.select :client_id, current_user.tenant.clients.order("name Asc").pluck(:name, :id), { prompt: "Select Client" } %></div>
+      <div class="zfield"><%= form.label :currency_id, "Currency", class: "req" %><%= form.select :currency_id, Currency.pluck(:name, :id), { prompt: "Select Currency" } %></div>
+      <div class="zfield"><%= form.label :bank_id, "Bank", class: "req" %><%= form.select :bank_id, tenant.banks.order("bank_name Asc").collect { |b| [b.description, b.id] }, { prompt: "Select Bank" } %></div>
+      <div class="zfield wide">
+        <span class="zlabel">Define Item Pricing</span>
+        <div class="zchoices" role="radiogroup" aria-label="Define Item Pricing">
+          <label><%= form.radio_button :product_pricing, "inclusive" %> Unit Price Includes VAT</label>
+          <label><%= form.radio_button :product_pricing, "exclusive" %> Unit Price Excludes VAT</label>
+          <label><%= form.radio_button :product_pricing, "none" %> No VAT</label>
+        </div>
       </div>
+      <div class="zfield wide"><%= form.label :description, "Invoice Description", class: "req" %><%= form.text_field :description %><span class="zhint">Appears on the client's statement.</span></div>
     </div>
-    <div class="col-sm-4">
-      <div class="form-group">
-        <%= form.label :invoice_number, "Invoice Number", style: "display: block", class: "required_field" %>
-        <%= form.text_field :invoice_number, readonly: false, class: "form-control form-control-sm" %>
-      </div>
+  </section>
+
+  <section class="zsect">
+    <div class="boxh"><h2><span class="req">Invoice Items</span></h2></div>
+    <div class="zwrap">
+      <table class="zt zitems">
+        <thead><tr><th style="width:14%">HS Code</th><th>Description</th><th style="width:11%">Quantity</th><th style="width:14%">Unit Price</th><th style="width:20%">VAT Type</th></tr></thead>
+        <tbody>
+          <%= form.fields_for :invoice_items do |f| %>
+            <tr>
+              <td><%= f.text_field :item_code, "aria-label": "HS Code" %></td>
+              <td><%= f.text_area :description, rows: 2, placeholder: "Item Description", "aria-label": "Description" %></td>
+              <td><%= f.number_field :quantity, "aria-label": "Quantity" %></td>
+              <td><%= f.text_field :unit_price, inputmode: "decimal", "aria-label": "Unit Price" %></td>
+              <td><%= f.select :vat_type_id, VatType.all.collect { |v| [v.description, v.id] }, { prompt: "Select Type" }, "aria-label": "VAT Type" %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
     </div>
-    <div class="col-sm-4">
-      <div class="form-group">
-        <%= form.label :invoice_category_id, "Invoice Type", style: "display: block", class: "required_field" %>
-        <%= form.select :invoice_category_id, InvoiceCategory.pluck(:name, :id), {prompt: "Select Type"}, class: "form-select form-control-sm" %>
-      </div>
-    </div>
-  </div>
-  <div class="form-group">
-    <%= form.label :client_id, style: "display: block", class: "required_field" %>
-    <%#= form.select :client_id, current_user.tenant.clients.order('name Asc').pluck(:name, :id), {include_blank: true}, {data: {controller: 'slim'}, class: "small"} %>
-      <%= form.select :client_id, current_user.tenant.clients.order('name Asc').pluck(:name, :id), {prompt: 'Select Client'},class: "form-select form-control-sm" %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :currency_id, style: "display: block", class: "required_field" %>
-    <%= form.select :currency_id, Currency.pluck(:name, :id), {prompt: "Select Currency"},class: "form-select form-control-sm" %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :bank_id, style: "display: block", class: "required_field" %>
-    <%= form.select :bank_id, tenant.banks.order('bank_name Asc').collect {|b| [b.description, b.id]}, {prompt: "Select Bank"},class: "form-select form-control-sm" %>
-  </div>
-
-  <div class="form-group">
-    <strong><%= form.label :product_pricing, "Define Item Pricing", style: "display: block" %></strong>
-    <%= form.radio_button :product_pricing, 'inclusive' %> Unit Price Includes VAT &nbsp;&nbsp; <%= form.radio_button :product_pricing, 'exclusive' %> Unit Price Excludes VAT &nbsp;&nbsp; <%= form.radio_button :product_pricing, 'none' %> No VAT
-  </div>
-
-  <div class="form-group">
-    <%= form.label :description, "Invoice Description (appears on the statement)", style: "display: block", class: "required_field" %>
-    <%= form.text_field :description, class: "form-control form-control-sm" %>
-  </div>
-
-  <h6 class="required_field"><strong>Invoice Items</strong></h6>
-  <p></p>
-  <!-- Nested attributes - Invoice Items -->
-  <div class="row">
-      <div class="col-sm-2 small fw-bold">HS Code</div>
-      <div class="col-sm-4 small fw-bold">Description</div>
-      <div class="col-sm-2 small fw-bold">Quantity</div>
-      <div class="col-sm-2 small fw-bold">Unit Price</div>
-      <div class="col-sm-2 small fw-bold">VAT Type</div>
-  </div>
-  <div class="row">
-    <%= form.fields_for :invoice_items do |f| %>
-      <div class="col-sm-2"><div class="form-group"><%= f.text_field :item_code, class: 'form-control form-control-sm' %></div></div>
-      <div class="col-sm-4"><div class="form-group"><%= f.text_area :description, rows: 2, placeholder: "Item Description", class: 'form-control form-control-sm' %></div></div>
-      <div class="col-sm-2"><div class="form-group"><%= f.number_field :quantity, class: 'form-control form-control-sm' %></div></div>
-      <div class="col-sm-2"><div class="form-group"><%= f.text_field :unit_price, class: 'form-control form-control-sm' %></div></div>
-      <div class="col-sm-2"><div class="form-group"><%= f.select :vat_type_id, VatType.all.collect {|v| [v.description, v.id]}, {prompt: "Select Type"}, class: 'form-control form-control-sm' %></div></div>
+    <% if invoice.invoice_items.empty? %>
+      <p class="zhint" style="padding:12px 18px 0;margin:0">No item lines. Items are copied in when you start from a quotation; a New Proforma starts with two empty lines.</p>
     <% end %>
-  </div>
-  <div class="text-center">
-    <%= form.submit "Save Invoice", class:'btn btn-lg btn-success' %>
+    <% if can_apply_discount? %>
+      <div class="zgrid" style="padding-top:14px">
+        <div class="zfield"><%= form.label :discount, "Approved discount (before VAT)" %><%= form.number_field :discount, min: 0, step: "0.01" %></div>
+      </div>
+    <% end %>
+  </section>
+
+  <div class="zformfoot">
+    <%= link_to "Cancel", (invoice.persisted? ? invoice_path(invoice) : invoices_path), class: "b" %>
+    <%= form.submit "Save Invoice", class: "b main" %>
   </div>
 <% end %>

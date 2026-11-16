@@ -1,0 +1,9 @@
+<% if record.errors.any? %>
+  <div class="znote err zerrors" role="alert">
+    <span><i class="fas fa-exclamation-circle" aria-hidden="true"></i></span>
+    <div>
+      <b><%= pluralize(record.errors.count, "problem") %> to fix before saving</b>
+      <ul><% record.errors.each do |error| %><li><%= error.full_message %></li><% end %></ul>
+    </div>
+  </div>
+<% end %>

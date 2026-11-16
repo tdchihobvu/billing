@@ -1,53 +1,36 @@
-<h2>Edit <%= resource_name.to_s.humanize %></h2>
-
-<%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { method: :put }) do |f| %>
-  <%= render "devise/shared/error_messages", resource: resource %>
-
-  <div class="field">
-    <%= f.label :firstname %><br />
-    <%= f.text_field :firstname, autofocus: true %>
-  </div>
-
-  <div class="field">
-    <%= f.label :lastname %><br />
-    <%= f.text_field :lastname %>
-  </div>
-  
-  <div class="field">
-    <%= f.label :email %><br />
-    <%= f.email_field :email, autofocus: true, autocomplete: "email" %>
-  </div>
-
-  <% if devise_mapping.confirmable? && resource.pending_reconfirmation? %>
-    <div>Currently waiting confirmation for: <%= resource.unconfirmed_email %></div>
+<div class="zpage">
+  <%= render "shared/zhead", title: "Your profile", crumb: "Account", sub: resource.email %>
+  <%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { method: :put, class: "box" }) do |f| %>
+    <%= render "devise/shared/error_messages", resource: resource %>
+    <section class="zsect">
+      <div class="boxh"><h2>Details</h2></div>
+      <div class="zgrid">
+        <div class="zfield"><%= f.label :firstname, "First name" %><%= f.text_field :firstname, autofocus: true %></div>
+        <div class="zfield"><%= f.label :lastname, "Last name" %><%= f.text_field :lastname %></div>
+        <div class="zfield wide"><%= f.label :email %><%= f.email_field :email, autocomplete: "email" %>
+          <% if devise_mapping.confirmable? && resource.pending_reconfirmation? %><span class="zhint">Currently waiting confirmation for: <%= resource.unconfirmed_email %></span><% end %></div>
+      </div>
+    </section>
+    <section class="zsect">
+      <div class="boxh"><h2>Password</h2><span>Leave blank if you don't want to change it</span></div>
+      <div class="zgrid">
+        <div class="zfield"><%= f.label :password, "New password" %><%= f.password_field :password, autocomplete: "new-password" %>
+          <span class="zhint"><%= User::PASSWORD_RULES %></span></div>
+        <div class="zfield"><%= f.label :password_confirmation, "Confirm new password" %><%= f.password_field :password_confirmation, autocomplete: "new-password" %></div>
+      </div>
+    </section>
+    <section class="zsect">
+      <div class="zgrid">
+        <div class="zfield wide"><%= f.label :current_password, "Current password", class: "req" %><%= f.password_field :current_password, autocomplete: "current-password" %>
+          <span class="zhint">We need your current password to confirm your changes.</span></div>
+      </div>
+    </section>
+    <div class="zformfoot"><%= f.submit "Update", class: "b main" %></div>
   <% end %>
 
-  <div class="field">
-    <%= f.label :password %> <i>(leave blank if you don't want to change it)</i><br />
-    <%= f.password_field :password, autocomplete: "new-password" %>
-    <% if @minimum_password_length %>
-      <br />
-      <em><%= @minimum_password_length %> characters minimum</em>
-    <% end %>
-  </div>
-
-  <div class="field">
-    <%= f.label :password_confirmation %><br />
-    <%= f.password_field :password_confirmation, autocomplete: "new-password" %>
-  </div>
-
-  <div class="field">
-    <%= f.label :current_password %> <i>(we need your current password to confirm your changes)</i><br />
-    <%= f.password_field :current_password, autocomplete: "current-password" %>
-  </div>
-
-  <div class="actions">
-    <%= f.submit "Update" %>
-  </div>
-<% end %>
-
-<h3>Cancel my account</h3>
-
-<div>Unhappy? <%= button_to "Cancel my account", registration_path(resource_name), data: { confirm: "Are you sure?", turbo_confirm: "Are you sure?" }, method: :delete %></div>
-
-<%= link_to "Back", :back %>
+  <section class="box" style="padding:18px">
+    <h2 class="zsubhead">Cancel my account</h2>
+    <p class="muted">Unhappy? This removes your user account.</p>
+    <%= button_to "Cancel my account", registration_path(resource_name), method: :delete, class: "b danger", data: { confirm: "Are you sure?", turbo_confirm: "Are you sure?" } %>
+  </section>
+</div>

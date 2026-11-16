@@ -231,14 +231,16 @@ class InvoicePdf < Prawn::Document
 
 	def invoice_table_footer
         [["Sub Total (Excl)",number_to_currency(@invoice.sub_total, unit: "")]] +
+        (@invoice.discount_amount.positive? ? [["Discount",number_to_currency(-@invoice.discount_amount, unit: "")]] : []) +
         [["VAT Total",number_to_currency(@invoice.vat, unit: "")]] +
         [["Invoice Total #{@invoice.currency.name}",number_to_currency(@invoice.total, unit: "")]]
 	end
 
 	def invoice_license_table_footer
         [["Sub Total (Excl)",number_to_currency(@invoice.license.sub_total, unit: "")]] +
-        [["VAT Total",number_to_currency(@invoice.license.vat, unit: "")]] +
-        [["Invoice Total #{@invoice.currency.name}",number_to_currency(@invoice.license.amount, unit: "")]]
+        (@invoice.discount_amount.positive? ? [["Discount",number_to_currency(-@invoice.discount_amount, unit: "")]] : []) +
+        [["VAT Total",number_to_currency(@invoice.discount_amount.positive? ? @invoice.vat : @invoice.license.vat, unit: "")]] +
+        [["Invoice Total #{@invoice.currency.name}",number_to_currency(@invoice.discount_amount.positive? ? @invoice.total : @invoice.license.amount, unit: "")]]
 	end
 
 end

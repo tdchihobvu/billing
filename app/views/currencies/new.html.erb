@@ -1,9 +1,3 @@
-<h1>New currency</h1>
-
-<%= render "form", currency: @currency %>
-
-<br>
-
-<div>
-  <%= link_to "Back to currencies", currencies_path %>
-</div>
+<%= render layout: "shared/crud_form", locals: { title: "New currency", crumb: link_to("Settings / Currencies", currencies_path), back_path: currencies_path, back_label: "Back to currencies" } do %>
+  <%= render "form", currency: @currency %>
+<% end %>

@@ -1,6 +1,9 @@
 require "active_support/core_ext/integer/time"
 
 Rails.application.configure do
+  # Compress HTML and JSON responses; Heroku's router does not do this.
+  config.middleware.use Rack::Deflater
+
   # Settings specified here will take precedence over those in config/application.rb.
 
   config.action_mailer.default_url_options = { host: 'zimura.aibes.online', protocol: 'https' }

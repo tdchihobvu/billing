@@ -3,7 +3,32 @@ class ClientsController < ApplicationController
 
   # GET /clients
   def index
-    @clients = current_user.tenant.clients.includes(:client_type, :industry).order(name: :asc)
+    respond_to do |format|
+      format.html do
+        @client_types = ClientType.order(:name)
+        @industries = tenant.industries.order(:name)
+        scope = current_user.tenant.clients
+        scope = scope.where(client_type_id: params[:client_type_id]) if params[:client_type_id].present?
+        scope = scope.where(industry_id: params[:industry_id]) if params[:industry_id].present?
+        if params[:q].present?
+          scope = TextSearch.apply(scope, params[:q], %w[clients.name clients.trading_name clients.client_account_number clients.city clients.location clients.mobile clients.phone])
+        end
+        @count = scope.count
+        @per_page = 50
+        @page = [params[:page].to_i, 1].max
+        @pages = [(@count / @per_page.to_f).ceil, 1].max
+        @clients = scope.preload(:client_type, :industry).order(:name).offset((@page - 1) * @per_page).limit(@per_page)
+      end
+      format.json do
+        scope = current_user.tenant.clients.left_outer_joins(:client_type, :industry).preload(:client_type, :industry)
+        columns = [nil, "clients.client_account_number", "clients.name", "client_types.name", "industries.name", "clients.city", nil]
+        vc = view_context
+        render_server_side_table(scope, columns: columns) do |client, number|
+          [number, ERB::Util.html_escape(client.client_account_number), ERB::Util.html_escape(client.name), ERB::Util.html_escape(client.client_type&.name),
+           ERB::Util.html_escape(client.industry&.name), ERB::Util.html_escape(client.city), vc.link_to("View", client)]
+        end
+      end
+    end
   end
 
   # GET /clients/1
@@ -11,6 +36,9 @@ class ClientsController < ApplicationController
     @start_date = statement_start_date
     @end_date = Date.today
     @client.update_client_balances
+    # The statement is built from stored lines; add any new invoices and receipts before showing it,
+    # so nobody has to press Refresh to see an up-to-date statement.
+    @client.update_statement(tenant) if params[:tab] == "statement"
     @currency = @client.currency
     @target_currency = @currency
   end
@@ -24,7 +52,7 @@ class ClientsController < ApplicationController
   end
 
   def upload_branches
-    @client = Client.find(params[:client_id])
+    @client = tenant.clients.find(params[:client_id])
     unless params[:file].nil?
       Client.import_branches(params[:client_id],params[:file])
       flash[:notice] = "Branches successfully upload."
@@ -35,8 +63,8 @@ class ClientsController < ApplicationController
   end
 
   def delete_branch
-    @client = Client.find(params[:client_id])
-    @branch = Branch.find(params[:branch_id])
+    @client = tenant.clients.find(params[:client_id])
+    @branch = @client.branches.find(params[:branch_id])
     if @branch.update_attribute(:active, false)
       flash[:notice] = "Branch Successfully removed."
     end
@@ -63,11 +91,9 @@ class ClientsController < ApplicationController
 
   def account_statement
     @client.update_statement(tenant)
-    from = params[:as_at].to_date
-    unless @client.transactions.empty?
-      from = @client.transactions[0].transaction_date
-    end
-    end_date = params[:as_at].to_date
+    # "As at" defaults to today when it is missing or not a valid date.
+    end_date = (Date.parse(params[:as_at].to_s) rescue nil) || Date.current
+    from = @client.transactions.empty? ? end_date : @client.transactions[0].transaction_date
     respond_to do |format|
       format.html
       format.pdf do 
@@ -79,11 +105,11 @@ class ClientsController < ApplicationController
   end
 
   def print_by_date
-    @client = Client.find(params[:id])
+    @client = tenant.clients.find(params[:id])
   end
 
   def takeon_balances
-    @client = Client.find(params[:id])
+    @client = tenant.clients.find(params[:id])
     # get the last journal
     last = Transaction.last
     @transaction = Transaction.new  
@@ -93,7 +119,7 @@ class ClientsController < ApplicationController
   end
 
   def save_journal
-    @client = Client.find(params[:client_id])
+    @client = tenant.clients.find(params[:client_id])
     @transaction = Transaction.new(transaction_params)
     last = Transaction.where(tenant_id: tenant.id).last
     if last.nil?
@@ -121,12 +147,12 @@ class ClientsController < ApplicationController
   end
 
   def edit_journal
-    @client = Client.find(params[:client_id])
+    @client = tenant.clients.find(params[:client_id])
     @transaction = Transaction.find(params[:id])
   end
 
   def update_journal
-    @client = Client.find(params[:client_id])
+    @client = tenant.clients.find(params[:client_id])
     @transaction = Transaction.find(params[:id])
     prev_amount = @transaction.amount
     prev_date = @transaction.transaction_date
@@ -237,12 +263,12 @@ class ClientsController < ApplicationController
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_client
-      @client = Client.find(params[:id])
+      @client = tenant.clients.find(params[:id])
     end
 
     # Only allow a list of trusted parameters through.
     def client_params
-      params.require(:client).permit(:client_type_id, :industry_id, :currency_id, :name, :trading_name, :client_account_number, :bp_number, :vat_number, :address_1, :address_2, :location, :city, :country, :website, :mobile, :phone, :email, :cp_name, :cp_mobile, :cp_email, :active, :tenant_id, branches_attributes: [:id, :tenant_id, :name, :address_1, :location, :city, :license_option_id, :license_category_id])
+      params.require(:client).permit(:client_type_id, :industry_id, :currency_id, :name, :trading_name, :client_account_number, :bp_number, :vat_number, :address_1, :address_2, :location, :city, :country, :website, :mobile, :phone, :email, :cp_name, :cp_mobile, :cp_email, :active, :tenant_id, branches_attributes: [:id, :tenant_id, :name, :display_name, :address_1, :location, :city, :license_option_id, :license_category_id])
     end
 
     def transaction_params

@@ -1,5 +1,29 @@
-<h1>UserManagement#details</h1>
-<p>Find me in app/views/user_management/details.html.erb</p>
-<% if current_user.role == 'superadmin' %>
-	<%= link_to "Reset Password", reset_user_management_index_path(id: @user) %> for <%= @user.username %>
-<% end %>
+<% u = @user %>
+<div class="zpage">
+  <div class="zvhead">
+    <span class="zmono" aria-hidden="true"><%= zinitials(u.fullname) %></span>
+    <div>
+      <div class="zcrumb"><%= link_to "Administration / Users", user_management_index_path %></div>
+      <h1><%= u.fullname %></h1>
+      <small class="muted"><%= role_label(u.role) %></small>
+    </div>
+    <div class="acts">
+      <%= link_to "All users", user_management_index_path, class: "b" %>
+      <% if can?("users.manage") && (current_user.superadmin? || !u.superadmin?) %>
+        <%= link_to "Edit", edit_user_management_index_path(id: u), class: "b" %>
+        <%= link_to "Reset password", reset_user_management_index_path(id: u), class: "b danger", data: { turbo_confirm: "Reset the password for #{u.username}? They will need the temporary password to sign in." } %>
+      <% end %>
+    </div>
+  </div>
+  <% if notice.present? %><div class="znote ok"><span><i class="fas fa-check" aria-hidden="true"></i></span><div><%= notice %></div></div><% end %>
+  <section class="box">
+    <div class="zdetails">
+      <div><small class="muted">Username</small><div><b><%= u.username %></b></div></div>
+      <div><small class="muted">Email</small><div><b><%= u.email.presence || "Not given" %></b></div></div>
+      <div><small class="muted">Role</small><div><b><%= role_label(u.role) %></b></div></div>
+      <div><small class="muted">Last signed in</small><div><b><%= u.last_sign_in_at&.strftime("%d %b %Y %H:%M") || "Never" %></b></div></div>
+      <div><small class="muted">Sign-ins</small><div><b><%= u.sign_in_count.to_i %></b></div></div>
+      <div><small class="muted">Password</small><div><b><%= u.must_change_password ? "Must change at next sign-in" : "Set by the user" %></b></div></div>
+    </div>
+  </section>
+</div>

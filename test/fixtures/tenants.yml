@@ -24,11 +24,11 @@ one:
 
 two:
   tenant_category: two
-  company_name: MyString
+  company_name: company_name_two
   trading_name: MyString
-  registration_number: MyString
-  bp_number: MyString
-  vat_number: MyString
+  registration_number: registration_number_two
+  bp_number: bp_number_two
+  vat_number: vat_number_two
   address_1: MyString
   address_2: MyString
   location: MyString

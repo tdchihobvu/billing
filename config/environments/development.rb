@@ -3,7 +3,8 @@ require "active_support/core_ext/integer/time"
 Rails.application.configure do
 
   # config.action_mailer.default_url_options = { host: 'localhost', port: 3000 }
-  config.action_mailer.default_url_options = { host: 'zimura.aibes.online', protocol: 'https' }
+  # Reset links must open this copy of the app, not the live site.
+  config.action_mailer.default_url_options = { host: 'localhost', port: 3000 }
   
   # Settings specified here will take precedence over those in config/application.rb.
 
@@ -42,7 +43,9 @@ Rails.application.configure do
 
   # Don't care if the mailer can't send.
   config.action_mailer.raise_delivery_errors = true
-  config.action_mailer.delivery_method = :smtp
+  # Without a SendGrid key, emails are saved to tmp/mails instead of being sent.
+  config.action_mailer.delivery_method = ENV["SENDGRID_APIKEY"].present? ? :smtp : :file
+  config.action_mailer.file_settings = { location: Rails.root.join("tmp/mails") }
   config.action_mailer.smtp_settings = {
     :address          => 'smtp.gmail.com',
     :port             => 587,

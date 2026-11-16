@@ -1,19 +1,99 @@
-<h1><%= @tenant.company_name %></h1>
+<%
+  tname = @tenant.trading_name.presence || @tenant.company_name
+  hints = {
+    "Invoice No." => "Format for invoice numbers. The next number follows the last invoice.",
+    "Receipt No." => "Format for receipt numbers.",
+    "Invoice Validity" => "Days before an unpaid invoice with no due date is overdue.",
+    "Exchange Rate Update Frequency" => "How long an exchange rate stays valid.",
+    "System Users Title" => "What field staff are called on screens and reports.",
+    "Invoice Title" => "Printed at the top of invoices.",
+    "Attach Invoice to Receipt" => "Whether every receipt must be linked to an invoice.",
+    "Product Pricing" => "Whether prices include VAT.",
+    "Background Color" => "Company colour for menus and printouts."
+  }
+  lists = [
+    ["Currencies", Currency.order(:name).pluck(:name), currencies_path],
+    ["Payment forms", PaymentForm.order(:name).pluck(:name), payment_forms_path],
+    ["Licence categories", LicenseCategory.order(:name).pluck(:name), license_categories_path],
+    ["Licence options", LicenseOption.order(:name).pluck(:name), license_options_path],
+    ["Client types", ClientType.order(:name).pluck(:name), client_types_path],
+    ["Banks", Bank.where(tenant_id: @tenant.id).map { |b| "#{b.bank_name}, #{b.account_number}" }, banks_path],
+    ["Districts", District.order(:name).pluck(:name), districts_path],
+    ["Exchange rates", [], exchange_rates_path]
+  ]
+%>
+<div class="zpage">
+  <%= render "shared/zhead", title: "General", crumb: "Settings" %>
 
-<ul>
-	<li><%= link_to 'Banks', banks_path %></li>
-	<li><%= link_to 'Currencies', currencies_path %></li>
-	<li><%= link_to 'Payment Forms', payment_forms_path %></li>
-	<li><%= link_to 'License Categories', license_categories_path %></li>
-	<li><%= link_to 'License Options', license_options_path %></li>
-	<li><%= link_to 'Exchange Rates', exchange_rates_path %></li>
-</ul>
+  <%= form_with(model: @tenant, class: "box") do |form| %>
+    <%= render "shared/form_errors", record: @tenant %>
+    <%= hidden_field_tag :return_to, params[:return_to].presence || request.fullpath %>
+    <div class="boxh"><h2>System settings</h2><span>Apply to everyone in <%= tname %></span></div>
+    <%= form.fields_for :system_settings do |builder| %>
+      <%= builder.hidden_field :id %>
+      <%= builder.hidden_field :config_key_id %>
+      <% key = builder.object.config_key.name %>
+      <div class="zsetrow">
+        <div><%= builder.label :config_value, key, style: "font-weight:600;margin:0" %><% if hints[key] %><small class="muted"><%= hints[key] %></small><% end %></div>
+        <div class="zfield">
+          <% case key %>
+          <% when "Product Pricing" %>
+            <div class="zchoices"><label class="zcheck"><%= builder.radio_button :config_value, "exclusive" %> Excludes VAT</label><label class="zcheck"><%= builder.radio_button :config_value, "inclusive" %> Includes VAT</label></div>
+          <% when "Default Module" %>
+            <%= builder.select :config_value, %w[invoicing licensing] %>
+          <% when "Exchange Rate Update Frequency" %>
+            <%= builder.select :config_value, ["daily", "skip day", "weekly", "monthly"] %>
+          <% when "Attach Invoice to Receipt" %>
+            <div class="zchoices"><label class="zcheck"><%= builder.radio_button :config_value, "NO" %> NO</label><label class="zcheck"><%= builder.radio_button :config_value, "YES" %> YES</label></div>
+          <% when "Base Currency" %>
+            <%= builder.select :config_value, Currency.all.collect { |c| [c.name, c.id] }, { prompt: "Select Currency" } %>
+          <% when "Background Color" %>
+            <div style="display:flex;gap:8px;align-items:center"><%= builder.color_field :config_value, style: "width:44px;padding:2px;height:36px" %><span class="muted money"><%= builder.object.config_value %></span></div>
+          <% else %>
+            <%= builder.text_field :config_value %>
+          <% end %>
+        </div>
+        <div></div>
+      </div>
+    <% end %>
+    <div class="zformfoot"><%= form.submit "Update Settings", class: "b main" %></div>
+  <% end %>
 
-<%= render "tenants/settings_form", tenant: @tenant %>
+  <% if @tenant.system_modules.empty? %>
+    <%= form_with(model: @tenant, class: "box") do |form| %>
+      <div class="boxh"><h2>Available Modules</h2><%= form.submit "Update Modules", class: "b main" %></div>
+      <%= form.collection_check_boxes :system_module_ids, SystemModule.order("name Asc"), :id, :name do |b| %>
+        <div class="zsetrow">
+          <div><%= b.label(style: "font-weight:600;margin:0") %></div>
+          <small class="muted">Switched off</small>
+          <%= b.check_box(class: "zswitch", role: "switch") %>
+        </div>
+      <% end %>
+    <% end %>
+  <% else %>
+    <section class="box">
+      <div class="boxh"><h2>Available Modules</h2></div>
+      <% @tenant.system_modules.each do |m| %>
+        <div class="zsetrow">
+          <div><b><%= m.name %></b><% if m.description.present? %><small class="muted"><%= m.description %></small><% end %></div>
+          <small class="muted">Switched on for <%= tname %></small>
+          <span class="zswitch on" role="img" aria-label="<%= m.name %> is on"></span>
+        </div>
+      <% end %>
+    </section>
+  <% end %>
 
-<h3>Available Modules</h3>
-<% if @tenant.system_modules.empty? %>
-	<%= render "tenants/modules_form", tenant: @tenant %>
-<% else %>
-	<%= render 'tenants/tenant_modules' %>
-<% end %>
+  <section class="box">
+    <div class="boxh"><h2>Lists</h2><span>Choices offered in forms</span></div>
+    <% lists.each do |title, items, path| %>
+      <div class="zsetrow">
+        <div><b><%= title %></b></div>
+        <div class="zchips">
+          <% items = items.reject(&:blank?) %><% items.first(12).each do |x| %><span class="ztag" style="padding:4px 10px"><%= x %></span><% end %>
+          <% if items.size > 12 %><span class="muted" style="font-size:12.5px">and <%= items.size - 12 %> more</span><% end %>
+        </div>
+        <%= link_to "Edit list", path, class: "b" %>
+      </div>
+    <% end %>
+  </section>
+</div>

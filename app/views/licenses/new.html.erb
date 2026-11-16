@@ -1,32 +1,57 @@
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Search Client</h1>
-    <div class="float-end">
-      <%= link_to :back, class: "btn btn-outline btn-sm rounded-0" do %><i class="fas fa-backward text-dark"></i> Back <% end %> 
-    </div>
-</div>
+<%
+  status_for = lambda do |lic|
+    if lic.nil? then ["No licence", ""]
+    elsif lic.expiry_date && lic.expiry_date < Date.current then ["Expired #{lic.expiry_date.strftime('%d %b %Y')}", "late"]
+    elsif !lic.paid? then ["Not paid", "late"]
+    elsif !lic.printable? then [lic.approval_label, "part"]
+    else ["Valid", "paid"]
+    end
+  end
+%>
+<div class="zpage">
+  <%= render "shared/zhead", title: "Generate License", crumb: link_to("Licensing / Valid Licenses", licenses_path),
+             sub: "Find the client by name or account number. Then print their licence, or generate a new one from a paid invoice." %>
 
-<p style="color: green"><%= notice %></p>
-
-<div class="card border-0">
-  <div class="card-body">
-    <%= form_tag(new_license_path, method: :get) do %>
-      <div class="input-group mb-4">
-        <%= text_field_tag(:search, params[:search], placeholder: "Enter client name",  class: "form-control form-control-sm") %>
-        <div class="input-group-append">
-          <%= submit_tag "Search", class: "btn btn-primary" %>
-        </div>    
-      </div>
+  <section class="box">
+    <%= form_tag(new_license_path, method: :get, class: "zfilters",
+                 data: { controller: "autosubmit", turbo_frame: "license_search_results", turbo_action: "advance" }) do %>
+      <label class="zsearch" style="max-width:460px"><span class="visually-hidden">Client name or account number</span><i class="fas fa-search" aria-hidden="true"></i>
+        <%= search_field_tag :search, params[:search], placeholder: "Client name or account number", autofocus: true, autocomplete: "off",
+                             data: { action: "input->autosubmit#queue" } %></label>
+      <%= submit_tag "Search", name: nil, class: "b" %>
     <% end %>
 
-    <% unless @clients.empty? %>
-    <ul>
-        <% @clients.each_with_index do |client,i| %>
-        <li><%= link_to "#{i+=1} - #{client.name}", generate_licenses_path(client_id: client) %></li>
-        <% end %>
-    </ul>
-    <% else %>
-    <div class="alert alert-warning text-center border-0" role="alert">There is nothing to display.</div>
-    <% end %>
-
-  </div>
+    <turbo-frame id="license_search_results" target="_top">
+      <% if @clients.any? %>
+        <p class="muted" style="margin:0;padding:0 18px 8px;font-size:12.5px" aria-live="polite">
+          <%= pluralize(@clients.size, "client") %><%= " (first 50; type more to narrow it down)" if @clients.size == 50 %>
+        </p>
+        <div class="zwrap">
+          <table class="zt">
+            <thead><tr><th>Client</th><th>Account</th><th>Current licence</th><th><span class="visually-hidden">Select</span></th></tr></thead>
+            <tbody>
+              <% @clients.each do |client| %>
+                <% lic = @latest[client.id] %>
+                <% label, tone = status_for.(lic) %>
+                <% address = [client.address_1, client.location, client.city].compact_blank.join(", ") %>
+                <tr>
+                  <td class="zvn zclient"><%= link_to client.name, generate_licenses_path(client_id: client), class: "zno" %><small title="<%= address %>"><%= address %></small></td>
+                  <td class="money"><%= client.client_account_number %></td>
+                  <td>
+                    <span class="ztag <%= tone %>"><%= label %></span>
+                    <% if lic %><small class="muted" style="display:block;margin-top:3px"><%= lic.license_for %><% if lic.expiry_date && lic.expiry_date >= Date.current %><%= label == "Valid" ? ", valid to " : ", period ends " %><%= lic.expiry_date.strftime("%d %b %Y") %><% end %></small><% end %>
+                  </td>
+                  <td style="text-align:right"><%= link_to "Select", generate_licenses_path(client_id: client), class: "b" %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% elsif params[:search].to_s.strip.length >= 2 %>
+        <%= zempty("No client matches “#{params[:search].strip}”", "Try part of the name, a different spelling, or the account number.") %>
+      <% else %>
+        <%= zempty("Search for a client", "Start typing a client's name or account number. Results appear as you type.") %>
+      <% end %>
+    </turbo-frame>
+  </section>
 </div>

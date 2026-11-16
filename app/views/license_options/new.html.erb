@@ -1,9 +1,3 @@
-<h1>New license option</h1>
-
-<%= render "form", license_option: @license_option %>
-
-<br>
-
-<div>
-  <%= link_to "Back to license options", license_options_path %>
-</div>
+<%= render layout: "shared/crud_form", locals: { title: "New license option", crumb: link_to("Licensing / License options", license_options_path), back_path: license_options_path, back_label: "Back to license options" } do %>
+  <%= render "form", license_option: @license_option %>
+<% end %>

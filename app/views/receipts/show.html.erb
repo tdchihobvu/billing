@@ -1,25 +1,59 @@
-<!-- Page Heading -->
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Receipt - <span class="text-danger"><%= @receipt.reference_number %></h1>
-    <div class="float-end">
-      <%= link_to receipts_path, class: "d-none d-sm-inline-block btn btn-sm btn-outline text-dark" do %>
-      <i class="fas fa-folder fa-sm text-dark"></i> All Receipts
-      <% end %> |
-      <%= link_to @receipt, data: {turbo_method: :delete, turbo_confirm: 'Are you sure. You want to void this receipt?' }, class: "btn btn-outline btn-sm rounded-0 text-dark" do %>
-        <i class="fas fa-trash text-dark"></i> Void
-      <% end %> |
-      <%= link_to :back, class: "btn btn-outline btn-sm rounded-0" do %><i class="fas fa-backward text-dark"></i> Back <% end %> 
+<% r = @receipt %>
+<div class="zpage">
+  <div class="zhead">
+    <div>
+      <div class="zcrumb"><%= link_to "Sales / Receipting", receipts_path %></div>
+      <h1>Receipt <%= r.reference_number %></h1>
     </div>
-</div>
-
-<p style="color: green"><%= notice %></p>
-<div class="card border-0">
-  <div class="card-body">
-    <%= render @receipt %>
+    <div class="acts">
+      <%= link_to "All Receipts", receipts_path, class: "b" %>
+      <%= link_to print_receipts_path(id: r), class: "b" do %><i class="fas fa-print" aria-hidden="true"></i> Print<% end %>
+      <% unless r.deleted? %>
+        <%= link_to r, class: "b danger", data: { turbo_method: :delete, turbo_confirm: "Void receipt #{r.reference_number}? The payment comes off #{r.invoice ? r.invoice.invoice_number : 'the client account'} and the statement." } do %><i class="fas fa-times" aria-hidden="true"></i> Void<% end %>
+      <% end %>
+    </div>
   </div>
-  <div class="text-center">
-    <%= link_to print_receipts_path(id: @receipt), class: "btn btn-sm btn-success" do %>
-    <i class="fas fa-print fa-sm"></i> Print
-    <% end %>
+
+  <% if notice.present? %><div class="znote ok"><span><i class="fas fa-check" aria-hidden="true"></i></span><div><%= notice %></div></div><% end %>
+  <% if r.deleted? %>
+    <div class="znote err"><span><i class="fas fa-times" aria-hidden="true"></i></span><div><b>This receipt is void</b>It no longer counts towards the client's balance.</div></div>
+  <% end %>
+
+  <div class="zsplit">
+    <section class="box zdoc" aria-label="Receipt">
+      <div class="zdoctop">
+        <div>
+          <span class="ztag <%= r.deleted? ? '' : 'paid' %>"><%= r.deleted? ? "Void" : (r.receipt_type.present? && r.receipt_type != "payment" ? r.receipt_type.humanize : "Received") %></span>
+          <h2><%= link_to r.client.name, r.client %></h2>
+          <small class="muted"><%= [r.client.address_1, r.client.location, r.client.city].compact_blank.join(", ") %></small>
+        </div>
+        <div class="zowed"><small class="muted">Amount</small><b><span class="cur"><%= r.currency&.name %></span><%= number_with_precision(r.amount, precision: 2, delimiter: ",") %></b></div>
+      </div>
+      <div class="zfacts">
+        <div><small>Transaction Date</small><b><%= r.transaction_date.strftime("%d %b %Y") %></b></div>
+        <div><small>Payment Form</small><b><%= r.payment_form&.name %></b></div>
+        <div><small>Transaction By</small><b><%= r.user&.user_fullname || r.user_fullname %></b></div>
+        <div><small>Rate</small><b><%= r.rate %></b></div>
+      </div>
+      <div class="zdetails" style="padding:0">
+        <div><small class="muted">Invoice</small><div><b><%= r.invoice ? link_to(r.invoice.invoice_number, r.invoice) : "On account" %></b></div></div>
+        <div><small class="muted">Description</small><div><b><%= r.description.presence || "None" %></b></div></div>
+        <% if r.invoice && r.invoice.discount_amount.to_d.positive? %>
+          <div><small class="muted">Invoice discount</small><div><b><%= number_with_precision(r.invoice.discount_amount, precision: 2, delimiter: ",") %></b></div></div>
+        <% end %>
+        <% if r.reason.present? %><div><small class="muted">Reason</small><div><b><%= r.reason %></b></div></div><% end %>
+      </div>
+    </section>
+
+    <section class="box" aria-label="Receipt QR code">
+      <div class="boxh"><h2>Verification</h2><span>QR code printed on the receipt</span></div>
+      <div style="padding:6px 18px 18px;display:grid;justify-items:center">
+        <% if r.qr_code.attached? %>
+          <%= image_tag r.qr_code, alt: "QR code for receipt #{r.reference_number}", style: "width:180px;height:180px" %>
+        <% else %>
+          <%= zempty("No QR code", "This receipt was saved without one.") %>
+        <% end %>
+      </div>
+    </section>
   </div>
 </div>

@@ -1,14 +1,1 @@
-<p style="color: green"><%= notice %></p>
-
-<h1>Payment forms</h1>
-
-<div id="payment_forms">
-  <% @payment_forms.each do |payment_form| %>
-    <%= render payment_form %>
-    <p>
-      <%= link_to "Show this payment form", payment_form %>
-    </p>
-  <% end %>
-</div>
-
-<%= link_to "New payment form", new_payment_form_path %>
+<%= render "shared/crud_index", records: @payment_forms, model: PaymentForm, title: "Payment forms", crumb: "Settings", new_path: new_payment_form_path, new_label: "New payment form" %>

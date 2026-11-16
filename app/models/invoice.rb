@@ -21,9 +21,20 @@ class Invoice < ApplicationRecord
     deleted: "Deleted"
   }
 
+  # The status enum's "deleted" value defines deleted? as "status is Deleted", which hides
+  # the deleted column's own query method. Every caller means the column, so restore it.
+  def deleted?
+    self[:deleted] == true
+  end
+
   after_update :update_associated_license
+  # Keep the client statement in step when an invoice is deleted, voided or restored.
+  after_commit :sync_statement_line, on: :update, if: :saved_change_to_deleted?
+  # A licence invoice that becomes fully paid marks its licence paid, which queues it for approval.
+  after_save :mark_license_paid, if: -> { saved_change_to_paid?(to: true) }
   before_validation :populate_invoice_items
   validate :invoice_items_cannot_be_empty
+  validate :discount_within_invoice, if: :will_save_change_to_discount?
   # validates :bank_id, presence: true
   validates :invoice_date, uniqueness: { scope: [:client_id, :invoice_total, :deleted], message: "Possible invoice duplicate per client." }
 
@@ -37,6 +48,12 @@ class Invoice < ApplicationRecord
   scope :active, -> {where(deleted: false)}
   scope :unpaid, -> {where(deleted: false, paid: false)}
   scope :inactive, -> {where(deleted: true)}
+  # One rule for "overdue" everywhere (sidebar badge, Invoices tab): a real invoice, not deleted,
+  # with money still owing, past its due date (or invoice date + validity days when it has none).
+  scope :overdue_after, ->(validity_days, today = Date.current) {
+    sales.where("invoices.invoice_total > invoices.amount_paid")
+         .where("COALESCE(invoices.due_date, invoices.invoice_date + CAST(? AS integer)) < ?", validity_days.to_i, today)
+  }
 
   scope :between_dates, ->(start_date, end_date) {includes(:currency).where(invoice_date: start_date..end_date)}
 
@@ -79,12 +96,20 @@ class Invoice < ApplicationRecord
     license_value(:amount) { invoice_items.active.sum(&:net_total) }
   end
 
+  # VAT follows the discount, so tax is charged on the reduced price.
   def vat
-    license_value(:vat) { invoice_items.active.sum(:line_vat) }
+    before_discount = license_value(:vat) { invoice_items.active.sum(:line_vat) }
+    return before_discount unless discount_amount.positive?
+
+    before_discount * (1 - discount_amount / sub_total.to_d)
+  end
+
+  def discount_amount
+    [discount.to_d, sub_total.to_d].min
   end
 
   def total
-    sub_total + vat
+    sub_total - discount_amount + vat
   end
 
   def rated_invoice_total(target_currency)
@@ -100,15 +125,21 @@ class Invoice < ApplicationRecord
   end
 
   def total_paid
-    receipts.active.where(receipt_type: "payment").sum(:actual_paid).to_d
+    received_through("payment")
   end
 
   def total_setoff
-    receipts.active.where(receipt_type: "setoff").sum(:actual_paid).to_d
+    received_through("setoff")
   end
 
   def total_writeoff
-    receipts.active.where(receipt_type: "write_off").sum(:actual_paid).to_d
+    received_through("write_off")
+  end
+
+  # Worked out from each receipt's amount, rate and currency. Older rows have a
+  # wrong stored actual_paid, so that column cannot be trusted.
+  def received_through(receipt_type)
+    receipts.active.where(receipt_type: receipt_type).to_a.sum { |receipt| receipt.amount_paid.to_d.round(2) }
   end
 
   def total_amount_paid
@@ -123,18 +154,67 @@ class Invoice < ApplicationRecord
 
     self.last_payment_update = Time.current
 
-    save!
+    # Only derived figures change here, so an old validation issue on the
+    # invoice must not block recording a payment.
+    save!(validate: false)
+  end
+
+  # Corrects the stored figures only when they are wrong. Returns true if saved.
+  def sync_balance
+    return false if would_lose_paid_status? && client_has_unallocated_receipts?
+
+    prepare_balance
+    return save_prepared_balance if balance_needs_saving?
+
+    restore_attributes
+    false
+  end
+
+  def prepare_balance
+    self.invoice_total = total
+    self.amount_paid = total_amount_paid
+    update_invoice_status
+  end
+
+  def balance_needs_saving?
+    (changed - ["last_status_update"]).any?
+  end
+
+  def save_prepared_balance
+    save!(validate: false)
+    true
+  rescue ActiveRecord::RecordNotUnique => e
+    Rails.logger.warn("Could not correct invoice #{id}: #{e.message}")
+    SystemEvent.record(kind: "payment_sync", tenant_id: tenant_id, record: self,
+                       title: "Invoice #{invoice_number}'s balance could not be corrected", details: e.message)
+    restore_attributes
+    false
+  end
+
+  # Receipts with no invoice can settle a client through the statement alone,
+  # so those invoices cannot be judged from their own receipts.
+  def would_lose_paid_status?
+    paid? && total.to_d.round(2) - total_amount_paid.to_d.round(2) > 0
+  end
+
+  def client_has_unallocated_receipts?
+    Receipt.active.where(client_id: client_id, invoice_id: nil).exists?
+  end
+
+  def sync_statement_line
+    Transaction.where(source: "Invoices", source_id: id, journal: [false, nil])
+               .update_all(deleted: deleted?, updated_at: Time.current)
   end
 
   def update_invoice_status
     balance = invoice_balance.to_d.round(2)
 
     if deleted?
-      self.status = :deleted
+      self.status = :deleted unless void?
       self.paid = false
     elsif balance < 0
       self.status = :overpaid
-      self.paid = false
+      self.paid = true
     elsif balance <= 0
       self.status = :fully_paid
       self.paid = true
@@ -155,11 +235,7 @@ class Invoice < ApplicationRecord
 
       update_balance
 
-      license&.update!(
-        amount: invoice_total,
-        status: status,
-        paid: self.paid
-      )
+      update_associated_license
     end
   end
 
@@ -181,11 +257,12 @@ class Invoice < ApplicationRecord
   def update_associated_license
     return unless license.present?
 
-    license.update!(
-      amount: invoice_total,
-      status: status,
-      paid: self.paid
-    )
+    # The invoice is the source of truth. Skip validation so a zero-total invoice
+    # cannot silently roll back its own void or update.
+    # A discounted invoice keeps the licence's full price, or the discount would apply twice.
+    license.amount = invoice_total unless discount_amount.positive?
+    license.assign_attributes(status: status, paid: self.paid)
+    license.save!(validate: false)
   end
 
   def invoice_vat(currency)
@@ -261,7 +338,17 @@ class Invoice < ApplicationRecord
   end
 
   def sync_reference
-    self.source_reference
+    source_reference.presence || invoice_number
+  end
+
+  # Older invoices have no due date, so fall back to the invoice's validity period.
+  def effective_due_date(validity_days)
+    due_date || (invoice_date && invoice_date + validity_days.to_i.days)
+  end
+
+  def days_overdue(validity_days)
+    due = effective_due_date(validity_days)
+    due ? [(Date.current - due).to_i, 0].max : 0
   end
 
   # def age
@@ -463,6 +550,11 @@ class Invoice < ApplicationRecord
     end
   end
 
+  def discount_within_invoice
+    errors.add(:discount, "cannot be negative") if discount.to_d.negative?
+    errors.add(:discount, "cannot be more than the invoice subtotal") if discount.to_d > sub_total.to_d
+  end
+
   def populate_invoice_items
     # if self.invoice_category_id == 2 and invoice_items.empty?
     #   self.invoice_items.build(description: "#{license.}", quantity: self.quantity, unit_price: self.unit_price, vat_type_id: self.vat_type_id)
@@ -473,6 +565,22 @@ class Invoice < ApplicationRecord
     # if self.invoice_items.empty? || self.license.nil?
     #   errors.add(:invoice_id, "Please add atleast one invoice item")
     # end
+  end
+
+
+  def mark_license_paid
+    lic = License.find_by(invoice_id: id)
+    return if lic.nil? || lic.paid?
+
+    # Only the paid flag changes, so an old validation problem on the licence must not stop it.
+    lic.paid = true
+    lic.status = "Fully Paid"
+    lic.save!(validate: false)
+  rescue StandardError => e
+    Rails.logger.error("Could not mark licence paid for invoice #{id}: #{e.message}")
+    SystemEvent.record(kind: "payment_sync", tenant_id: tenant_id, record: self,
+                       title: "Invoice #{invoice_number} is paid but its licence could not be marked paid",
+                       details: "#{e.class}: #{e.message}. The licence will not reach the approval queue until this is fixed.")
   end
 
 end

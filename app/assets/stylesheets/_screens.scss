@@ -1,0 +1,539 @@
+// Shared screen pieces: page header, filter bar, chips, stats, and the people (users) list.
+// Pages set --brand inline from the company colour; the fallback keeps them usable without it.
+
+$ink: #1f2933;
+$muted: #5f6b7a;
+$line: #e4e7eb;
+$soft: #f5f7fa;
+$radius: 0.75rem;
+
+.screen {
+  --accent: var(--brand, #2f6fde);
+  --accent-soft: rgba(47, 111, 222, 0.1);
+  --accent-soft: color-mix(in srgb, var(--accent) 11%, white);
+  color: $ink;
+  padding-bottom: 2rem;
+}
+
+// ---------------------------------------------------------------- Header
+.screen-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  margin-bottom: 1.25rem;
+
+  h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+    color: $ink;
+  }
+
+  p {
+    margin: 0.25rem 0 0;
+    color: $muted;
+    font-size: 0.9rem;
+  }
+}
+
+.screen-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.btn-accent {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.9rem;
+  border: 0;
+  border-radius: 0.55rem;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-decoration: none;
+  white-space: nowrap;
+
+  &:hover,
+  &:focus-visible {
+    color: #fff;
+    filter: brightness(0.93);
+  }
+}
+
+.btn-quiet {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid $line;
+  border-radius: 0.55rem;
+  background: #fff;
+  color: $ink;
+  font-weight: 500;
+  font-size: 0.875rem;
+  text-decoration: none;
+  white-space: nowrap;
+
+  &:hover,
+  &:focus-visible {
+    background: $soft;
+    color: $ink;
+  }
+}
+
+// --------------------------------------------------------------- Surfaces
+.panel {
+  background: #fff;
+  border: 1px solid $line;
+  border-radius: $radius;
+  box-shadow: 0 1px 2px rgba(31, 41, 51, 0.04);
+}
+
+.panel + .panel,
+.filter-bar + .panel,
+.chip-row + .panel,
+.stat-row + .panel {
+  margin-top: 1rem;
+}
+
+.panel-body {
+  padding: 1rem 1.25rem;
+}
+
+.panel .table {
+  margin: 0;
+
+  thead th {
+    border-bottom: 1px solid $line;
+    color: $muted;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  td {
+    vertical-align: middle;
+  }
+}
+
+.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.muted {
+  color: $muted;
+}
+
+// -------------------------------------------------------------- Filters
+.filter-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
+  gap: 0.75rem 1rem;
+  align-items: end;
+  padding: 1rem 1.25rem;
+  background: #fff;
+  border: 1px solid $line;
+  border-radius: $radius;
+
+  label {
+    display: block;
+    margin-bottom: 0.3rem;
+    color: $muted;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  .form-control,
+  .form-select {
+    border-color: $line;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  .filter-wide {
+    grid-column: span 2;
+  }
+
+  .filter-buttons {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  @media (max-width: 575.98px) {
+    .filter-wide {
+      grid-column: auto;
+    }
+  }
+}
+
+.filter-custom[hidden] {
+  display: none !important;
+}
+
+// ---------------------------------------------------------------- Chips
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.8rem;
+  border: 1px solid $line;
+  border-radius: 999px;
+  background: #fff;
+  color: $ink;
+  font-size: 0.825rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.12s ease, border-color 0.12s ease;
+
+  &:hover,
+  &:focus-visible {
+    background: $soft;
+    color: $ink;
+  }
+
+  &.is-active {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: $ink;
+    font-weight: 600;
+  }
+
+  .chip-count {
+    min-width: 1.5rem;
+    padding: 0.05rem 0.45rem;
+    border-radius: 999px;
+    background: $soft;
+    color: $muted;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &.is-active .chip-count {
+    background: var(--accent);
+    color: #fff;
+  }
+}
+
+// ---------------------------------------------------------------- Stats
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.stat {
+  padding: 0.85rem 1.1rem;
+  background: #fff;
+  border: 1px solid $line;
+  border-radius: $radius;
+
+  .stat-label {
+    color: $muted;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  .stat-value {
+    margin-top: 0.15rem;
+    font-size: 1.35rem;
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.25;
+  }
+}
+
+// --------------------------------------------------------------- Badges
+.tag {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+  background: $soft;
+  color: $muted;
+
+  &.tag-good { background: #e3f4ea; color: #1e6b3d; }
+  &.tag-warn { background: #fff3d6; color: #8a5a00; }
+  &.tag-bad  { background: #fde4e2; color: #a12a20; }
+  &.tag-info { background: var(--accent-soft); color: $ink; }
+}
+
+.empty-state {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: $muted;
+
+  i {
+    display: block;
+    margin-bottom: 0.75rem;
+    font-size: 1.75rem;
+    opacity: 0.5;
+  }
+
+  strong {
+    display: block;
+    color: $ink;
+    font-size: 1rem;
+  }
+}
+
+// --------------------------------------------------------------- People
+.role-tabs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.role-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.9rem 1rem;
+  background: #fff;
+  border: 1px solid $line;
+  border-radius: $radius;
+  color: $ink;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+
+  &:hover,
+  &:focus-visible {
+    color: $ink;
+    border-color: #c9d1db;
+    box-shadow: 0 2px 8px rgba(31, 41, 51, 0.06);
+  }
+
+  &.is-active {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    box-shadow: inset 0 0 0 1px var(--accent);
+  }
+
+  .role-tab__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .role-tab__name {
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  .role-tab__count {
+    font-size: 1.35rem;
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .role-tab__hint {
+    color: $muted;
+    font-size: 0.75rem;
+    line-height: 1.35;
+  }
+}
+
+.people-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 1.25rem;
+  border-bottom: 1px solid $line;
+
+  .people-search {
+    position: relative;
+    flex: 1 1 16rem;
+    max-width: 24rem;
+
+    i {
+      position: absolute;
+      top: 50%;
+      left: 0.75rem;
+      transform: translateY(-50%);
+      color: $muted;
+      font-size: 0.8rem;
+    }
+
+    input {
+      width: 100%;
+      padding: 0.45rem 0.75rem 0.45rem 2rem;
+      border: 1px solid $line;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+
+      &:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-soft);
+      }
+    }
+  }
+
+  .people-showing {
+    color: $muted;
+    font-size: 0.8rem;
+  }
+}
+
+.people-group__title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.55rem 1.25rem;
+  background: $soft;
+  border-bottom: 1px solid $line;
+  color: $muted;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.people-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.person {
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1.6fr) minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid $line;
+  transition: background 0.12s ease;
+
+  &:hover {
+    background: #fafbfc;
+  }
+
+  &[hidden] {
+    display: none;
+  }
+
+  @media (max-width: 767.98px) {
+    grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+
+    .person__meta,
+    .person__flags {
+      display: none;
+    }
+  }
+}
+
+.people-group:last-child .person:last-child {
+  border-bottom: 0;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  font-size: 0.85rem;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+
+  &.role-superadmin { background: #ece6fb; color: #4b2e9a; }
+  &.role-admin      { background: #e2edfc; color: #1f4f99; }
+  &.role-manager    { background: #ddf3f0; color: #17665c; }
+  &.role-supervisor { background: #fdf0d9; color: #8a5a00; }
+  &.role-cashier    { background: #e7f4e7; color: #2b6a2b; }
+}
+
+.person__who {
+  min-width: 0;
+
+  strong {
+    display: block;
+    overflow: hidden;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  span {
+    display: block;
+    overflow: hidden;
+    color: $muted;
+    font-size: 0.8rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.person__meta {
+  min-width: 0;
+  color: $muted;
+  font-size: 0.8rem;
+
+  b {
+    display: block;
+    color: $ink;
+    font-weight: 500;
+  }
+}
+
+.person__flags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.35rem;
+}
+
+.person__actions {
+  display: flex;
+  gap: 0.25rem;
+
+  a {
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.5rem;
+    color: $muted;
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      background: $soft;
+      color: $ink;
+    }
+  }
+}
+
+.people-empty[hidden] {
+  display: none;
+}

@@ -17,10 +17,10 @@ class TarrifsControllerTest < ActionDispatch::IntegrationTest
 
   test "should create tarrif" do
     assert_difference("Tarrif.count") do
-      post tarrifs_url, params: { tarrif: { amount: @tarrif.amount, industry_id: @tarrif.industry_id, name: @tarrif.name } }
+      post tarrifs_url, params: { tarrif: fresh_attributes(@tarrif) }
     end
 
-    assert_redirected_to tarrif_url(Tarrif.last)
+    assert_redirected_to tarrifs_url
   end
 
   test "should show tarrif" do
@@ -39,8 +39,10 @@ class TarrifsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should destroy tarrif" do
+    record = unreferenced_copy(@tarrif)
+
     assert_difference("Tarrif.count", -1) do
-      delete tarrif_url(@tarrif)
+      delete tarrif_url(record)
     end
 
     assert_redirected_to tarrifs_url

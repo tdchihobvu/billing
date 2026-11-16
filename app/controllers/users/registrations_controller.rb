@@ -22,7 +22,6 @@ class Users::RegistrationsController < Devise::RegistrationsController
   # PUT /resource
   def update
     super
-    puts("********************8 tapinda mu update #{params[:user][:password]}")
   end
 
   # DELETE /resource

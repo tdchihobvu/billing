@@ -17,7 +17,7 @@ class GoodsReceivedsControllerTest < ActionDispatch::IntegrationTest
 
   test "should create goods_received" do
     assert_difference("GoodsReceived.count") do
-      post goods_receiveds_url, params: { goods_received: { date_received: @goods_received.date_received, deleted: @goods_received.deleted, ext_number: @goods_received.ext_number, grv_number: @goods_received.grv_number, supplier_id: @goods_received.supplier_id, user_id: @goods_received.user_id } }
+      post goods_receiveds_url, params: { goods_received: fresh_attributes(@goods_received) }
     end
 
     assert_redirected_to goods_received_url(GoodsReceived.last)
@@ -39,8 +39,10 @@ class GoodsReceivedsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should destroy goods_received" do
+    record = unreferenced_copy(@goods_received)
+
     assert_difference("GoodsReceived.count", -1) do
-      delete goods_received_url(@goods_received)
+      delete goods_received_url(record)
     end
 
     assert_redirected_to goods_receiveds_url

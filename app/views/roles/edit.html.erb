@@ -1,0 +1,55 @@
+<div class="zpage">
+  <%= render "shared/zhead", title: @role.name, crumb: link_to("Administration / Roles", roles_path),
+             sub: (@role.built_in ? "Built-in role. You can rename it and change what it may do." : "Custom role."),
+             actions: safe_join([
+               link_to("Copy as new role", new_role_path(copy: @role.id), class: "b"),
+               (@role.built_in ? nil : button_to("Delete role", role_path(@role), method: :delete, class: "b danger", form: { class: "button_to" },
+                                                 data: { turbo_confirm: "Delete the #{@role.name} role? This can't be undone." }))
+             ].compact) %>
+
+  <div class="zroleedit">
+    <div><%= render "form", role: @role %></div>
+
+    <aside class="zroleside" id="people">
+      <section class="box">
+        <div class="boxh"><h2>People with this role</h2><span><%= @people.size %></span></div>
+        <% if @people.any? %>
+          <ul class="zpeople">
+            <% @people.each do |u| %>
+              <li>
+                <span class="zav" aria-hidden="true"><%= zinitials(u.fullname.strip.presence || u.username) %></span>
+                <span><b><%= link_to (u.fullname.strip.presence || u.username), details_user_management_index_path(id: u) %></b><small>@<%= u.username %></small></span>
+                <%= link_to "Change", edit_user_management_index_path(id: u), class: "zlink", "aria-label": "Change role for #{u.fullname}" %>
+              </li>
+            <% end %>
+          </ul>
+        <% else %>
+          <p class="muted" style="padding:0 18px 16px;margin:0">Nobody has this role yet.</p>
+        <% end %>
+      </section>
+
+      <section class="box" data-controller="permissions">
+        <div class="boxh"><h2>Add people</h2><span>Moves them from their current role</span></div>
+        <% if @others.any? %>
+          <%= form_with url: assign_role_path(@role), method: :post do %>
+            <div style="padding:0 18px 10px">
+              <label class="zsearch" style="max-width:none"><span class="visually-hidden">Find a person</span><i class="fas fa-search" aria-hidden="true"></i>
+                <input type="search" placeholder="Find a person" autocomplete="off" data-permissions-target="query" data-action="input->permissions#filterPeople"></label>
+            </div>
+            <div class="zpicklist">
+              <% @others.each do |u| %>
+                <label data-permissions-target="person" data-search="<%= [u.fullname, u.username].join(' ').downcase %>">
+                  <input type="checkbox" name="user_ids[]" value="<%= u.id %>" class="zbox">
+                  <span><b><%= u.fullname.strip.presence || u.username %></b><small><%= u.role_name %></small></span>
+                </label>
+              <% end %>
+            </div>
+            <div style="padding:12px 18px 18px"><%= submit_tag "Give them the #{@role.name} role", class: "b main", data: { turbo_submits_with: "Saving…" } %></div>
+          <% end %>
+        <% else %>
+          <p class="muted" style="padding:0 18px 16px;margin:0">Everyone else already has this role, or is a Super admin.</p>
+        <% end %>
+      </section>
+    </aside>
+  </div>
+</div>

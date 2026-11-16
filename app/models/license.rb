@@ -1,10 +1,12 @@
 class License < ApplicationRecord
   include Rails.application.routes.url_helpers
+  include LicenseApproval
 
   belongs_to :invoice
   belongs_to :client
   belongs_to :license_category
   belongs_to :license_option
+  has_and_belongs_to_many :vehicles
 
   has_one_attached :qr_code, dependent: :destroy
 
@@ -17,7 +19,7 @@ class License < ApplicationRecord
   validates :license_category_id, :license_option_id, presence: true
   validate :amount_cannot_be_zero
 
-  scope :active, -> {where("active = true AND expiry_date >= '#{Date.today}'")}
+  scope :active, -> {where("licenses.active = true AND licenses.expiry_date >= ?", Date.today)}
   scope :paid, -> {where(active: true, paid: true)}
   scope :unprinted, -> {where(active: true, paid: true, printed: false)}
 
@@ -49,13 +51,6 @@ class License < ApplicationRecord
 
   def long_period
     "#{renewal_date.strftime("%d %b %Y")} to #{expiry_date.strftime("%d %b %Y")}"
-  end
-
-  def client
-    nil
-    unless self.client_id.nil?
-      Client.find(self.client_id)
-    end
   end
 
   def vat
@@ -93,14 +88,13 @@ class License < ApplicationRecord
     as_at = Date.today
     # get the client statement balance
     unless client.receipts.empty?
-      puts("****************** #{client.name} #{client.id}")
       if client.account_balance_as_at(as_at,target_currency) <= 0.5 and client.credits_total_as_at(as_at,target_currency) > 0
-        puts("balance is #{client.account_balance_as_at(as_at,target_currency)} and credits are #{client.credits_total_as_at(as_at,target_currency)}")
         self.update_attribute(:paid, true)
         self.update_attribute(:status, 'Fully Paid')
         unless invoice.nil?
           invoice.update_attribute(:paid, true)
           invoice.update_attribute(:amount_paid, self.amount)
+          invoice.update_attribute(:status, :fully_paid)
         end
       elsif client.account_balance_as_at(as_at,target_currency) > 0.5 and client.credits_total_as_at(as_at,target_currency) > 0
         puts("balance is #{client.account_balance_as_at(as_at,target_currency)} and credits are #{client.credits_total_as_at(as_at,target_currency)}")

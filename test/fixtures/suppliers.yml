@@ -15,7 +15,7 @@ one:
   active: false
 
 two:
-  name: MyString
+  name: name_two
   vat_number: MyString
   bp_number: MyString
   address_1: MyString

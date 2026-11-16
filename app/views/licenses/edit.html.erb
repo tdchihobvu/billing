@@ -1,10 +1,5 @@
-<h1>Editing license</h1>
-
-<%= render "form", license: @license %>
-
-<br>
-
-<div>
-  <%= link_to "Show this license", @license %> |
-  <%= link_to "Back to licenses", licenses_path %>
+<div class="zpage">
+  <%= render "shared/zhead", title: "Editing license", crumb: link_to("Licensing / Valid Licenses", licenses_path),
+             actions: link_to("Show this license", license_path(@license), class: "b") %>
+  <%= render "form", license: @license %>
 </div>

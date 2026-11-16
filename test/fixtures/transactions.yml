@@ -1,6 +1,8 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
+  tenant_id: <%= ActiveRecord::FixtureSet.identify(:one) %>
+  currency_id: <%= ActiveRecord::FixtureSet.identify(:one) %>
   client: one
   transaction_date: 2024-01-26
   reference_number: MyString
@@ -14,6 +16,8 @@ one:
   source_id: 1
 
 two:
+  tenant_id: <%= ActiveRecord::FixtureSet.identify(:two) %>
+  currency_id: <%= ActiveRecord::FixtureSet.identify(:two) %>
   client: two
   transaction_date: 2024-01-26
   reference_number: MyString

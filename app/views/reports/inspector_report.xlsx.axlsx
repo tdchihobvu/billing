@@ -1,0 +1,217 @@
+wb = xlsx_package.workbook
+period = "#{@start_date.strftime("%d/%m/%Y")} to #{@end_date.strftime("%d/%m/%Y")}"
+title = default_user_title.presence || "Inspector"
+scope_label = @inspector ? @inspector.fullname : "All #{title.pluralize.downcase}"
+
+styles = wb.styles
+s_title  = styles.add_style b: true, sz: 14
+s_h2     = styles.add_style b: true, sz: 12
+s_sub    = styles.add_style i: true, fg_color: "666666"
+s_head   = styles.add_style b: true, bg_color: "DDE4EE", alignment: { wrap_text: true, vertical: :center },
+                            border: { style: :thin, color: "AAAAAA", edges: [:bottom] }
+s_text   = styles.add_style alignment: { vertical: :top }
+s_wrap   = styles.add_style alignment: { wrap_text: true, vertical: :top }
+s_money  = styles.add_style num_fmt: 4, alignment: { vertical: :top }      # #,##0.00
+s_inv    = styles.add_style b: true, fg_color: "1F4F99", alignment: { vertical: :top }
+s_rec    = styles.add_style b: true, fg_color: "1E6B3D", alignment: { vertical: :top }
+s_total  = styles.add_style b: true, bg_color: "F2F2F2"
+s_totmon = styles.add_style b: true, bg_color: "F2F2F2", num_fmt: 4
+s_void   = styles.add_style fg_color: "999999", i: true, alignment: { vertical: :top }
+s_voidw  = styles.add_style fg_color: "999999", i: true, alignment: { wrap_text: true, vertical: :top }
+s_voidm  = styles.add_style fg_color: "999999", i: true, num_fmt: 4, alignment: { vertical: :top }
+
+# Void invoices are listed but left out of every total.
+counts = ->(invoice) { !invoice.void? }
+inspector_of = ->(record) { record.user&.fullname.presence || record.user_fullname.presence || "Unknown" }
+money = ->(value) { value.to_d.round(2).to_f }
+fmt = ->(value) { format("%.2f", value.to_d.round(2)) }
+balance_of = ->(invoice) { invoice.invoice_total.to_d - invoice.amount_paid.to_d }
+# What was billed: the invoice's item rows, or, for licence invoices (which have none), the licence.
+items_of = lambda do |invoice|
+  items = invoice.invoice_items.reject(&:deleted)
+  if items.any?
+    items.map { |i| { code: i.item_code, description: i.description, qty: i.quantity.to_i, unit: i.unit_price.to_d, vat: i.line_vat.to_d, total: i.line_total.to_d } }
+  elsif (license = invoice.license)
+    qty = license.quantity.to_i.positive? ? license.quantity.to_i : 1
+    amount = (license.amount.presence || invoice.invoice_total).to_d
+    name = [license.license_category&.name, "licence"].compact.join(" ")
+    name += " (#{license.license_option.name})" if license.license_option
+    [{ code: license.license_key, description: name, qty: qty, unit: amount / qty, vat: invoice.vat_amount.to_d, total: amount }]
+  else
+    []
+  end
+end
+item_line = ->(line) { "#{line[:qty]} x #{line[:description]} @ #{fmt.(line[:unit])}" }
+
+invoice_details = lambda do |invoice|
+  lines = items_of.(invoice).map(&item_line)
+  license = invoice.license
+  lines << "Valid #{license.renewal_date&.strftime("%d/%m/%Y")} to #{license.expiry_date.strftime("%d/%m/%Y")}" if license&.expiry_date
+  lines << invoice.description if invoice.description.present?
+  lines << "VAT #{fmt.(invoice.vat_amount)}" if invoice.vat_amount.to_d.nonzero?
+  lines << "Void: #{invoice.void_reason}" if invoice.void? && invoice.void_reason.present?
+  lines.join("\n")
+end
+
+receipt_details = lambda do |receipt|
+  inv_no = receipt.invoice&.invoice_number || receipt.invoice_reference
+  lines = [inv_no.present? ? "For invoice #{inv_no}" : "On account"]
+  lines << receipt.description if receipt.description.present?
+  lines << receipt.reason if receipt.reason.present?
+  lines.join("\n")
+end
+
+invoices_by_user = @invoices.group_by { |i| inspector_of.(i) }
+receipts_by_user = @receipts.group_by { |r| inspector_of.(r) }
+inspectors = (invoices_by_user.keys | receipts_by_user.keys).sort
+
+# ------------------------------------------------ Sheet 1: summary + full list
+wb.add_worksheet(name: "Report") do |sheet|
+  sheet.add_row ["#{title} report: invoices and receipts"], style: s_title
+  sheet.add_row ["Period: #{period}   |   #{title}: #{scope_label}   |   Generated #{Time.current.strftime("%d/%m/%Y %H:%M")}"], style: s_sub
+  sheet.add_row []
+
+  # Summary
+  sheet.add_row ["Summary"], style: s_h2
+  sheet.add_row [title, "Currency", "Invoices raised", "Amount invoiced", "Receipts issued", "Amount received", "Invoiced minus received"], style: s_head
+  grand = Hash.new { |h, k| h[k] = [0, 0.to_d, 0, 0.to_d] }
+  inspectors.each do |name|
+    invs = invoices_by_user.fetch(name, []).select(&counts)
+    recs = receipts_by_user.fetch(name, [])
+    currencies = (invs.map { |i| i.currency.name } | recs.map { |r| r.currency.name }).sort
+    currencies = ["-"] if currencies.empty?
+    currencies.each do |cur|
+      ci = invs.select { |i| i.currency.name == cur }
+      cr = recs.select { |r| r.currency.name == cur }
+      inv_amt = ci.sum { |i| i.invoice_total.to_d }
+      rec_amt = cr.sum { |r| r.amount.to_d }
+      g = grand[cur]; g[0] += ci.size; g[1] += inv_amt; g[2] += cr.size; g[3] += rec_amt
+      sheet.add_row [name, cur, ci.size, money.(inv_amt), cr.size, money.(rec_amt), money.(inv_amt - rec_amt)],
+                    style: [nil, nil, nil, s_money, nil, s_money, s_money]
+    end
+  end
+  grand.sort.each do |cur, (ic, ia, rc, ra)|
+    sheet.add_row ["Total", cur, ic, money.(ia), rc, money.(ra), money.(ia - ra)],
+                  style: [s_total, s_total, s_total, s_totmon, s_total, s_totmon, s_totmon]
+  end
+  sheet.add_row []
+  sheet.add_row []
+
+  # Every invoice and receipt, by inspector, in date order
+  sheet.add_row ["Invoices and receipts (#{@invoices.size} invoices, #{@receipts.size} receipts)"], style: s_h2
+  if inspectors.empty?
+    sheet.add_row ["No invoices or receipts in this period."], style: s_sub
+  else
+    sheet.add_row [title, "Date", "Type", "Number", "Client", "Details", "Currency", "Invoiced", "Received",
+                   "Invoice balance", "Payment method", "Status"], style: s_head
+    header_row = sheet.rows.size
+    last_data_row = header_row
+    types = [:string] * 7 + [:float, :float, :float, :string, :string]
+
+    inspectors.each do |name|
+      entries = invoices_by_user.fetch(name, []).map { |i| [i.invoice_date, 0, i] } +
+                receipts_by_user.fetch(name, []).map { |r| [r.transaction_date.to_date, 1, r] }
+      entries.sort_by! { |date, order, rec| [date || Date.new(1900), order, rec.is_a?(Invoice) ? rec.invoice_number.to_s : rec.reference_number.to_s] }
+
+      entries.each do |_, _, rec|
+        if rec.is_a?(Invoice)
+          style = if rec.void?
+                    [s_void] * 5 + [s_voidw, s_void, s_voidm, s_voidm, s_voidm, s_void, s_void]
+                  else
+                    [s_text, s_text, s_inv, s_text, s_text, s_wrap, s_text, s_money, s_money, s_money, s_text, s_text]
+                  end
+          sheet.add_row [name, rec.invoice_date&.strftime("%d/%m/%Y"), "Invoice", rec.invoice_number, rec.client&.name,
+                         invoice_details.(rec), rec.currency.name, money.(rec.invoice_total), nil, money.(balance_of.(rec)),
+                         nil, rec.status&.humanize],
+                        types: types, style: style
+        else
+          kind = rec.receipt_type.present? && !rec.payment? ? "Receipt (#{rec.receipt_type.humanize})" : "Receipt"
+          sheet.add_row [name, rec.transaction_date.strftime("%d/%m/%Y"), kind, rec.reference_number, rec.client&.name,
+                         receipt_details.(rec), rec.currency.name, nil, money.(rec.amount), nil, rec.payment_form&.name, "Issued"],
+                        types: types,
+                        style: [s_text, s_text, s_rec, s_text, s_text, s_wrap, s_text, s_money, s_money, s_money, s_text, s_text]
+        end
+      end
+
+      invs = invoices_by_user.fetch(name, []).select(&counts)
+      recs = receipts_by_user.fetch(name, [])
+      (invs.map { |i| i.currency.name } | recs.map { |r| r.currency.name }).sort.each do |cur|
+        ci = invs.select { |i| i.currency.name == cur }
+        inv_amt = ci.sum { |i| i.invoice_total.to_d }
+        rec_amt = recs.select { |r| r.currency.name == cur }.sum { |r| r.amount.to_d }
+        sheet.add_row ["#{name} total", nil, nil, nil, nil, nil, cur, money.(inv_amt), money.(rec_amt),
+                       money.(ci.sum { |i| balance_of.(i) }), nil, nil],
+                      style: [s_total] * 7 + [s_totmon, s_totmon, s_totmon, s_total, s_total]
+      end
+      last_data_row = sheet.rows.size
+      sheet.add_row []
+    end
+
+    sheet.auto_filter = "A#{header_row}:L#{last_data_row}"
+  end
+
+  sheet.column_widths 24, 11, 16, 14, 30, 48, 9, 14, 14, 14, 16, 12
+end
+
+# ------------------------------------------------------------ Sheet 2: invoices
+wb.add_worksheet(name: "Invoices") do |sheet|
+  sheet.add_row [title, "Date", "Invoice No.", "Client", "Billed for", "Description", "Currency", "Subtotal", "VAT", "Total",
+                 "Paid", "Balance", "Due date", "Status"], style: s_head
+  @invoices.sort_by { |i| [inspector_of.(i), i.invoice_date || Date.new(1900), i.invoice_number.to_s] }.each do |i|
+    items = (items_of.(i).map(&item_line) + [i.license&.expiry_date && "Valid #{i.license.renewal_date&.strftime("%d/%m/%Y")} to #{i.license.expiry_date.strftime("%d/%m/%Y")}"]).compact.join("\n")
+    sheet.add_row [inspector_of.(i), i.invoice_date&.strftime("%d/%m/%Y"), i.invoice_number, i.client&.name, items, i.description,
+                   i.currency.name, money.(i.subtotal), money.(i.vat_amount), money.(i.invoice_total), money.(i.amount_paid),
+                   money.(balance_of.(i)), i.due_date&.strftime("%d/%m/%Y"), i.status&.humanize],
+                  types: [:string] * 7 + [:float] * 5 + [:string, :string],
+                  style: (i.void? ? [s_void] * 4 + [s_voidw, s_voidw, s_void] + [s_voidm] * 5 + [s_void] * 2
+                                  : [s_text] * 4 + [s_wrap, s_wrap, s_text] + [s_money] * 5 + [s_text] * 2)
+  end
+  @invoices.select(&counts).group_by { |i| i.currency.name }.sort.each do |cur, list|
+    sheet.add_row ["Total (#{list.size})", nil, nil, nil, nil, nil, cur, money.(list.sum { |i| i.subtotal.to_d }),
+                   money.(list.sum { |i| i.vat_amount.to_d }), money.(list.sum { |i| i.invoice_total.to_d }),
+                   money.(list.sum { |i| i.amount_paid.to_d }), money.(list.sum { |i| balance_of.(i) }), nil, nil],
+                  style: [s_total] * 7 + [s_totmon] * 5 + [s_total] * 2
+  end
+  sheet.auto_filter = "A1:N1"
+  sheet.sheet_view.pane { |p| p.top_left_cell = "A2"; p.state = :frozen; p.y_split = 1 }
+  sheet.column_widths 24, 11, 14, 30, 40, 26, 9, 13, 12, 13, 13, 13, 11, 12
+end
+
+# ------------------------------------------------------------ Sheet 3: receipts
+wb.add_worksheet(name: "Receipts") do |sheet|
+  sheet.add_row [title, "Date", "Receipt No.", "Type", "Client", "Invoice No.", "Description", "Currency", "Amount",
+                 "Payment method", "Source"], style: s_head
+  @receipts.sort_by { |r| [inspector_of.(r), r.transaction_date, r.reference_number.to_s] }.each do |r|
+    sheet.add_row [inspector_of.(r), r.transaction_date.strftime("%d/%m/%Y"), r.reference_number, r.receipt_type&.humanize || "Payment",
+                   r.client&.name, r.invoice&.invoice_number || r.invoice_reference, [r.description, r.reason].compact_blank.join("\n"),
+                   r.currency.name, money.(r.amount), r.payment_form&.name, r.transaction_source],
+                  types: [:string] * 8 + [:float, :string, :string],
+                  style: [s_text] * 6 + [s_wrap, s_text, s_money, s_text, s_text]
+  end
+  @receipts.group_by { |r| r.currency.name }.sort.each do |cur, list|
+    sheet.add_row ["Total (#{list.size})", nil, nil, nil, nil, nil, nil, cur, money.(list.sum { |r| r.amount.to_d }), nil, nil],
+                  style: [s_total] * 8 + [s_totmon, s_total, s_total]
+  end
+  sheet.auto_filter = "A1:K1"
+  sheet.sheet_view.pane { |p| p.top_left_cell = "A2"; p.state = :frozen; p.y_split = 1 }
+  sheet.column_widths 24, 11, 14, 11, 30, 14, 30, 9, 14, 16, 16
+end
+
+# ------------------------------------------------------- Sheet 4: invoice items
+wb.add_worksheet(name: "Invoice lines") do |sheet|
+  sheet.add_row [title, "Date", "Invoice No.", "Client", "Code / licence key", "Billed for", "Valid from", "Valid to", "Quantity",
+                 "Unit price", "VAT", "Line total", "Currency", "Invoice status"], style: s_head
+  @invoices.sort_by { |i| [inspector_of.(i), i.invoice_date || Date.new(1900), i.invoice_number.to_s] }.each do |i|
+    license = i.license
+    items_of.(i).each do |line|
+      sheet.add_row [inspector_of.(i), i.invoice_date&.strftime("%d/%m/%Y"), i.invoice_number, i.client&.name, line[:code],
+                     line[:description], license&.renewal_date&.strftime("%d/%m/%Y"), license&.expiry_date&.strftime("%d/%m/%Y"),
+                     line[:qty], money.(line[:unit]), money.(line[:vat]), money.(line[:total]), i.currency.name, i.status&.humanize],
+                    types: [:string] * 8 + [:integer, :float, :float, :float, :string, :string],
+                    style: (i.void? ? [s_void] * 9 + [s_voidm] * 3 + [s_void] * 2 : [nil] * 9 + [s_money] * 3 + [nil] * 2)
+    end
+  end
+  sheet.auto_filter = "A1:N1"
+  sheet.sheet_view.pane { |p| p.top_left_cell = "A2"; p.state = :frozen; p.y_split = 1 }
+  sheet.column_widths 24, 11, 14, 30, 18, 34, 11, 11, 9, 12, 11, 12, 9, 13
+end

@@ -1,7 +1,15 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
+  setting_category: one
   name: MyString
 
 two:
+  setting_category: two
   name: MyString
+
+<% ["Invoice No.", "Proforma Invoice No.", "Receipt No.", "Quote No.", "Exchange Rate Update Frequency", "Product Pricing", "Invoice Title", "System Users Title", "Invoice Validity", "Default Module", "Attach Invoice to Receipt", "Logo Path", "Base Currency", "Background Color", "Text Color", "Invoice Template"].each_with_index do |name, i| %>
+key_<%= i %>:
+  name: <%= name %>
+  setting_category: one
+<% end %>

@@ -1,0 +1,19 @@
+<%# Choose a role as cards, each saying what the role is for and how much it allows. Local: f (user form builder). %>
+<% total = Permission::KEYS.size %>
+<section class="zsect">
+  <div class="boxh"><h2><span class="req">Role</span></h2><span>Decides what this person can see and do<%= " · ".html_safe if can?("roles.manage") %><%= link_to("Roles and permissions", roles_path, class: "zlink") if can?("roles.manage") %></span></div>
+  <div class="zrolepick" role="radiogroup" aria-label="Role">
+    <% tenant_roles.each do |r| %>
+      <% next if r.superadmin? && !current_user.superadmin? %>
+      <% granted = r.superadmin? ? total : r.permissions.size %>
+      <label class="zrolepick__item">
+        <%= f.radio_button :role, r.key, required: true %>
+        <span>
+          <b><%= r.name %></b>
+          <small><%= r.description.presence || "No description yet." %></small>
+          <em><%= r.superadmin? ? "Everything" : "#{granted} of #{total} permissions" %></em>
+        </span>
+      </label>
+    <% end %>
+  </div>
+</section>

@@ -1,0 +1,111 @@
+<%
+  tab = params[:tab] == "compare" ? "compare" : "roles"
+  groups = Permission.grouped.map { |key, label, icon, items| [key, label, icon, items.reject(&:superadmin_only)] }.reject { |*, items| items.empty? }
+  people = tenant.users.order(:firstname, :lastname).group_by(&:role)
+%>
+<div class="zpage">
+  <%= render "shared/zhead", title: "Roles", crumb: link_to("Administration", user_management_index_path),
+             sub: "A role decides what people can see and do. Give each person the smallest role that fits their job.",
+             actions: link_to(new_role_path, class: "b main") { safe_join([tag.i(class: "fas fa-plus", "aria-hidden": "true"), " New role"]) } %>
+
+  <section class="box">
+    <nav class="ztabs" aria-label="Roles">
+      <%= link_to roles_path, "aria-current": (tab == "roles" ? "page" : nil) do %>Roles<em><%= @roles.size %></em><% end %>
+      <%= link_to roles_path(tab: "compare"), "aria-current": (tab == "compare" ? "page" : nil) do %>Compare roles<% end %>
+    </nav>
+
+    <% if tab == "roles" %>
+      <div class="zwrap">
+        <table class="zt zroles-table">
+          <thead><tr><th>Role</th><th>Access</th><th>People</th><th><span class="visually-hidden">Edit</span></th></tr></thead>
+          <tbody>
+            <% @roles.each do |role| %>
+              <% members = people[role.key] || [] %>
+              <% edit_path = role.superadmin? ? role_path(role) : edit_role_path(role) %>
+              <tr>
+                <td class="zrole-cell">
+                  <%= link_to role.name, edit_path, class: "zrole-name" %>
+                  <span class="ztag <%= role.superadmin? ? 'part' : '' %> zrole-kind"><%= role.superadmin? ? "Locked" : (role.built_in ? "Built-in" : "Custom") %></span>
+                  <small><%= role.description.presence || "No description yet." %></small>
+                </td>
+                <td><div class="zaccess-cell">
+                  <% if role.superadmin? %>
+                    <span class="zaccess full"><i class="fas fa-crown" aria-hidden="true"></i> Everything, including roles</span>
+                  <% else %>
+                    <% shown = 0 %>
+                    <% groups.each do |key, label, icon, items| %>
+                      <% level = Permission.access_level(role.permissions, items) %>
+                      <% next if level == :none %>
+                      <% shown += 1 %>
+                      <span class="zaccess <%= level %>" title="<%= label %>: <%= Permission::ACCESS_LABELS[level] %>">
+                        <i class="fas <%= icon %>" aria-hidden="true"></i> <%= label %>
+                        <em><%= level == :custom ? "#{(items.map(&:key) & role.permissions).size}/#{items.size}" : Permission::ACCESS_LABELS[level] %></em>
+                      </span>
+                    <% end %>
+                    <% if shown.zero? %><span class="muted" style="font-size:12.5px">No access yet</span><% end %>
+                  <% end %>
+                </div></td>
+                <td class="zpeople-cell">
+                  <% if members.any? %>
+                    <%= link_to user_management_index_path(role: role.key), class: "zstack", title: members.first(12).map(&:fullname).join(", ") do %>
+                      <% members.first(4).each do |u| %><span class="zav" aria-hidden="true"><%= zinitials(u.fullname.strip.presence || u.username) %></span><% end %>
+                      <b><%= members.size %></b><span class="visually-hidden"> <%= "person".pluralize(members.size) %> with this role</span>
+                    <% end %>
+                  <% else %>
+                    <span class="muted" style="font-size:12.5px">Nobody</span>
+                  <% end %>
+                </td>
+                <td style="text-align:right;white-space:nowrap">
+                  <% if role.superadmin? %>
+                    <%= link_to "View", edit_path, class: "b" %>
+                  <% else %>
+                    <%= link_to "Edit", edit_path, class: "b" %>
+                    <%= link_to new_role_path(copy: role.id), class: "b ghost", title: "Copy #{role.name} as a new role" do %><i class="far fa-copy" aria-hidden="true"></i><span class="visually-hidden">Copy <%= role.name %></span><% end %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+      <p class="zroles-foot">
+        <i class="fas fa-shield-alt" aria-hidden="true"></i>
+        Access levels per area: <b>Full access</b> (everything there), <b>View only</b>, or <b>Custom</b> (some of it). Areas with no access aren't shown.
+        Only Super admins can change roles, so nobody can give themselves more access.
+      </p>
+
+    <% else %>
+      <div class="zwrap zmatrix-wrap">
+        <table class="zt zmatrix">
+          <thead>
+            <tr>
+              <th scope="col">Permission</th>
+              <% @roles.each do |role| %>
+                <th scope="col" class="c"><%= link_to role.name, (role.superadmin? ? role_path(role) : edit_role_path(role)) %></th>
+              <% end %>
+            </tr>
+          </thead>
+          <tbody>
+            <% Permission.grouped.each do |_, label, icon, items| %>
+              <tr class="zmatrix__group"><th scope="rowgroup" colspan="<%= @roles.size + 1 %>"><i class="fas <%= icon %>" aria-hidden="true"></i> <%= label %></th></tr>
+              <% items.each do |perm| %>
+                <tr>
+                  <th scope="row"><%= perm.label %><small><%= perm.hint %></small></th>
+                  <% @roles.each do |role| %>
+                    <td class="c">
+                      <% if role.allows?(perm.key) %>
+                        <span class="zyes" title="<%= role.name %> can <%= perm.label.downcase %>"><i class="fas fa-check" aria-hidden="true"></i><span class="visually-hidden">Yes</span></span>
+                      <% else %>
+                        <span class="zno-dash" aria-label="No">–</span>
+                      <% end %>
+                    </td>
+                  <% end %>
+                </tr>
+              <% end %>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
+  </section>
+</div>

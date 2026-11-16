@@ -32,9 +32,14 @@ class Receipt < ApplicationRecord
 
   before_commit :generate_qrcode, on: :create
   before_commit :update_statement, on: :update
+  before_save :set_actual_paid, if: :payment_details_changing?
+  after_save :refresh_invoice_balances, if: :payment_details_changed?
+  after_commit :settle_client_from_statement, on: :create, if: -> { invoice_id.nil? }
 
   scope :active, -> {where(deleted: false)}
   scope :between_dates, ->(start_date, end_date) {active.includes(:currency, :payment_form).where(transaction_date: start_date..end_date)}
+
+  PAYMENT_DETAILS = %w[amount rate currency_id invoice_id deleted receipt_type].freeze
 
   def self.generate_receipt_number(tenant)
     rec_format = tenant.system_settings
@@ -77,7 +82,7 @@ class Receipt < ApplicationRecord
 
   def amount_paid
     return amount unless invoice.present?
-    return amount if currency_id == invoice.currency_id
+    return amount if currency_id == invoice.currency_id || rate.to_f.zero?
 
     if invoice.currency.name == "USD"
       amount / rate.to_f
@@ -240,10 +245,37 @@ class Receipt < ApplicationRecord
       )
   end
 
+  def payment_details_changing?
+    new_record? || (changed & PAYMENT_DETAILS).any?
+  end
+
+  def payment_details_changed?
+    (saved_changes.keys & (PAYMENT_DETAILS + ["actual_paid"])).any?
+  end
+
+  def set_actual_paid
+    self.actual_paid = amount_paid
+  end
+
+  def refresh_invoice_balances
+    ids = [invoice_id, invoice_id_before_last_save].compact.uniq
+    Invoice.where(id: ids).find_each(&:update_balance)
+  end
+
+  # A receipt with no invoice can still settle a client's account, so licences
+  # should not have to wait for someone to press Refresh.
+  def settle_client_from_statement
+    client.settle_licenses_from_statement
+  rescue StandardError => e
+    Rails.logger.error("Could not settle licences for client #{client_id}: #{e.message}")
+    SystemEvent.record(kind: "payment_sync", tenant_id: tenant_id, record: self,
+                       title: "Receipt #{reference_number} could not settle #{client&.name}'s licences",
+                       details: "#{e.class}: #{e.message}")
+  end
+
   def update_statement
     transaction = Transaction.find_by(source: "Receipts", source_id: self.id)
     unless transaction.nil?
-    puts("*************** tapinda tapinda baba")
       transaction.update(
         transaction_date: self.transaction_date,
         description: self.description, 
@@ -292,6 +324,15 @@ class Receipt < ApplicationRecord
 
   def populate_exchange_rate
     self.sync_reference = source_reference
+
+    # USD is the base currency: no exchange rate needed, unless it pays a
+    # non-USD invoice (amount_paid converts using the rate in that case).
+    if currency_id.present? && base_currency && currency_id == base_currency.id &&
+       (invoice.nil? || invoice.currency_id == currency_id)
+      self.rate = 1.to_d
+      self.converted_rate = 1.to_d
+      return
+    end
 
     exchange_rate = ExchangeRate.active_exchange_rate(
       tenant,

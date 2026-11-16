@@ -1,0 +1,48 @@
+wb = xlsx_package.workbook
+title = default_user_title.presence || "Inspector"
+today = Date.current
+
+s_title = wb.styles.add_style b: true, sz: 14
+s_sub   = wb.styles.add_style i: true, fg_color: "666666"
+s_head  = wb.styles.add_style b: true, bg_color: "DDE4EE", border: { style: :thin, color: "AAAAAA", edges: [:bottom] }
+s_money = wb.styles.add_style num_fmt: 4
+s_total = wb.styles.add_style b: true, bg_color: "F2F2F2"
+s_totm  = wb.styles.add_style b: true, bg_color: "F2F2F2", num_fmt: 4
+
+filters = []
+filters << "#{title}: #{@users.find { |u| u.id.to_s == params[:user_id].to_s }&.fullname}" if params[:user_id].present?
+filters << "Payment: #{params[:payment] == "paid" ? "Paid" : "Not fully paid"}" if params[:payment].present?
+filters << "Client contains \"#{params[:q]}\"" if params[:q].present?
+
+wb.add_worksheet(name: "Expiring licences") do |sheet|
+  sheet.add_row ["Licences expiring #{@start_date.strftime("%d/%m/%Y")} to #{@end_date.strftime("%d/%m/%Y")}"], style: s_title
+  sheet.add_row [(["Generated #{Time.current.strftime("%d/%m/%Y %H:%M")}"] + filters).join("   |   ")], style: s_sub
+  sheet.add_row []
+  sheet.add_row ["Client name", "Client address", "Phone", "Email", "Licence", "Valid period", "Valid from", "Expires on", "Days to expiry",
+                 "Amount previously invoiced", "Currency", "Invoice No.", "Responsible #{title.downcase}", "Payment status"], style: s_head
+  header_row = 4
+
+  @licenses.each do |license|
+    client = license.client
+    invoice = license.invoice
+    address = [client.address_1, client.address_2, client.location, client.city].compact_blank.join(", ")
+    period = license.renewal_date ? license.long_period : "Until #{license.expiry_date.strftime("%d %b %Y")}"
+
+    sheet.add_row [client.name, address, client.mobile.presence || client.phone, client.email, license.license_option&.name, period,
+                   license.renewal_date&.strftime("%d/%m/%Y"), license.expiry_date.strftime("%d/%m/%Y"), (license.expiry_date - today).to_i,
+                   invoice.invoice_total.to_d.round(2).to_f, invoice.currency.name, invoice.invoice_number,
+                   invoice.user&.fullname || invoice.user_fullname, invoice.status&.humanize],
+                  types: [:string] * 8 + [:integer, :float] + [:string] * 4,
+                  style: [nil] * 9 + [s_money] + [nil] * 4
+  end
+
+  @totals.sort.each do |currency, amount|
+    count = @licenses.count { |l| l.invoice.currency.name == currency }
+    sheet.add_row ["Total (#{count})", nil, nil, nil, nil, nil, nil, nil, nil, amount.round(2).to_f, currency, nil, nil, nil],
+                  style: [s_total] * 9 + [s_totm] + [s_total] * 4
+  end
+
+  sheet.auto_filter = "A#{header_row}:N#{header_row}"
+  sheet.sheet_view.pane { |p| p.top_left_cell = "A#{header_row + 1}"; p.state = :frozen; p.y_split = header_row }
+  sheet.column_widths 32, 36, 15, 24, 18, 28, 11, 11, 9, 16, 9, 14, 22, 13
+end

@@ -1,14 +1,1 @@
-<p style="color: green"><%= notice %></p>
-
-<h1>Client types</h1>
-
-<div id="client_types">
-  <% @client_types.each do |client_type| %>
-    <%= render client_type %>
-    <p>
-      <%= link_to "Show this client type", client_type %>
-    </p>
-  <% end %>
-</div>
-
-<%= link_to "New client type", new_client_type_path %>
+<%= render "shared/crud_index", records: @client_types, model: ClientType, title: "Client types", crumb: "Sales / Clients", new_path: new_client_type_path, new_label: "New client type" %>

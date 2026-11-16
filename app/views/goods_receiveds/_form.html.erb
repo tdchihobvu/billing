@@ -28,7 +28,7 @@
 
   <div>
     <%= form.label :user_id, style: "display: block" %>
-    <%= form.select :user_id, User.where().pluck(:name, :id), {include_blank: true}, {data: {controller: 'slim'}, class: "form-control small"} %>
+    <%= form.select :user_id, tenant.users.order(:firstname, :lastname).map { |user| [user.fullname, user.id] }, {include_blank: true}, {data: {controller: 'slim'}, class: "form-control small"} %>
   </div>
 
   <div>

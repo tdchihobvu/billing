@@ -17,7 +17,7 @@ class QuotationsControllerTest < ActionDispatch::IntegrationTest
 
   test "should create quotation" do
     assert_difference("Quotation.count") do
-      post quotations_url, params: { quotation: { bank_id: @quotation.bank_id, client_id: @quotation.client_id, currency_id: @quotation.currency_id, deleted: @quotation.deleted, quotation_date: @quotation.quotation_date, quotation_number: @quotation.quotation_number, quotation_terms: @quotation.quotation_terms } }
+      post quotations_url, params: { quotation: fresh_attributes(@quotation) }
     end
 
     assert_redirected_to quotation_url(Quotation.last)
@@ -39,8 +39,10 @@ class QuotationsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should destroy quotation" do
+    record = unreferenced_copy(@quotation)
+
     assert_difference("Quotation.count", -1) do
-      delete quotation_url(@quotation)
+      delete quotation_url(record)
     end
 
     assert_redirected_to quotations_url

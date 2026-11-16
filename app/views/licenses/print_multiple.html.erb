@@ -1,30 +1,27 @@
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800"><%= @client.name %> Branches Licenses</h1>
-    <div class="float-end">
-      <%= link_to download_all_licenses_path(id: @license, client: @client, format: :pdf), class: "btn btn-outline btn-sm rounded-0" do %><i class="fas fa-download text-dark"></i> Download All <% end %> |
-      <%= link_to :back, class: "btn btn-outline btn-sm rounded-0" do %><i class="fas fa-backward text-dark"></i> Back <% end %> 
-    </div>
-</div>
+<div class="zpage">
+  <%= render "shared/zhead", title: "#{@client.name} Branches Licenses", crumb: link_to("Licensing / #{@client.name}", generate_licenses_path(client_id: @client)),
+             sub: "Valid #{@license.long_period}",
+             actions: link_to(download_all_licenses_path(id: @license, client: @client, format: :pdf), class: "b main") { safe_join([tag.i(class: "fas fa-download", "aria-hidden": "true"), " Download All"]) } %>
 
-<div class="card border-0">
-  <div class="card-body">
-    <table class="table table-striped small">
-      <% @branches.each_with_index do |branch,i| %>
-      <tr>
-        <td>
-          <%= i+=1 %>.
-        </td>
-        <td>
-          <%= branch.name %>
-        </td>
-        <td>
-          <%= branch.full_address %>
-        </td>
-        <td>
-          <%= link_to 'Print', branch_license_licenses_path(branch_id: branch, license_id: @license, format: :pdf), target: '_blank' %>
-        </td>
-      </tr>
-      <% end %>
-    </table>
-  </div>
+  <section class="box">
+    <% if @branches.any? %>
+      <div class="zwrap">
+        <table class="zt">
+          <thead><tr><th class="r" style="width:48px">No.</th><th>Branch</th><th>Address</th><th><span class="visually-hidden">Print</span></th></tr></thead>
+          <tbody>
+            <% @branches.each_with_index do |branch, i| %>
+              <tr>
+                <td class="r"><%= i + 1 %></td>
+                <td><b><%= branch.branch_name %></b></td>
+                <td><%= branch.full_address %></td>
+                <td style="text-align:right"><%= link_to branch_license_licenses_path(branch_id: branch, license_id: @license, format: :pdf), target: "_blank", rel: "noopener", class: "b" do %><i class="fas fa-print" aria-hidden="true"></i> Print<% end %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <%= zempty("No branches", "This client has no branches. Print a single licence instead.") %>
+    <% end %>
+  </section>
 </div>

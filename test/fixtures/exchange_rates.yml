@@ -1,0 +1,11 @@
+<% { "base_old" => [:one, "2024-01-26"], "other_old" => [:two, "2024-01-26"], "base_today" => [:one, Date.today], "other_today" => [:two, Date.today] }.each do |label, (currency, date)| %>
+<%= label %>:
+  currency: <%= currency %>
+  user: one
+  tenant_id: <%= ActiveRecord::FixtureSet.identify(:one) %>
+  transaction_date: <%= date %>
+  buying_rate: 1
+  midrate: 1
+  selling_rate: 1
+  alternative_rate: 1
+<% end %>

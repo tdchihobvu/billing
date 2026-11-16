@@ -1,9 +1,3 @@
-<h1>New license category</h1>
-
-<%= render "form", license_category: @license_category %>
-
-<br>
-
-<div>
-  <%= link_to "Back to license categories", license_categories_path %>
-</div>
+<%= render layout: "shared/crud_form", locals: { title: "New license category", crumb: link_to("Licensing / License categories", license_categories_path), back_path: license_categories_path, back_label: "Back to license categories" } do %>
+  <%= render "form", license_category: @license_category %>
+<% end %>

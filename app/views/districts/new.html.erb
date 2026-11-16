@@ -1,9 +1,3 @@
-<h1>New district</h1>
-
-<%= render "form", district: @district %>
-
-<br>
-
-<div>
-  <%= link_to "Back to districts", districts_path %>
-</div>
+<%= render layout: "shared/crud_form", locals: { title: "New district", crumb: link_to("Settings / Districts", districts_path), back_path: districts_path, back_label: "Back to districts" } do %>
+  <%= render "form", district: @district %>
+<% end %>

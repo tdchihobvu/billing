@@ -17,7 +17,7 @@ class ProductTypesControllerTest < ActionDispatch::IntegrationTest
 
   test "should create product_type" do
     assert_difference("ProductType.count") do
-      post product_types_url, params: { product_type: {  } }
+      post product_types_url, params: { product_type: fresh_attributes(@product_type) }
     end
 
     assert_redirected_to product_type_url(ProductType.last)
@@ -34,13 +34,15 @@ class ProductTypesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should update product_type" do
-    patch product_type_url(@product_type), params: { product_type: {  } }
+    patch product_type_url(@product_type), params: { product_type: { name: "Updated" } }
     assert_redirected_to product_type_url(@product_type)
   end
 
   test "should destroy product_type" do
+    record = unreferenced_copy(@product_type)
+
     assert_difference("ProductType.count", -1) do
-      delete product_type_url(@product_type)
+      delete product_type_url(record)
     end
 
     assert_redirected_to product_types_url

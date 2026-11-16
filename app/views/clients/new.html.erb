@@ -1,18 +1,13 @@
-<!-- Page Heading -->
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">New Client</h1>
-    <div class="float-end">
-      <%= link_to clients_path, class: "d-none d-sm-inline-block btn btn-sm btn-outline text-dark" do %>
-      <i class="fas fa-users fa-sm text-dark"></i> Clients
-      <% end %> |
-      <%= link_to :back, class: "btn btn-outline btn-sm rounded-0" do %><i class="fas fa-backward text-dark"></i> Back <% end %> 
+<div class="zpage">
+  <div class="zhead">
+    <div>
+      <div class="zcrumb"><%= link_to "Sales / Clients", clients_path %></div>
+      <h1>New Client</h1>
     </div>
-</div>
-
-<p style="color: green"><%= notice %></p>
-
-<div class="card border-0">
-  <div class="card-body">
-    <%= render "form", client: @client %>
+    <div class="acts"><%= link_to "Clients", clients_path, class: "b" %></div>
   </div>
+
+  <% if notice.present? %><div class="znote ok"><span><i class="fas fa-check" aria-hidden="true"></i></span><div><%= notice %></div></div><% end %>
+
+  <%= render "form", client: @client %>
 </div>

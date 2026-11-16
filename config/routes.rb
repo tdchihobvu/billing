@@ -1,4 +1,6 @@
 Rails.application.routes.draw do
+  get "quick_search", to: "quick_search#index"
+  resource :password_change, only: [:edit, :update]
 
   resources :user_management do  
     collection do  
@@ -38,6 +40,7 @@ Rails.application.routes.draw do
       get :collections_by_user
       get :overdue_invoices
       get :upcoming_renewals
+      get :inspector_report
     end
   end
 
@@ -56,6 +59,35 @@ Rails.application.routes.draw do
       get :print_multiple
       get :branch_license
       get :download_all
+    end
+    member do
+      patch :vehicles, action: :assign_vehicles
+      get :vehicle_discs
+    end
+  end
+  resources :vehicles, only: %i[create update destroy]
+  resources :void_requests, only: %i[index] do
+    member do
+      post :approve
+      post :reject
+    end
+  end
+  get "system_health", to: "system_health#index", as: :system_health
+  post "system_health/events/:id/resolve", to: "system_health#resolve", as: :resolve_system_event
+  post "system_health/events/resolve_all", to: "system_health#resolve_all", as: :resolve_all_system_events
+  post "system_health/balances/check", to: "system_health#check_balances", as: :check_balances_system_health
+  post "system_health/balances/issues/:id/fix", to: "system_health#fix_issue", as: :fix_balance_issue
+  post "system_health/balances/fix_all", to: "system_health#fix_all", as: :fix_all_balance_issues
+  resources :roles do
+    member do
+      post :assign
+    end
+  end
+  resources :license_approvals, only: %i[index show] do
+    member do
+      post :approve
+      post :reject
+      post :resubmit
     end
   end
   resources :license_options
@@ -88,6 +120,9 @@ Rails.application.routes.draw do
           get :client_invoices
           get :user_invoices
           get :user_receipts
+          get :open_invoices
+          get :license_status
+          get :license_statuses
           post :open_shift
           post :new_receipt
           post :new_invoice
@@ -181,7 +216,8 @@ Rails.application.routes.draw do
   resources :industries
   resources :client_types
   devise_for :users, controllers: {
-    sessions: 'users/sessions'
+    sessions: 'users/sessions',
+    passwords: 'users/passwords'
   }
 
   resources :welcome do 
