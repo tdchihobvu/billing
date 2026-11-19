@@ -180,5 +180,11 @@ window.addEventListener("resize", () => {
   prepare(document.body)
 })
 
+// On a phone, leaving the page (a link, or the Back button) closes the drawer.
+const closeDrawer = () => { if (isDrawer()) setCollapsed(document.body, true) }
+document.addEventListener("turbo:visit", closeDrawer)
+window.addEventListener("popstate", closeDrawer)
+document.addEventListener("turbo:before-cache", closeDrawer)
+
 document.addEventListener("turbo:before-render", (event) => prepare(event.detail.newBody))
 document.addEventListener("turbo:load", () => prepare(document.body))

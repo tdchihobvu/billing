@@ -669,8 +669,16 @@ $row-radius: 0.5rem;
   color: $muted;
 }
 
+.app-nav__close-icon {
+  display: none;
+}
+
 // Phones and small tablets: the menu is a drawer.
 @media (max-width: $drawer-limit) {
+  .app-nav__close-icon {
+    display: inline-block;
+  }
+
   .app-nav {
     position: fixed;
     top: 0;
@@ -695,8 +703,44 @@ $row-radius: 0.5rem;
     background: rgba(31, 41, 51, 0.38);
   }
 
+  // The ☰ button is hidden under the open drawer, so the drawer has its own close button.
   .app-nav__toggle {
-    display: none;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 2.75rem;
+    height: 2.75rem;
+    margin-left: auto;
+    font-size: 1.15rem;
+  }
+
+  .app-nav__collapse-icon {
+    display: none !important;
+  }
+
+  // On a phone the whole drawer scrolls as one list, so the account links at the bottom
+  // don't take up a third of the screen and cut the menu off.
+  .app-nav {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .app-nav__scroll {
+    flex: 0 0 auto;
+    min-height: auto;
+    overflow: visible;
+  }
+
+  // Finger-sized links in the open sections.
+  #accordionSidebar .collapse-item {
+    padding-top: 0.7rem;
+    padding-bottom: 0.7rem;
+    font-size: 14.5px;
+  }
+
+  // The page behind the open drawer stays still.
+  body:not(.sidebar-toggled) {
+    overflow: hidden;
   }
 
   #sidebarToggleTop {
