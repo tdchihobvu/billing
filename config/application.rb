@@ -12,6 +12,7 @@ module Rail7App
     config.load_defaults 7.0
     config.hosts << "aibes.online"
     config.hosts << "zimura.aibes.online"
+    config.hosts << "licensing.zimura.co.zw"
     config.hosts << "aibes-billing-6434be043bbd.herokuapp.com"
 
     # Configuration for the application, engines, and railties goes here.
