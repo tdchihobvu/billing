@@ -6,7 +6,7 @@ Rails.application.configure do
 
   # Settings specified here will take precedence over those in config/application.rb.
 
-  config.action_mailer.default_url_options = { host: 'zimura.aibes.online', protocol: 'https' }
+  config.action_mailer.default_url_options = { host: 'licensing.zimura.co.zw', protocol: 'https' }
   
   # Code is not reloaded between requests.
   config.cache_classes = true
@@ -51,7 +51,7 @@ Rails.application.configure do
   # config.action_cable.allowed_request_origins = [ "http://example.com", /http:\/\/example.*/ ]
 
   # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
-  # config.force_ssl = true
+  config.force_ssl = true
 
   # Include generic and useful information about system operation, but avoid logging too much
   # information to avoid inadvertent exposure of personally identifiable information (PII).
@@ -72,17 +72,17 @@ Rails.application.configure do
   # Ignore bad email addresses and do not raise email delivery errors.
   # Set this to true and configure the email server for immediate delivery to raise delivery errors.
   config.action_mailer.raise_delivery_errors = true
-  config.action_mailer.delivery_method = :smtp
-  config.action_mailer.smtp_settings = {
-    :address          => 'smtp.gmail.com',
-    :port             => 587,
-    :domain           => 'gmail.com',
-    :user_name        => 'aibessystem@gmail.com',
-    :password         => 'zszpzvcekskovnvi',
-    :authentication   => 'plain',
-    :enable_starttls  => true,
-    :open_timeout     => 5,
-    :read_timeout     => 5 }
+  # config.action_mailer.delivery_method = :smtp
+  # config.action_mailer.smtp_settings = {
+  #   :address          => 'smtp.gmail.com',
+  #   :port             => 587,
+  #   :domain           => 'gmail.com',
+  #   :user_name        => 'aibessystem@gmail.com',
+  #   :password         => 'zszpzvcekskovnvi',
+  #   :authentication   => 'plain',
+  #   :enable_starttls  => true,
+  #   :open_timeout     => 5,
+  #   :read_timeout     => 5 }
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to
   # the I18n.default_locale when a translation cannot be found).

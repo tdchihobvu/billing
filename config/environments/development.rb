@@ -46,16 +46,6 @@ Rails.application.configure do
   # Without a SendGrid key, emails are saved to tmp/mails instead of being sent.
   config.action_mailer.delivery_method = ENV["SENDGRID_APIKEY"].present? ? :smtp : :file
   config.action_mailer.file_settings = { location: Rails.root.join("tmp/mails") }
-  config.action_mailer.smtp_settings = {
-    :address          => 'smtp.gmail.com',
-    :port             => 587,
-    :domain           => 'gmail.com',
-    :user_name        => 'aibessystem@gmail.com',
-    :password         => 'zszpzvcekskovnvi',
-    :authentication   => 'plain',
-    :enable_starttls  => true,
-    :open_timeout     => 5,
-    :read_timeout     => 5 }
 
   config.action_mailer.perform_caching = false
 
