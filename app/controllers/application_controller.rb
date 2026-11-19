@@ -76,33 +76,28 @@ class ApplicationController < ActionController::Base
 	end
 
 	def update_exchange_rate
-		# check exchange rate update frequency
-		last_update = ExchangeRate.order(transaction_date: :desc).where(tenant_id: tenant.id).first
-		if last_update.nil?
-			redirect_to exchange_rates_url, notice: "Please update exchange rate"
+		# Is this company's newest exchange rate out of date for its update frequency?
+		last_update = ExchangeRate.where(tenant_id: tenant.id).order(transaction_date: :desc).first
+		stale = if last_update.nil?
+		          true
+		        else
+		          last = last_update.transaction_date.to_date
+		          case exchange_rate_update_frequency
+		          when "weekly" then last + 7.days <= Date.current
+		          when "monthly" then last + 30.days <= Date.current
+		          when "skip day" then last + 2.days <= Date.current
+		          else last < Date.current # daily, or no setting
+		          end
+		        end
+		return unless stale
+
+		when_set = last_update ? " Last updated on #{last_update.transaction_date.strftime("%d %b %Y")}." : ""
+		if current_user&.can?("settings.exchange_rates")
+		  redirect_to exchange_rates_url, notice: "Please update exchange rate.#{when_set}"
 		else
-		  case exchange_rate_update_frequency
-		  when 'daily'
-		      if ExchangeRate.where(transaction_date: Date.today).empty?
-		        redirect_to exchange_rates_url, notice: "Please update exchange rate. Last updated on #{last_update.transaction_date.strftime("%d %b %Y")}"
-		      end
-		  when 'weekly'
-		  	if (last_update.transaction_date + 7.days) <= Date.today
-		        redirect_to exchange_rates_url, notice: "Please update exchange rate. Last updated on #{last_update.transaction_date.strftime("%d %b %Y")}"
-		  	end
-		  when 'monthly'
-		  	if (last_update.transaction_date + 30.days) <= Date.today
-		        redirect_to exchange_rates_url, notice: "Please update exchange rate. Last updated on #{last_update.transaction_date.strftime("%d %b %Y")}"
-		  	end
-		  when 'skip day'
-		  	if (last_update.transaction_date + 2.days) <= Date.today
-		        redirect_to exchange_rates_url, notice: "Please update exchange rate. Last updated on #{last_update.transaction_date.strftime("%d %b %Y")}"
-		  	end
-		  else
-		      if ExchangeRate.where(transaction_date: Date.today).empty?
-		        redirect_to exchange_rates_url, notice: "Please update exchange rate. Last updated on #{last_update.transaction_date.strftime("%d %b %Y")}"
-		      end
-		  end
+		  # People who may not set rates are not sent to a page they cannot open (that used to
+		  # bounce them back and forth forever); they get a message on the dashboard instead.
+		  flash.now[:alert] = "The exchange rate is out of date.#{when_set} Ask a Manager or Super admin to update it."
 		end
 	end
 

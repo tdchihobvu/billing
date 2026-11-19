@@ -247,7 +247,7 @@ class ReceiptPdf < Prawn::Document
   def draw_closing
     y = [cursor, 150].max
     qr_size = 64
-    qr_text = "#{@tenant.company_name} receipt #{@r.reference_number}: #{cur} #{money(@r.amount)} from #{@r.client.name} on #{@r.transaction_date&.strftime('%d %b %Y')}#{' (VOID)' if @void}."
+    qr_text = @r.verification_text(@tenant.company_name)
     stroke_color LINE
     line_width 0.8
     stroke_horizontal_line 0, bounds.width, at: y

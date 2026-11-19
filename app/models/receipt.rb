@@ -220,6 +220,20 @@ class Receipt < ApplicationRecord
     end
   end
 
+  # What the receipt's QR code says. The printed receipt and the receipt page both draw the code
+  # from this text every time, so it never depends on a stored image file.
+  def verification_text(company_name = tenant&.company_name)
+    amount_text = ActiveSupport::NumberHelper.number_to_delimited(format("%.2f", amount.to_d))
+    "#{company_name} receipt #{reference_number}: #{currency&.name} #{amount_text} from #{client&.name} " \
+      "on #{transaction_date&.strftime('%d %b %Y')}#{' (VOID)' if deleted?}."
+  end
+
+  def verification_qr_svg(company_name = tenant&.company_name)
+    RQRCode::QRCode.new(verification_text(company_name), level: :m)
+                   .as_svg(module_size: 4, use_path: true, viewbox: true, standalone: true, offset: 0, color: "1f1a17")
+  end
+  public :verification_text, :verification_qr_svg
+
   def generate_qrcode
 
     qrcode = RQRCode::QRCode.new("#{client.name} #{self.reference_number} | Date: #{transaction_date.strftime("%d %b %Y")} | Amount #{self.currency.symbol} #{sprintf("%0.02f", self.amount)} for #{self.description}")
