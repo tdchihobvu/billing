@@ -123,6 +123,7 @@ Rails.application.routes.draw do
           get :open_invoices
           get :license_status
           get :license_statuses
+          get :app_version
           post :open_shift
           post :new_receipt
           post :new_invoice

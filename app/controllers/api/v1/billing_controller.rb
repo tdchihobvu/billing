@@ -409,11 +409,27 @@ module Api
         create_receipt
       end
 
+      # Which app version phones should run. Set on the server (Heroku config vars):
+      #   MOBILE_LATEST_VERSION  e.g. 2.0.5   -> phones on older versions see "A new version is available"
+      #   MOBILE_MINIMUM_VERSION e.g. 2.0.4   -> older versions are asked to update before carrying on
+      #   MOBILE_DOWNLOAD_URL    where staff get the new APK
+      def app_version
+        render json: {
+          latest: ENV["MOBILE_LATEST_VERSION"].presence,
+          minimum: ENV["MOBILE_MINIMUM_VERSION"].presence,
+          download_url: ENV["MOBILE_DOWNLOAD_URL"].presence
+        }, status: :ok
+      end
+
       def void_invoice
         # get the invoice parameteres reference and reason for void
         source_reference = params[:invoiceReference]
         void_reason = params[:voidReason]
-        @invoice = Invoice.find_by(source_reference: source_reference, user_id: current_device.user_id)
+        # Phone invoices are found by their phone reference; website invoices (which phones
+        # know by their invoice number) by the number.
+        mine = Invoice.where(user_id: current_device.user_id)
+        @invoice = mine.find_by(source_reference: source_reference) ||
+                   (source_reference.present? ? mine.find_by(invoice_number: source_reference) : nil)
         unless @invoice.nil?
           if @invoice.deleted?
             render json: {status: "ERROR", message: "Invoice with source reference #{source_reference} is already marked as void."}, status: 404
