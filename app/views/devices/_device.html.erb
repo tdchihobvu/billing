@@ -31,7 +31,8 @@
 
   <p>
     <strong>Access token:</strong>
-    <%= device.access_token %>
+    <%# Works like the phone's password for the API: never shown in full. %>
+    <%= device.access_token.present? ? "••••#{device.access_token.last(4)}" : "Not issued" %>
   </p>
 
 </div>

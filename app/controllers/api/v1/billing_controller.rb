@@ -518,8 +518,15 @@ module Api
         # derive the username from the device
         unless current_device.nil?
           @user = current_device.user
-          # Website receipts link by invoice_id and have no invoice_reference.
-          render json: @user.receipts.active.where("receipts.invoice_reference IS NOT NULL OR receipts.invoice_id IS NOT NULL").preload(:client, :user, :currency, :payment_form, :invoice), each_serializer: ReceiptSerializer, root: true
+          # Everything the inspector's own figures depend on, so the phone matches the website:
+          # - every receipt the inspector recorded (on the phone or the website), including
+          #   ones put on the client's account with no invoice;
+          # - every payment against the inspector's invoices, whoever recorded it (e.g. the office).
+          receipts = Receipt.active.where(tenant_id: current_device.tenant_id).where(
+            "receipts.user_id = :user OR receipts.invoice_id IN (SELECT id FROM invoices WHERE invoices.user_id = :user AND invoices.deleted = FALSE)",
+            user: @user.id
+          )
+          render json: receipts.preload(:client, :user, :currency, :payment_form, :invoice), each_serializer: ReceiptSerializer, root: true
         else
           render json: {status: "ERROR", message: "Device could not be found or does not exist."}, status: 203
         end

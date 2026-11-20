@@ -3,7 +3,8 @@ class DevicesController < ApplicationController
 
   # GET /devices
   def index
-    @devices = Device.all
+    # Only this company's devices (the list used to show every company's).
+    @devices = Device.where(tenant_id: tenant.id).preload(:user, :regional_office)
   end
 
   # GET /devices/1
@@ -50,7 +51,7 @@ class DevicesController < ApplicationController
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_device
-      @device = Device.find(params[:id])
+      @device = Device.where(tenant_id: tenant.id).find(params[:id])
     end
 
     # Only allow a list of trusted parameters through.

@@ -80,13 +80,26 @@ module DesignHelper
     %i[decimal float integer].include?(model.columns_hash[column.to_s]&.type) && !column.to_s.end_with?("_id")
   end
 
+  # How a linked record is named in lists: the first of these it has (users have no `name`).
+  ZCRUD_NAME_METHODS = %i[name user_fullname fullname company_name description title username reference_number].freeze
+  # Secrets are never shown in full: only enough to tell them apart.
+  ZCRUD_SECRET = /token|password|secret|api_key/i
+
+  def zcrud_record_name(linked)
+    method = ZCRUD_NAME_METHODS.find { |m| linked.respond_to?(m) && linked.public_send(m).present? }
+    method ? linked.public_send(method).to_s : "##{linked.id}"
+  end
+
   def zcrud_value(record, column)
     value = record.public_send(column)
+    if column.to_s.match?(ZCRUD_SECRET)
+      return value.present? ? "••••#{value.to_s.last(4)}" : ""
+    end
     if column.to_s.end_with?("_id")
       assoc = column.to_s.delete_suffix("_id")
       if record.respond_to?(assoc)
         linked = record.public_send(assoc)
-        return linked.respond_to?(:name) ? linked.name.to_s : linked.to_s if linked
+        return zcrud_record_name(linked) if linked
       end
     end
     case value
