@@ -56,11 +56,11 @@ class DeliveryNotePdf < Prawn::Document
 		bounding_box([0,170], width: 540, height: 110, :pad => 2) do 
 			move_down 3
 			indent(0,0) do # left and right padding
-			  text "Received By:  ..................................................................................                Signature:    .....................................................................", align: :left, size: 9, style: :bold unless tenant.vat_number.nil? || tenant.vat_number.empty?
+			  text "Received By:  ..................................................................................                Signature:    .....................................................................", align: :left, size: 9, style: :bold
 			  text ".", align: :left, size: 10
 			  text ".", align: :left, size: 10
 			  text ".", align: :left, size: 10
-			  text "Delivered By:  ..................................................................................                Signature:    .....................................................................", align: :left, size: 9, style: :bold unless tenant.vat_number.nil? || tenant.vat_number.empty?
+			  text "Delivered By:  ..................................................................................                Signature:    .....................................................................", align: :left, size: 9, style: :bold
 
 			end
 		end
@@ -112,12 +112,7 @@ class DeliveryNotePdf < Prawn::Document
 	def invoice_items_header
 		table invoice_table_header do
 			style(row(0..-1), :borders => [:left,:right,:top,:bottom], :font_style => :bold, :border_color => "DADCE0", :size => 9)
-
-		  	style(columns([2]), :align => :center)
-		  	style(columns([3,4,5,6]), :align => :right)
-			style(columns([0]), :width => 53)
-			style(columns([2]), :width => 40)
-			style(columns([3,4,5,6]), :width => 65)
+			style(columns([0]), :width => 60, :align => :center)
 			self.width = 540
 			self.header = true
 			self.position = :center
@@ -127,11 +122,7 @@ class DeliveryNotePdf < Prawn::Document
 	def invoice_items
 		table invoice_items_rows do
 			style(row(0..-1), :borders => [:left,:right,:top,:bottom], :border_color => "DADCE0", :size => 9, :padding => 5)
-		  	style(columns([2]), :align => :center)
-		  	style(columns([3,4,5,6]), :align => :right)
-			style(columns([0]), :width => 53)
-			style(columns([2]), :width => 40)
-			style(columns([3,4,5,6]), :width => 65)
+			style(columns([0]), :width => 60, :align => :center)
 			self.width = 540
 			# self.row_colors = ["DADCE0","FFFFFF"]
 			self.position = :center
@@ -140,6 +131,21 @@ class DeliveryNotePdf < Prawn::Document
 
 	def invoice_table_header
 		[["Qty","Description"]]
+	end
+
+	# Licence invoices: one line per licence (was missing, so these crashed).
+	def invoice_license_items
+		rows = License.where(invoice_id: @invoice.id, active: true).map do |l|
+			period = l.renewal_date && l.expiry_date ? " for the Period #{l.renewal_date.strftime("%d %B %Y")} To #{l.expiry_date.strftime("%d %B %Y")}" : ""
+			[l.quantity, "#{l.license_category&.name}#{period}"]
+		end
+		return if rows.empty?
+		table rows do
+			style(row(0..-1), :borders => [:left,:right,:top,:bottom], :border_color => "DADCE0", :size => 9, :padding => 5)
+			style(columns([0]), :width => 60, :align => :center)
+			self.width = 540
+			self.position = :center
+		end
 	end
 
 	def invoice_items_rows

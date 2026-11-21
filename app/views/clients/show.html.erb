@@ -23,7 +23,7 @@
     </div>
     <div class="acts">
       <%= link_to record_receipt_receipts_path(client_id: c.id), class: "b" do %><i class="fas fa-dollar-sign" aria-hidden="true"></i> Record Receipt<% end %>
-      <%= zmore_menu([["Edit", edit_client_path(c)], ["Print", print_clients_path(id: c, format: :pdf), { target: "_blank", rel: "noopener" }], :divider,
+      <%= zmore_menu([["Edit", edit_client_path(c)], ["Print statement", account_statement_clients_path(id: c, as_at: Date.current, format: :pdf), { target: "_blank", rel: "noopener" }], :divider,
                       ["Delete", client_path(c), { data: { turbo_method: :delete, turbo_confirm: "Delete #{c.name}? This can't be undone." } }]]) %>
       <%= link_to (default_module == "licensing" ? license_invoices_path(client_id: c.id) : new_invoice_path), class: "b main" do %><i class="fas fa-plus" aria-hidden="true"></i> New Invoice<% end %>
     </div>

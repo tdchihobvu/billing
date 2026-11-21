@@ -1,0 +1,19 @@
+<%# The invoice as a slip for a small receipt-roll printer, with a way back. %>
+<div class="zpage">
+  <%= render "shared/zhead", title: "Slip for #{@invoice.invoice_number}", crumb: link_to("Invoice #{@invoice.invoice_number}", invoice_path(@invoice)),
+             sub: "For a small receipt-roll printer. For a full-page invoice use Print Invoice.",
+             actions: safe_join([
+               link_to("Back to invoice", invoice_path(@invoice), class: "b"),
+               button_tag(type: "button", class: "b main", onclick: "window.print()") { safe_join([tag.i(class: "fas fa-print", "aria-hidden": "true"), " Print slip"]) }
+             ], " ") %>
+  <section class="box" style="padding:18px;display:flex;justify-content:center">
+    <pre class="zslip" style="margin:0;padding:16px;background:#fff;border:1px dashed var(--line);font:12.5px/1.45 ui-monospace,Consolas,monospace;white-space:pre;max-width:100%;overflow-x:auto"><%= @slip %></pre>
+  </section>
+</div>
+<style>
+  @media print {
+    body * { visibility: hidden; }
+    .zslip, .zslip * { visibility: visible; }
+    .zslip { position: absolute; left: 0; top: 0; border: 0 !important; }
+  }
+</style>

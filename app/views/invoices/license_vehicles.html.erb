@@ -1,0 +1,25 @@
+<%# The client's vehicles as tick boxes for a licence invoice (loaded into the form). %>
+<%= turbo_frame_tag "license_vehicles" do %>
+  <% if @client.nil? %>
+    <p class="zhint" style="margin:0">Choose the client to see their vehicles.</p>
+  <% elsif @vehicles.empty? %>
+    <p class="zhint" style="margin:0">
+      <%= @client.name %> has no vehicles. Only vehicle licences need them:
+      <%= link_to "add vehicles", client_path(@client, tab: "vehicles"), target: "_top", class: "zlink" %> first if this licence is for buses or kombis.
+    </p>
+  <% else %>
+    <%= hidden_field_tag "vehicle_ids[]", "", id: nil %>
+    <p class="zhint" style="margin:0 0 10px">
+      Tick the vehicles this licence covers; <b>No. of Licenses</b> follows the number ticked. Leave them all unticked for a licence that isn't for vehicles.
+      <% if @from_previous %><br>Ticked from the client's last licence of this category.<% end %>
+    </p>
+    <div class="zvehpick" role="group" aria-label="Vehicles this licence covers">
+      <% @vehicles.each do |v| %>
+        <label class="zcheck">
+          <%= check_box_tag "vehicle_ids[]", v.id, @selected.include?(v.id), id: "pick_vehicle_#{v.id}", data: { action: "change->vehicle-picker#count" } %>
+          <span><b><%= v.registration_number %></b><% if v.make_model.present? %> <small class="muted"><%= v.make_model %></small><% end %></span>
+        </label>
+      <% end %>
+    </div>
+  <% end %>
+<% end %>

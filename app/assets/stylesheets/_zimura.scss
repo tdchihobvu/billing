@@ -2840,3 +2840,8 @@ table.zt.zlines {
 // Tables in narrow panels (e.g. an invoice's lines beside its summary) may shrink to fit.
 table.zt.zlines { min-width: 0; }
 .zt td.zdoc-cell { white-space: nowrap; .ztag { display: table; margin-bottom: 4px; } }
+
+// Vehicle tick boxes on the licence invoice form.
+.zvehpick { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+.zvehpick .zcheck { padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; min-height: 44px; box-sizing: border-box; }
+.zvehpick .zcheck:has(input:checked) { border-color: var(--brand); background: color-mix(in srgb, var(--brand) 6%, transparent); }

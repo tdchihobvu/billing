@@ -172,6 +172,7 @@ Rails.application.routes.draw do
       get :print_credit_note
       get :delivery_note
       get :edit_license
+      get :license_vehicles
       get :inactive
       get :sms_reminder
       get :email_reminder

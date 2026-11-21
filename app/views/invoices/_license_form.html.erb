@@ -1,5 +1,7 @@
 <%# The licence invoice form in the ZIMURA design, used by New and Edit. Local: invoice. %>
-  <%= form_with(model: invoice, class: "box") do |form| %>
+  <%= form_with(model: invoice, class: "box",
+                data: { controller: "vehicle-picker", action: "turbo:frame-load->vehicle-picker#count",
+                         vehicle_picker_url_value: license_vehicles_invoices_path, vehicle_picker_license_value: invoice.license&.id }) do |form| %>
     <%= render "shared/form_errors", record: invoice %>
     <%= form.hidden_field :is_proforma %>
 
@@ -9,7 +11,7 @@
         <div class="zfield"><%= form.label :invoice_date, "Invoice Date", class: "req" %><%= form.date_field :invoice_date %></div>
         <div class="zfield"><%= form.label :invoice_number, "Invoice Number", class: "req" %><%= form.text_field :invoice_number, readonly: true %><span class="zhint">Set automatically.</span></div>
         <div class="zfield"><%= form.label :invoice_category_id, "Invoice Type", class: "req" %><%= form.select :invoice_category_id, InvoiceCategory.where(id: 2).pluck(:name, :id), { prompt: "Select Type" } %></div>
-        <div class="zfield wide"><%= form.label :client_id, "Client", class: "req" %><%= form.select :client_id, current_user.tenant.clients.order("name Asc").pluck(:name, :id), { include_blank: true }, { data: { controller: "slim" } } %></div>
+        <div class="zfield wide"><%= form.label :client_id, "Client", class: "req" %><%= form.select :client_id, current_user.tenant.clients.order("name Asc").pluck(:name, :id), { include_blank: true }, { data: { controller: "slim", action: "change->vehicle-picker#reload", vehicle_picker_target: "client" } } %></div>
         <div class="zfield"><%= form.label :currency_id, "Currency", class: "req" %><%= form.select :currency_id, Currency.pluck(:name, :id), { prompt: "Select Currency" } %></div>
         <div class="zfield wide">
           <span class="zlabel" id="pricing-label">Define Item Pricing</span>
@@ -27,10 +29,10 @@
       <div class="boxh"><h2>License Details</h2></div>
       <%= form.fields_for :license do |f| %>
         <div class="zgrid">
-          <div class="zfield"><%= f.label :license_category_id, "License Category", class: "req" %><%= f.select :license_category_id, LicenseCategory.all.collect { |a| [a.name, a.id] }, { prompt: "Select Category" } %></div>
+          <div class="zfield"><%= f.label :license_category_id, "License Category", class: "req" %><%= f.select :license_category_id, LicenseCategory.all.collect { |a| [a.name, a.id] }, { prompt: "Select Category" }, { data: { action: "change->vehicle-picker#reload", vehicle_picker_target: "category" } } %></div>
           <div class="zfield"><%= f.label :renewal_date, "Renewal Date" %><%= f.date_field :renewal_date %></div>
           <div class="zfield"><%= f.label :amount, "Invoice Amount", class: "req" %><%= f.text_field :amount, inputmode: "decimal" %></div>
-          <div class="zfield"><%= f.label :quantity, "No. of Licenses" %><%= f.text_field :quantity, inputmode: "numeric" %></div>
+          <div class="zfield"><%= f.label :quantity, "No. of Licenses" %><%= f.text_field :quantity, inputmode: "numeric", data: { vehicle_picker_target: "quantity" } %></div>
           <div class="zfield wide">
             <span class="zlabel req" id="option-label">License Option</span>
             <div class="zchoices" role="radiogroup" aria-labelledby="option-label">
@@ -42,6 +44,14 @@
           <div class="zfield"><%= f.label :special_days, "Special Days" %><%= f.number_field :special_days, min: 0 %><span class="zhint">Only for a Special licence.</span></div>
           <div class="zfield"><span class="zlabel">Auto Renewal</span><label class="zcheck"><%= f.check_box :auto_renewal %> Raise the renewal invoice automatically</label></div>
         </div>
+      <% end %>
+    </section>
+
+    <section class="zsect">
+      <div class="boxh"><h2>Vehicles</h2><span>For licences that cover buses, kombis and other vehicles</span></div>
+      <% picker_src = (license_vehicles_invoices_path(client_id: invoice.client_id, license_id: invoice.license&.id, category_id: invoice.license&.license_category_id) if invoice.client_id) %>
+      <%= turbo_frame_tag "license_vehicles", src: picker_src do %>
+        <p class="zhint" style="margin:0"><%= invoice.client_id ? "Loading the client's vehicles..." : "Choose the client to see their vehicles." %></p>
       <% end %>
     </section>
 

@@ -30,8 +30,8 @@
           more << ["Assign Branches", assign_branches_invoices_path(id: inv)] unless client.branches.empty?
           more << ["Setoff", setoff_invoice_path(inv)] if balance.positive?
           more += [["New (duplicate)", duplicate_invoices_path(id: inv)], :divider,
-                   ["Delivery Note", delivery_note_invoices_path(id: inv, format: :pdf), { target: "_blank", rel: "noopener" }],
-                   ["Print Receipt", receipt_invoices_path(id: inv, format: :txt), { target: "_blank", rel: "noopener" }]]
+                   (["Delivery Note", delivery_note_invoices_path(id: inv, format: :pdf), { target: "_blank", rel: "noopener" }] unless inv.license),
+                   ["Print slip (small printer)", receipt_invoices_path(id: inv)]].compact
           more << ["Fiscalise Invoice", fiscalise_invoices_path(id: inv)] if inv.is_proforma?
           more += [:divider, ["Trash", invoice_path(inv), { button: true, method: :delete, data: { turbo_confirm: "Move #{inv.invoice_number} to Inactive Invoices? It leaves the client's statement." } }]]
         %>

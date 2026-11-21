@@ -7,6 +7,7 @@ class LicensesController < ApplicationController
   def assign_vehicles
     ids = Array(params[:vehicle_ids]).reject(&:blank?)
     @license.vehicle_ids = @license.client.vehicles.where(id: ids).pluck(:id)
+    @license.touch # phones re-download this licence's vehicles at the next sync
     count = @license.vehicles.size
     note = count > @license.quantity.to_i && @license.quantity.to_i.positive? ? " This is more than the #{@license.quantity} licence(s) invoiced." : ""
     redirect_to license_path(@license, anchor: "vehicles"), notice: "This licence now covers #{count} #{'vehicle'.pluralize(count)}.#{note}", status: :see_other

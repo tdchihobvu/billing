@@ -153,16 +153,22 @@ class InvoicesController < ApplicationController
   # end
 
   def create
+    vehicle_ids = picked_vehicle_ids
     @invoice = Invoice.new(invoice_params)
     @invoice.user_id = current_user.id
     @invoice.tenant_id = tenant.id
     category = params[:invoice][:invoice_category_id]
+    @invoice.license.quantity = vehicle_ids.size if @invoice.license && vehicle_ids.present?
     if @invoice.save
+      if @invoice.license && !vehicle_ids.nil?
+        @invoice.license.vehicle_ids = vehicle_ids
+        @invoice.license.touch
+      end
       @invoice.update_balance
       @invoice.update_attribute(:due_date, (@invoice.invoice_date + invoice_validity.days))
       redirect_to @invoice, notice: "Invoice was successfully created."
     else
-      if category = 2
+      if category.to_s == "2" # licence invoice (was `category = 2`, which was always true)
         @invoice.build_license
         render :license, status: :unprocessable_entity
       else
@@ -173,7 +179,14 @@ class InvoicesController < ApplicationController
 
   # PATCH/PUT /invoices/1
   def update
-    if @invoice.update(invoice_params)
+    vehicle_ids = picked_vehicle_ids
+    @invoice.assign_attributes(invoice_params)
+    @invoice.license.quantity = vehicle_ids.size if @invoice.license && vehicle_ids.present?
+    if @invoice.save
+      if @invoice.license && !vehicle_ids.nil?
+        @invoice.license.vehicle_ids = vehicle_ids
+        @invoice.license.touch
+      end
       @invoice.update_balance
       @invoice.update_attribute(:due_date, (@invoice.invoice_date + invoice_validity.days))
       redirect_to @invoice, notice: "Invoice was successfully updated.", status: :see_other
@@ -272,6 +285,29 @@ class InvoicesController < ApplicationController
   #   end
   #   @invoice.build_license   
   # end
+
+  # The client's vehicles as tick boxes on the licence invoice form (loaded when a client
+  # is chosen). Ticked: the vehicles this licence already covers, or - for a new licence -
+  # the ones on the client's last licence of the same category (a renewal keeps its fleet).
+  def license_vehicles
+    @client = tenant.clients.find_by(id: params[:client_id])
+    @vehicles = @client ? @client.vehicles.active.ordered.to_a : []
+    license = License.joins(:invoice).where(invoices: { tenant_id: tenant.id }).find_by(id: params[:license_id]) if params[:license_id].present?
+    @from_previous = false
+    @selected =
+      if license
+        license.vehicle_ids
+      elsif @client && params[:category_id].present?
+        previous = License.joins(:invoice, :vehicles)
+                          .where(invoices: { client_id: @client.id, deleted: false }, license_category_id: params[:category_id])
+                          .order(created_at: :desc).first
+        @from_previous = previous.present?
+        previous ? previous.vehicles.active.pluck(:id) : []
+      else
+        []
+      end
+    render layout: false
+  end
 
   def license
     @invoice = Invoice.new(
@@ -632,11 +668,12 @@ class InvoicesController < ApplicationController
     end
   end
 
+  # The invoice as a narrow slip for a small (receipt-roll) printer. The HTML page shows it
+  # with Print and Back buttons; the .txt version is the raw slip.
   def receipt
     respond_to do |format|
-      format.text do
-        render layout: false
-      end
+      format.html { @slip = render_to_string(template: "invoices/receipt", formats: [:text], layout: false) }
+      format.text { render layout: false }
     end
   end
 
@@ -674,6 +711,15 @@ class InvoicesController < ApplicationController
     # def invoice_params
     #   params.require(:invoice).permit(:client_id, :user_id, :invoice_date, :invoice_number,:description, :order_number, :currency_id, :bank_id, :invoice_category_id, :deleted, :is_proforma, :sent, :paid, :product_pricing, :unit_price, :quantity, invoice_items_attributes: [:id, :description, :quantity, :unit_price, :vat_type_id], license_attributes: [:id, :invoice_id, :client_id, :license_category_id, :license_option_id, :renewal_date, :auto_renewal, :amount, :quantity, :special_days])
     # end
+
+    # Vehicles ticked on the licence invoice form, limited to the client's own vehicles.
+    # nil when the form had no vehicle list (nothing to change).
+    def picked_vehicle_ids
+      return nil unless params.key?(:vehicle_ids)
+      client = tenant.clients.find_by(id: params.dig(:invoice, :client_id))
+      return [] unless client
+      client.vehicles.where(id: Array(params[:vehicle_ids]).compact_blank).pluck(:id)
+    end
 
     def can_apply_discount?
       current_user.can?("invoices.discount")

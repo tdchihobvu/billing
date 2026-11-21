@@ -67,7 +67,7 @@
       <div class="zpager">
         <span>Page <%= @page %> of <%= @pages %>, <%= number_with_delimiter(@counts[@tab]) %> invoices</span>
         <span class="acts">
-          <%= link_to "Previous", invoices_path(keep.merge(tab: @tab, page: @page - 1)), class: "b #{'disabled' if @page <= 1}", "aria-disabled": (@page <= 1) %>
+          <%= link_to "Previous", invoices_path(keep.merge(tab: @tab, page: [@page - 1, 1].max)), class: "b #{'disabled' if @page <= 1}", "aria-disabled": (@page <= 1) %>
           <%= link_to "Next", invoices_path(keep.merge(tab: @tab, page: @page + 1)), class: "b #{'disabled' if @page >= @pages}", "aria-disabled": (@page >= @pages) %>
         </span>
       </div>

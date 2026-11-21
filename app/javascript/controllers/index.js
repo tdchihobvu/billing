@@ -54,3 +54,6 @@ application.register("permissions", PermissionsController)
 
 import AutosubmitController from "./autosubmit_controller"
 application.register("autosubmit", AutosubmitController)
+
+import VehiclePickerController from "./vehicle_picker_controller"
+application.register("vehicle-picker", VehiclePickerController)

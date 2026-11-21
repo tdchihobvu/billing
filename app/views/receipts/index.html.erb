@@ -56,7 +56,7 @@
       <div class="zpager">
         <span>Page <%= @page %> of <%= @pages %></span>
         <span class="acts">
-          <%= link_to "Previous", receipts_path(keep.merge(page: @page - 1)), class: "b #{'disabled' if @page <= 1}" %>
+          <%= link_to "Previous", receipts_path(keep.merge(page: [@page - 1, 1].max)), class: "b #{'disabled' if @page <= 1}" %>
           <%= link_to "Next", receipts_path(keep.merge(page: @page + 1)), class: "b #{'disabled' if @page >= @pages}" %>
         </span>
       </div>

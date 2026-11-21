@@ -33,10 +33,10 @@ class Permission
              actions: %w[invoices#index invoices#show invoices#print invoices#receipt invoices#delivery_note invoices#inactive invoices#credit_notes invoices#print_credit_note quotations#index quotations#show quotations#print]),
     Item.new(key: "invoices.create", group: "invoices", label: "Raise invoices",
              hint: "New sales and licence invoices, proformas, duplicates, quotations and fiscalising.",
-             actions: %w[invoices#new invoices#create invoices#license invoices#proforma invoices#duplicate invoices#fiscalise invoices#save_fiscal_invoice quotations#new quotations#create]),
+             actions: %w[invoices#new invoices#create invoices#license invoices#license_vehicles invoices#proforma invoices#duplicate invoices#fiscalise invoices#save_fiscal_invoice quotations#new quotations#create]),
     Item.new(key: "invoices.edit", group: "invoices", label: "Edit invoices",
              hint: "Change invoices, assign branches and post setoffs.",
-             actions: %w[invoices#edit invoices#update invoices#edit_license invoices#assign_branches invoices#setoff quotations#edit quotations#update]),
+             actions: %w[invoices#edit invoices#update invoices#edit_license invoices#license_vehicles invoices#assign_branches invoices#setoff quotations#edit quotations#update]),
     Item.new(key: "invoices.delete", group: "invoices", label: "Delete or void invoices",
              hint: "Move invoices to trash, void them, and approve or reject void requests sent from phones. Voided invoices drop off balances and reports.",
              actions: %w[invoices#destroy invoices#disable invoices#void_invoice quotations#destroy

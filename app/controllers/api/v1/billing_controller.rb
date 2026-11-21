@@ -565,10 +565,24 @@ module Api
         term = params[:search].to_s.strip
         return render_error("Enter at least 2 characters to search.", :unprocessable_entity) if term.length < 2
 
-        clients = TextSearch.apply(tenant.clients, term, %w[clients.name clients.trading_name clients.client_account_number]).order(:name).limit(20)
-        licenses = License.where(client_id: clients.map(&:id)).joins(:invoice).where(invoices: { deleted: false }).preload(:license_category).order(expiry_date: :desc).group_by(&:client_id)
+        # A vehicle registration (with or without spaces): the status of the licence that covers
+        # that vehicle, so inspectors can check buses and kombis at the roadside.
+        reg = term.upcase.gsub(/[^A-Z0-9]/, "")
+        vehicle_rows = []
+        if reg.length >= 3
+          Vehicle.where(tenant_id: tenant.id, active: true)
+                 .where("REPLACE(UPPER(vehicles.registration_number), ' ', '') LIKE ?", "%#{ActiveRecord::Base.sanitize_sql_like(reg)}%")
+                 .includes(:client).order(:registration_number).limit(10).each do |vehicle|
+            covering = vehicle.licenses.joins(:invoice).where(invoices: { deleted: false })
+                              .preload(:license_category, :vehicles).order(expiry_date: :desc).first
+            vehicle_rows << license_summary(vehicle.client, covering).merge(vehicle: vehicle.registration_number)
+          end
+        end
 
-        render json: clients.map { |client| license_summary(client, licenses[client.id]&.first) }
+        clients = TextSearch.apply(tenant.clients, term, %w[clients.name clients.trading_name clients.client_account_number]).order(:name).limit(20)
+        licenses = License.where(client_id: clients.map(&:id)).joins(:invoice).where(invoices: { deleted: false }).preload(:license_category, :vehicles).order(expiry_date: :desc).group_by(&:client_id)
+
+        render json: vehicle_rows + clients.map { |client| license_summary(client, licenses[client.id]&.first) }
       end
 
 		  def customers_list
@@ -637,7 +651,7 @@ module Api
         end
         ids = clients.pluck(:id)
         licences = License.where(client_id: ids).joins(:invoice).where(invoices: { deleted: false })
-                          .preload(:license_category).order(expiry_date: :desc).group_by(&:client_id)
+                          .preload(:license_category, :vehicles).order(expiry_date: :desc).group_by(&:client_id)
         summaries = tenant.clients.where(id: ids).order(:name).map { |client| license_summary(client, licences[client.id]&.first) }
 
         render json: { server_time: server_time.iso8601, full: since.nil?, clients: summaries }
@@ -672,7 +686,10 @@ def license_summary(client, license)
            else "Valid"
            end
 
-  summary.merge(license_status: status, license_type: license.license_category.name, valid_from: license.renewal_date, valid_to: license.expiry_date)
+  # Registrations this licence covers, so phones can find a vehicle offline too.
+  vehicles = license.vehicles.select(&:active).map(&:registration_number).sort
+  summary.merge(license_status: status, license_type: license.license_category.name, valid_from: license.renewal_date, valid_to: license.expiry_date,
+                vehicles: vehicles)
 end
 
       def branch_params
