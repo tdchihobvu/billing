@@ -10,7 +10,7 @@ class Invoice < ApplicationRecord
   has_one :credit_note
   has_one :license
 
-  attr_accessor :unit_price, :quantity
+  attr_accessor :unit_price, :quantity, :reconciling
 
   enum :status, {
     fully_paid: "Fully Paid",
@@ -30,6 +30,9 @@ class Invoice < ApplicationRecord
   after_update :update_associated_license
   # Keep the client statement in step when an invoice is deleted, voided or restored.
   after_commit :sync_statement_line, on: :update, if: :saved_change_to_deleted?
+  # A new, changed, voided or moved invoice changes what the client owes, so spread
+  # the client's account credit again (not when that spreading saved this invoice).
+  after_commit :reconcile_client_balances, if: :account_figures_changed?
   # A licence invoice that becomes fully paid marks its licence paid, which queues it for approval.
   after_save :mark_license_paid, if: -> { saved_change_to_paid?(to: true) }
   before_validation :populate_invoice_items
@@ -138,12 +141,51 @@ class Invoice < ApplicationRecord
 
   # Worked out from each receipt's amount, rate and currency. Older rows have a
   # wrong stored actual_paid, so that column cannot be trusted.
+  # Only the invoice's own client's receipts count: older receipts were sometimes
+  # attached to another client's invoice, and that money belongs to the payer's account.
   def received_through(receipt_type)
-    receipts.active.where(receipt_type: receipt_type).to_a.sum { |receipt| receipt.amount_paid.to_d.round(2) }
+    receipts.active.where(receipt_type: receipt_type, client_id: client_id).to_a.sum { |receipt| receipt.amount_paid.to_d.round(2) }
   end
 
-  def total_amount_paid
+  def own_receipts_total
     total_paid + total_setoff + total_writeoff
+  end
+
+  # What the invoice's own receipts paid, plus its share of money paid on account
+  # (see Client#reconcile_invoice_balances), so invoice balances agree with the statement.
+  def total_amount_paid
+    own_receipts_total + account_credit.to_d
+  end
+
+  # Sets this invoice's share of the client's account credit and saves the figures that follow from it.
+  def apply_account_credit(credit)
+    self.account_credit = credit
+    prepare_balance
+    return false unless balance_needs_saving?
+
+    self.last_payment_update = Time.current
+    self.reconciling = true
+    save_prepared_balance # after_update keeps the licence's paid status in step; a duplicate is flagged, not fatal
+  ensure
+    self.reconciling = false
+  end
+
+  def account_figures_changed?
+    return false if reconciling
+    return true if previously_new_record?
+
+    (saved_changes.keys & %w[invoice_total deleted client_id is_proforma currency_id rate]).any?
+  end
+
+  def reconcile_client_balances
+    client&.reconcile_invoice_balances
+    previous_client = saved_changes["client_id"]&.first
+    Client.find_by(id: previous_client)&.reconcile_invoice_balances if previous_client
+  rescue StandardError => e
+    Rails.logger.error("Could not reconcile balances for client #{client_id}: #{e.message}")
+    SystemEvent.record(kind: "payment_sync", tenant_id: tenant_id, record: self,
+                       title: "#{client&.name}'s invoice balances could not be brought in line with the statement",
+                       details: "#{e.class}: #{e.message}")
   end
 
   def update_balance
@@ -181,7 +223,8 @@ class Invoice < ApplicationRecord
   end
 
   def save_prepared_balance
-    save!(validate: false)
+    # Own savepoint: a refused save must not spoil a surrounding transaction.
+    self.class.transaction(requires_new: true) { save!(validate: false) }
     true
   rescue ActiveRecord::RecordNotUnique => e
     Rails.logger.warn("Could not correct invoice #{id}: #{e.message}")

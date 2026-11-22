@@ -4,6 +4,7 @@ class PaymentTrackingTest < ActiveSupport::TestCase
   setup do
     @invoice = invoices(:one)
     @invoice.update_columns(deleted: false, paid: false, discount: 0)
+    Transaction.where(client_id: @invoice.client_id).delete_all # the fixture's stray statement line
     @receipt = receipts(:one)
     @receipt.update_columns(currency_id: @invoice.currency_id, client_id: @invoice.client_id, deleted: false, invoice_id: nil, rate: 1)
     @license = @invoice.license

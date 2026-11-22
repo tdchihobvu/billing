@@ -18,6 +18,7 @@ class Receipt < ApplicationRecord
   validate :invoice_required_when_setting_enabled
   validate :transaction_date_cannot_be_in_future
   validate :reason_required_for_non_payment
+  validate :invoice_belongs_to_client, if: -> { new_record? || will_save_change_to_invoice_id? || will_save_change_to_client_id? }
 
   enum :receipt_type, {
     payment: "Payment",
@@ -34,7 +35,9 @@ class Receipt < ApplicationRecord
   before_commit :update_statement, on: :update
   before_save :set_actual_paid, if: :payment_details_changing?
   after_save :refresh_invoice_balances, if: :payment_details_changed?
-  after_commit :settle_client_from_statement, on: :create, if: -> { invoice_id.nil? }
+  # Any new, changed or voided receipt changes the client's account, so the invoices are
+  # brought back in line with the statement and licences settled without pressing Refresh.
+  after_commit :settle_client_from_statement, if: -> { previously_new_record? || payment_details_changed? || saved_change_to_client_id? }
 
   scope :active, -> {where(deleted: false)}
   scope :between_dates, ->(start_date, end_date) {active.includes(:currency, :payment_form).where(transaction_date: start_date..end_date)}
@@ -212,6 +215,14 @@ class Receipt < ApplicationRecord
 
   private
 
+  # A receipt pays its own client's invoice; one attached to another client's invoice
+  # credited the wrong account and left the payer's invoice showing unpaid.
+  def invoice_belongs_to_client
+    return if invoice_id.blank? || invoice.nil?
+
+    errors.add(:invoice, "belongs to another client. Choose one of #{client&.name}'s invoices") if invoice.client_id != client_id
+  end
+
   def invoice_required_when_setting_enabled
     return unless tenant&.attach_invoice_to_receipt?
 
@@ -280,6 +291,8 @@ class Receipt < ApplicationRecord
   # should not have to wait for someone to press Refresh.
   def settle_client_from_statement
     client.settle_licenses_from_statement
+    previous_client = saved_changes["client_id"]&.first
+    Client.find_by(id: previous_client)&.reconcile_invoice_balances if previous_client
   rescue StandardError => e
     Rails.logger.error("Could not settle licences for client #{client_id}: #{e.message}")
     SystemEvent.record(kind: "payment_sync", tenant_id: tenant_id, record: self,

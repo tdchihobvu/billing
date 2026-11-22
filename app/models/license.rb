@@ -91,11 +91,9 @@ class License < ApplicationRecord
       if client.account_balance_as_at(as_at,target_currency) <= 0.5 and client.credits_total_as_at(as_at,target_currency) > 0
         self.update_attribute(:paid, true)
         self.update_attribute(:status, 'Fully Paid')
-        unless invoice.nil?
-          invoice.update_attribute(:paid, true)
-          invoice.update_attribute(:amount_paid, self.amount)
-          invoice.update_attribute(:status, :fully_paid)
-        end
+        # The invoice's own figures come from Client#reconcile_invoice_balances, which
+        # has already counted the account credit; overwriting them here made invoices
+        # disagree with their receipts.
       elsif client.account_balance_as_at(as_at,target_currency) > 0.5 and client.credits_total_as_at(as_at,target_currency) > 0
         puts("balance is #{client.account_balance_as_at(as_at,target_currency)} and credits are #{client.credits_total_as_at(as_at,target_currency)}")
         self.update_attribute(:status, 'Partly Paid')

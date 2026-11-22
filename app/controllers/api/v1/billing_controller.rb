@@ -3,6 +3,9 @@ module Api
     class BillingController < ApiController
 
     	before_action :validate_device, except: [:device_status, :register_devise]
+      # Every upload the office system refuses is logged in System health, whichever
+      # path refused it, so the office sees what the inspector's phone was told.
+      after_action :record_refused_upload
     	# before_action :check_auth, except: [:device_status]
     	# before_action :http_authenticate, except: [:device_status]
 
@@ -465,13 +468,9 @@ module Api
             render json: {status: "ERROR", message: "Receipt with source reference #{source_reference} is already marked as void."}, status: 404
           else
             unless params[:voidReason].nil?
+              # Saving the void refreshes the receipt's own invoice and the client's balances.
+              # (Looking the invoice up by its phone reference alone could reach another client's.)
               if @receipt.update(deleted: true, void_date: Date.today, void_reason: void_reason)
-                unless @receipt.invoice_reference.nil?
-                  invoice = Invoice.find_by(source_reference: @receipt.invoice_reference)
-                  unless invoice.nil?
-                    invoice.update_balance
-                  end
-                end
                 user = current_device.user
                 ipaddress = request.remote_ip
                 device_name = "#{current_device.name}#{current_device.serial_number}-#{request.user_agent}"
@@ -909,17 +908,66 @@ end
       end
 
       def render_error(message, status)
-        # A refused upload from a phone (invoice, receipt, client, branch) is logged for follow-up.
-        if request.post? || request.patch?
-          SystemEvent.record(kind: "mobile_upload", tenant_id: current_device&.tenant_id, user: current_device&.user,
-                             path: "#{request.method} #{request.path}",
-                             title: "Phone upload refused: #{action_name.humanize}",
-                             details: ["#{message}", "Device: #{current_device&.name || request.headers['TerminalId']}"].join("\n"))
-        end
         render json: {
           status: "ERROR",
           message: message
         }, status: status
+      end
+
+      # Phone replies the app sorts out by itself: a record the server already has, and a
+      # shift opened elsewhere (the phone adopts it and sends again).
+      HANDLED_BY_PHONE = /already exists|open shift with ID/i
+
+      def record_refused_upload
+        return unless (request.post? || request.patch?) && response.status >= 400
+        return if response.status == 409
+
+        reason = refusal_reason
+        return if reason.match?(HANDLED_BY_PHONE)
+
+        user = current_device&.user
+        SystemEvent.record(kind: "mobile_upload", tenant_id: current_device&.tenant_id, user: user,
+                           path: "#{request.method} #{request.path}",
+                           title: "Phone upload refused: #{upload_kind}#{" for #{upload_client}" if upload_client.present?}",
+                           details: refusal_details(reason, user).join("\n"))
+      rescue StandardError => e
+        Rails.logger.error("Could not log refused upload: #{e.message}")
+      end
+
+      def refusal_reason
+        body = JSON.parse(response.body) rescue {}
+        message = body.is_a?(Hash) ? body["message"] : nil
+        Array(message).join(". ").presence || "HTTP #{response.status}"
+      end
+
+      def upload_kind
+        { "create_receipt" => "receipt", "new_receipt" => "receipt", "new_invoice" => "invoice",
+          "client_registration" => "client", "new_branch" => "branch" }.fetch(action_name, action_name.humanize.downcase)
+      end
+
+      def upload_client
+        (params[:clientName] || params[:client_name] || params[:name]).to_s.squish
+      end
+
+      # What the inspector's phone sent, so the office can find and fix it without asking.
+      def refusal_details(reason, user)
+        amount = params[:amountPaid] || params[:amountDue]
+        currency = params[:currencyUsed] || params[:invoiceCurrency]
+        invoice_ref = params[:invoiceReference] || params[:invoice_reference]
+        phone_date = params[:transactionDateTime] || params[:invoiceDateTime]
+        [
+          "Reason: #{reason}",
+          ("Client: #{upload_client}" if upload_client.present?),
+          ("Amount: #{currency} #{amount}" if amount.present?),
+          ("Phone receipt number: #{params[:receiptNumber]}" if params[:receiptNumber].present?),
+          ("Invoice reference: #{invoice_ref}" if invoice_ref.present?),
+          ("Licence: #{params[:licenseCategory]} (#{params[:licenseOption]})" if params[:licenseCategory].present?),
+          ("Client type: #{params[:clientType]}" if params[:clientType].present?),
+          ("Date on the phone: #{phone_date}" if phone_date.present?),
+          "Inspector: #{user&.user_fullname || user&.username || 'unknown'}",
+          "Device: #{current_device&.name || request.headers['TerminalId']}",
+          "The inspector's phone shows this as Not accepted and will not send it again until they tap Send again."
+        ].compact
       end
 
     end

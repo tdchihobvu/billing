@@ -28,6 +28,7 @@ class BalanceIssue < ApplicationRecord
 
     inv = invoice
     changed = inv.sync_balance
+    inv.client&.reconcile_invoice_balances # counts money paid on account, as the statement does
     inv.reload
     still_off = (inv.invoice_total.to_d.round(2) - inv.total.to_d.round(2)).abs > 0.01 ||
                 (inv.amount_paid.to_d.round(2) - inv.total_amount_paid.to_d.round(2)).abs > 0.01

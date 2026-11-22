@@ -24,6 +24,9 @@ class Client < ApplicationRecord
 
   scope :active, -> {where(active: true)}
 
+  # An account owing no more than this is settled (the rule License#validate_paid uses).
+  SETTLED_WITHIN = 0.5.to_d
+
   def contact_person
     cp_name
   end
@@ -70,8 +73,42 @@ class Client < ApplicationRecord
   end
 
   def settle_licenses_from_statement
-    update_statement(tenant)
+    reconcile_invoice_balances
     licenses.active.where(paid: false).find_each(&:validate_paid)
+  end
+
+  # The statement is the truth for what a client owes. Money that reaches the account
+  # without paying one of their own invoices (receipts on account, credit journals,
+  # receipts attached to another client's invoice) is spread over the client's unpaid
+  # invoices, oldest first. Invoice balances then add up to the statement everywhere:
+  # invoice lists, reports, licences and the inspectors' phones.
+  def reconcile_invoice_balances
+    key = :"reconciling_client_#{id}"
+    return if Thread.current[key]
+
+    Thread.current[key] = true
+    update_statement(tenant)
+    target = currency
+    owed = transactions.where(deleted: false).to_a.sum { |t| (t.debit? ? 1 : -1) * t.rated_amount(target).to_d }
+    # Cents left over from currency conversion: the licence check already treats an
+    # account within this amount as settled, so the invoices follow the same rule.
+    owed = 0.to_d if owed <= SETTLED_WITHIN
+
+    rows = invoices.sales.order(:invoice_date, :id).to_a.map do |inv|
+      total = inv.total.to_d
+      unpaid = [total - inv.own_receipts_total.to_d, 0].max
+      factor = total.zero? ? 1.to_d : inv.rated_invoice_total(target).to_d / total # invoice currency -> statement currency
+      [inv, unpaid, factor]
+    end
+
+    spare = rows.sum { |_, unpaid, factor| unpaid * factor } - [owed, 0].max
+    rows.each do |inv, unpaid, factor|
+      share = spare > 0.01 ? [unpaid * factor, spare].min : 0.to_d
+      spare -= share
+      inv.apply_account_credit(factor.zero? ? 0 : (share / factor).round(2))
+    end
+  ensure
+    Thread.current[key] = nil
   end
 
   def update_statement(tenant)
@@ -80,49 +117,31 @@ class Client < ApplicationRecord
     # get invoices and post them as debits
     invoices.active.each do |i|
       i.sync_balance
-      unless i.client.nil?
-        transaction_date = i.invoice_date
-        unless Transaction.exists?(client_id: i.client_id, source: 'Invoices', source_id: i.id, reference_number: i.invoice_number)
-          Transaction.create(
-            client_id: i.client_id,
-            transaction_date: i.invoice_date,
-            reference_number: i.invoice_number,
-            description: i.statement_description,
-            amount: i.invoice_total,
-            debit: true,
-            user_id: i.user_id,
-            source: 'Invoices',
-            source_id: i.id,
-            tenant_id: i.tenant_id,
-            currency_id: i.currency_id,
-            rate: i.rate
-            )
-        end
-      end
+      post_statement_line("Invoices", i, debit: true, date: i.invoice_date, reference: i.invoice_number,
+                                         description: i.statement_description, amount: i.invoice_total)
     end
     # get receipts and post them as credits
     receipts.active.each do |r|
-      unless r.client.nil?
-        transaction_date = r.transaction_date
-        unless Transaction.exists?(client_id: r.client_id, source: 'Receipts', source_id: r.id, reference_number: r.reference_number)
-          Transaction.create(
-            client_id: r.client_id,
-            transaction_date: r.transaction_date,
-            reference_number: r.reference_number,
-            description: r.description,
-            amount: r.amount,
-            debit: false,
-            user_id: r.user_id,
-            source: 'Receipts',
-            source_id: r.id,
-            tenant_id: r.tenant_id,
-            currency_id: r.currency_id,
-            rate: r.rate
-            )
-        end
-      end
+      post_statement_line("Receipts", r, debit: false, date: r.transaction_date, reference: r.reference_number,
+                                         description: r.description, amount: r.amount)
     end
     sync_deleted_statement_lines
+  end
+
+  # One statement line per invoice or receipt, kept equal to the document: an edited
+  # amount, currency or rate used to leave the old figure on the statement.
+  def post_statement_line(source, doc, debit:, date:, reference:, description:, amount:)
+    line = Transaction.where(client_id: id, source: source, source_id: doc.id, journal: [false, nil]).order(:id).first
+    if line.nil?
+      Transaction.create(client_id: id, transaction_date: date, reference_number: reference, description: description,
+                         amount: amount, debit: debit, user_id: doc.user_id, source: source, source_id: doc.id,
+                         tenant_id: doc.tenant_id, currency_id: doc.currency_id, rate: doc.rate)
+      return
+    end
+
+    figures = { amount: amount, currency_id: doc.currency_id, rate: doc.rate }
+    changed = figures.reject { |key, value| line[key].to_d == value.to_d }
+    line.update_columns(changed.merge(updated_at: Time.current)) if changed.any?
   end
 
   # Hides statement lines whose invoice or receipt was deleted or voided, and shows them

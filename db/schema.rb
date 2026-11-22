@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_16_180000) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_22_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -410,6 +410,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_16_180000) do
     t.decimal "discount", precision: 15, scale: 2, default: "0.0"
     t.decimal "subtotal", precision: 15, scale: 2, default: "0.0"
     t.decimal "vat_amount", precision: 15, scale: 2, default: "0.0"
+    t.decimal "account_credit", precision: 18, scale: 2, default: "0.0", null: false
     t.index ["bank_id"], name: "index_invoices_on_bank_id"
     t.index ["client_id"], name: "index_invoices_on_client_id"
     t.index ["currency_id"], name: "index_invoices_on_currency_id"

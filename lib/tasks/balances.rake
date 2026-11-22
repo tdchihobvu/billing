@@ -41,4 +41,53 @@ namespace :invoices do
     puts newly_unpaid.first(20)
     puts "This was a dry run. Run with APPLY=1 to save the corrections." unless apply
   end
+
+  desc "Bring every client's invoice balances in line with their statement. APPLY=1 saves; TENANT=id limits it."
+  task reconcile_with_statements: :environment do
+    apply = ENV["APPLY"] == "1"
+    clients = Client.all
+    clients = clients.where(tenant_id: ENV["TENANT"]) if ENV["TENANT"].present?
+    ids = clients.joins(:invoices).merge(Invoice.sales).distinct.pluck(:id)
+
+    snapshot = -> { Invoice.sales.where(client_id: ids).pluck(:id, :amount_paid, :paid).to_h { |id, paid, done| [id, [paid.to_d, done]] } }
+    before = snapshot.call
+    failed = []
+    started = Time.current
+
+    work = lambda do
+      ids.each_with_index do |id, i|
+        ActiveRecord::Base.transaction(requires_new: true) { Client.find(id).reconcile_invoice_balances }
+      rescue StandardError => e
+        failed << "#{id}: #{e.message}"
+      ensure
+        print "\r#{i + 1} of #{ids.size} clients" if ((i + 1) % 100).zero? || i + 1 == ids.size
+      end
+      puts
+    end
+
+    # A real run saves client by client; a dry run does the same work inside one transaction and undoes it.
+    work.call if apply
+    ActiveRecord::Base.transaction do
+      work.call unless apply
+
+      after = snapshot.call
+      changed = after.count { |id, figs| before[id] && before[id][0] != figs[0] }
+      now_paid = after.count { |id, figs| before[id] && !before[id][1] && figs[1] }
+      now_unpaid = after.count { |id, figs| before[id] && before[id][1] && !figs[1] }
+      puts "Clients: #{ids.size}. Invoices whose amount paid changed: #{changed}."
+      puts "Now shown paid: #{now_paid}. Now shown unpaid (their receipts and the statement don't cover them): #{now_unpaid}."
+      unpaid_ids = after.select { |id, figs| before[id] && before[id][1] && !figs[1] }.keys
+      Invoice.where(id: unpaid_ids).includes(:client).each do |inv|
+        puts "  now unpaid: #{inv.invoice_number} #{inv.client&.name.to_s.squish} total #{inv.invoice_total.to_f} paid #{inv.amount_paid.to_f}"
+      end
+      puts "Clients that could not be done: #{failed.size}", failed.first(20) if failed.any?
+      skipped = SystemEvent.where(kind: "payment_sync").where("created_at > ?", started).count
+      puts "Invoices skipped and flagged in System health (e.g. duplicates): #{skipped}" if skipped.positive?
+
+      unless apply
+        puts "This was a dry run; nothing was saved. Run with APPLY=1 to save."
+        raise ActiveRecord::Rollback
+      end
+    end
+  end
 end
