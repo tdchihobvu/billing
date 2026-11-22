@@ -17,7 +17,8 @@
   <%= render "shared/zhead", title: "Licence for #{lic.client.name}", crumb: link_to("Licensing / Licence approvals", license_approvals_path(tab: tab)),
              sub: "#{lic.license_category&.name}, #{lic.license_option&.name}. Valid #{lic.long_period}.",
              actions: safe_join([link_to("Client", client_path(lic.client), class: "b"), link_to("Invoice #{inv.invoice_number}", invoice_path(inv), class: "b"),
-                                 (lic.printable? ? link_to(print_licenses_path(id: lic, format: :pdf), class: "b main", target: "_blank", rel: "noopener") { safe_join([tag.i(class: "fas fa-print", "aria-hidden": "true"), " Print License"]) } : nil)].compact) %>
+                                 (lic.printable? ? link_to(print_licenses_path(id: lic, format: :pdf), class: "b main", target: "_blank", rel: "noopener") { safe_join([tag.i(class: "fas fa-print", "aria-hidden": "true"), " Print License"]) } : nil),
+                                 (lic.printable? && (n = lic.vehicles.active.count).positive? ? link_to(vehicle_discs_license_path(lic, format: :pdf), class: "b", target: "_blank", rel: "noopener") { safe_join([tag.i(class: "fas fa-bus", "aria-hidden": "true"), " Print vehicle discs (#{n})"]) } : nil)].compact) %>
 
   <ol class="zsteps" aria-label="Approval progress">
     <% steps.each_with_index do |(label, at, done), i| %>

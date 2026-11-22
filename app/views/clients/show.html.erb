@@ -163,6 +163,7 @@
                 <td><% if license.printable? %>
                   <% if branches.empty? %>
                     <%= link_to "Print License", print_licenses_path(id: license, format: :pdf), class: "b", target: "_blank", rel: "noopener" %>
+                    <% if license.printable? && (nv = license.vehicles.active.count).positive? %><%= link_to vehicle_discs_license_path(license, format: :pdf), class: "b", target: "_blank", rel: "noopener" do %><i class="fas fa-bus" aria-hidden="true"></i> Vehicle discs (<%= nv %>)<% end %><% end %>
                   <% else %>
                     <%= link_to "Print Multiple", print_multiple_licenses_path(id: license, client_id: c.id), class: "b", target: "_blank", rel: "noopener" %>
                   <% end %>

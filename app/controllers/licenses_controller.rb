@@ -45,10 +45,10 @@ class LicensesController < ApplicationController
         @per_page = 50
         @page = [params[:page].to_i, 1].max
         @pages = [(@count / @per_page.to_f).ceil, 1].max
-        @licenses = scope.preload(:invoice, :license_option, client: :branches).order(:expiry_date).offset((@page - 1) * @per_page).limit(@per_page)
+        @licenses = scope.preload(:invoice, :license_option, :vehicles, client: :branches).order(:expiry_date).offset((@page - 1) * @per_page).limit(@per_page)
       end
       format.json do
-        scope = License.active.joins(:client, :license_option, :invoice).where(invoices: { deleted: false }).preload(:invoice, :license_option, client: :branches)
+        scope = License.active.joins(:client, :license_option, :invoice).where(invoices: { deleted: false }).preload(:invoice, :license_option, :vehicles, client: :branches)
         columns = [nil, "clients.name",
                    { sort: "licenses.renewal_date", search: "to_char(licenses.renewal_date, 'DD Mon YYYY') || ' to ' || to_char(licenses.expiry_date, 'DD Mon YYYY')" },
                    "license_options.name", "licenses.status", nil]

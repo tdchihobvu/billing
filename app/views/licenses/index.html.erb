@@ -53,6 +53,11 @@
                     <% else %>
                       <%= link_to "View Invoice", license.invoice, class: "b" %>
                     <% end %>
+                    <% vehicles = license.vehicles.count(&:active) %>
+                    <% if license.printable? && vehicles.positive? %>
+                      <%= link_to vehicle_discs_license_path(license, format: :pdf), class: "b", target: "_blank", rel: "noopener", title: "Print the licence discs for this licence's vehicles" do %><i class="fas fa-bus" aria-hidden="true"></i> Vehicle discs (<%= vehicles %>)<% end %>
+                    <% end %>
+                    <%= link_to "Details", license_path(license), class: "b ghost", title: "Licence details and the vehicles it covers" %>
                   </div>
                 </td>
               </tr>
