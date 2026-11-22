@@ -3,7 +3,7 @@ class RegionalOfficesController < ApplicationController
 
   # GET /regional_offices
   def index
-    @regional_offices = RegionalOffice.all
+    @regional_offices = RegionalOffice.where(tenant_id: tenant.id)
   end
 
   # GET /regional_offices/1
@@ -48,7 +48,7 @@ class RegionalOfficesController < ApplicationController
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_regional_office
-      @regional_office = RegionalOffice.find(params[:id])
+      @regional_office = RegionalOffice.where(tenant_id: tenant.id).find(params[:id])
     end
 
     # Only allow a list of trusted parameters through.

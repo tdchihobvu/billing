@@ -3,7 +3,7 @@ require "net/http"
 
 class WelcomeController < ApplicationController
 
-  before_action :authenticate_user!, except: [:register_device]
+  before_action :authenticate_user!
   before_action :update_exchange_rate
 
   def index
@@ -48,55 +48,31 @@ class WelcomeController < ApplicationController
       end
   end
 
-  def register_device
-    url = URI("http://localhost:3000/api/v1/billing/register_devise?deviceID=#{params[:deviceID]}")
-
-    http = Net::HTTP.new(url.host, url.port);
-    request = Net::HTTP::Get.new(url)
-
-    response = http.request(request)
-    puts response.read_body
-  end
-
+  # Fills in a missing exchange rate on this company's invoices and statement lines, from
+  # the rate that applied on their date. Records with no rate for their date are left as
+  # they are (setting 1 would count ZWL as USD) and the count is reported.
   def refresh
-    License.active.where(paid: false).all.each do |license|
-      puts("*** #{license.client_id}")
-      begin
-        c = Client.find(license.client_id)
-      rescue ActiveRecord::RecordNotFound => e
-        puts("client does not exist")
-      end
-    end
-
-    invoices = Invoice.active.where("rate <= 0")
-    transactions = Transaction.where("rate <= 0")
     tenant = current_user.tenant
-    # get exchange rate frequency
     config = ConfigKey.find_by(name: 'Exchange Rate Update Frequency')
-    return nil unless config
+    return redirect_to(root_url, alert: "Set the exchange rate update frequency in Settings first.") unless config
 
-    setting = tenant.system_settings.find_by(config_key_id: config.id)
-    exchange_rate_update_frequency = setting&.config_value
-
-    invoices.each do |inv|
-      transaction_date = inv.invoice_date 
-      puts("#{inv.client.name}*** invoice #{inv.id} #{inv.invoice_date} - #{inv.rate} - #{inv.converted_rate}")
-      unless ExchangeRate.active_exchange_rate(tenant,transaction_date,exchange_rate_update_frequency).nil?
-        inv.update(rate: ExchangeRate.active_exchange_rate(tenant,transaction_date,exchange_rate_update_frequency), converted_rate: 1/ExchangeRate.active_exchange_rate(tenant,transaction_date,exchange_rate_update_frequency))
-      else
-        inv.update(rate: 1, converted_rate: 1)
-      end
+    frequency = tenant.system_settings.find_by(config_key_id: config.id)&.config_value
+    fixed = skipped = 0
+    tenant.invoices.active.where("rate <= 0").find_each do |inv|
+      rate = ExchangeRate.active_exchange_rate(tenant, inv.invoice_date, frequency)
+      next skipped += 1 if rate.nil?
+      inv.update(rate: rate, converted_rate: 1 / rate)
+      fixed += 1
     end
-    transactions.each do |tr|
-      transaction_date = tr.transaction_date 
-      puts("#{tr.client.name}*** transaction #{tr.id} #{tr.transaction_date} - #{tr.rate}")
-      unless ExchangeRate.active_exchange_rate(tenant,transaction_date,exchange_rate_update_frequency).nil?
-        tr.update(rate: ExchangeRate.active_exchange_rate(tenant,transaction_date,exchange_rate_update_frequency))
-      else
-        tr.update(rate: 1)
-      end
+    Transaction.where(tenant_id: tenant.id).where("rate <= 0").find_each do |tr|
+      rate = ExchangeRate.active_exchange_rate(tenant, tr.transaction_date, frequency)
+      next skipped += 1 if rate.nil?
+      tr.update(rate: rate)
+      fixed += 1
     end
-    redirect_to root_url, notice: "System refreshed successfully"
+    message = "Balances refreshed: #{fixed} #{'record'.pluralize(fixed)} updated."
+    message += " #{skipped} still have no exchange rate for their date: add those rates under Exchange rates, then refresh again." if skipped.positive?
+    redirect_to root_url, notice: message
   end
 
   private

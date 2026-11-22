@@ -135,7 +135,7 @@ class ClientsController < ApplicationController
     @transaction.journal = true
     if @transaction.save
       redirect_to @client, notice: "Transaction was successfully created."
-      exchange_rates = ExchangeRate.order(transaction_date: :asc).where("currency_id = #{@transaction.currency_id} AND transaction_date <= '#{@transaction.transaction_date}'")
+      exchange_rates = ExchangeRate.order(transaction_date: :asc).where(tenant_id: tenant.id, currency_id: @transaction.currency_id).where("transaction_date <= ?", @transaction.transaction_date)
       rate = 1
       unless exchange_rates.empty?
         rate = exchange_rates[-1].selling_rate
@@ -148,12 +148,12 @@ class ClientsController < ApplicationController
 
   def edit_journal
     @client = tenant.clients.find(params[:client_id])
-    @transaction = Transaction.find(params[:id])
+    @transaction = Transaction.where(tenant_id: tenant.id).find(params[:id])
   end
 
   def update_journal
     @client = tenant.clients.find(params[:client_id])
-    @transaction = Transaction.find(params[:id])
+    @transaction = Transaction.where(tenant_id: tenant.id).find(params[:id])
     prev_amount = @transaction.amount
     prev_date = @transaction.transaction_date
     if @transaction.update(transaction_params)

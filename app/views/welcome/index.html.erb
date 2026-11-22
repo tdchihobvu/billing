@@ -10,7 +10,7 @@
     overdue: overdue_invoices_reports_path(over: 30),
     expiring: upcoming_renewals_reports_path(period: "next_7"),
     notifications: void_requests_path,
-    rates: exchange_rates_path,
+    rates: (exchange_rates_path if can?("settings.exchange_rates")),
     receipts: receipts_path(unlinked: 1)
   }
   team = s.inspectors
@@ -62,7 +62,7 @@
             <div class="it">
               <span class="zic <%= t.tone %>"><i class="fas <%= t.icon %>" aria-hidden="true"></i></span>
               <div><b><%= t.title %></b><small><%= t.detail %></small></div>
-              <%= link_to t.action, todo_paths[t.path], class: "zlink" %>
+              <% if todo_paths[t.path] %><%= link_to t.action, todo_paths[t.path], class: "zlink" %><% end %>
             </div>
           <% end %>
         </div>

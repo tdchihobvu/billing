@@ -51,7 +51,7 @@ class Permission
     # Receipting
     Item.new(key: "receipts.view", view: true, group: "receipts", label: "View and print receipts",
              hint: "Receipt lists, receipt details, printing receipts and shifts.",
-             actions: %w[receipts#index receipts#show receipts#print receipts#shifts]),
+             actions: %w[receipts#index receipts#show receipts#print receipts#shifts receipts#shift]),
     Item.new(key: "receipts.create", group: "receipts", label: "Record receipts",
              hint: "Record payments against invoices or a client's account.",
              actions: %w[receipts#new receipts#record_receipt receipts#invoices receipts#create clients#post_receipt]),

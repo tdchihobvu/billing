@@ -12,7 +12,7 @@
     </div>
     <div class="acts">
       <%= link_to "Expiring licences", upcoming_renewals_reports_path, class: "b" %>
-      <%= link_to new_license_path, class: "b main" do %><i class="fas fa-plus" aria-hidden="true"></i> Generate New<% end %>
+      <% if can?("licenses.generate") %><%= link_to new_license_path, class: "b main" do %><i class="fas fa-plus" aria-hidden="true"></i> Generate New<% end %><% end %>
     </div>
   </div>
 

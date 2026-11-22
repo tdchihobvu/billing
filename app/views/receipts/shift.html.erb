@@ -1,0 +1,53 @@
+<%# One shift: details, then its invoices and receipts with totals per currency. %>
+<% s = @shift %>
+<% money = ->(v) { number_with_precision(v.to_d, precision: 2, delimiter: ",") } %>
+<div class="zpage">
+  <%= render "shared/zhead", title: "Shift #{s.shift_id.presence || s.id}", crumb: link_to("Receipting / Shifts", shifts_receipts_path),
+             sub: "#{s.username} on #{s.device&.name || 'a phone'}#{" · #{@district.name}" if @district} · opened #{s.start_time&.strftime('%d %b %Y %H:%M')}#{s.end_time ? ", closed #{s.end_time.strftime('%d %b %Y %H:%M')}" : ' · still open'}",
+             actions: link_to("All shifts", shifts_receipts_path, class: "b") %>
+
+  <div class="zstats">
+    <div class="zstat"><small>Invoices</small><b><%= @invoices.size %></b></div>
+    <div class="zstat"><small>Receipts</small><b><%= @receipts.size %></b></div>
+    <% @receipts.group_by { |r| r.currency&.name.to_s }.each do |cur, list| %>
+      <div class="zstat"><small>Collected (<%= cur %>)</small><b><%= money.(list.sum { |r| r.amount.to_d }) %></b></div>
+    <% end %>
+  </div>
+
+  <section class="box">
+    <div class="boxh"><h2>Receipts</h2><span><%= pluralize(@receipts.size, "receipt") %></span></div>
+    <% if @receipts.any? %>
+      <div class="zwrap"><table class="zt">
+        <thead><tr><th>Receipt</th><th>Date</th><th>Client</th><th>Paid by</th><th class="r">Amount</th></tr></thead>
+        <tbody>
+          <% @receipts.each do |r| %>
+            <tr><td><%= link_to r.reference_number, r, class: "zno" %></td><td><%= r.transaction_date&.strftime("%d %b %Y %H:%M") %></td>
+                <td><%= r.client&.name %></td><td><%= r.payment_form&.name %></td>
+                <td class="r money"><span class="cur"><%= r.currency&.name %></span> <%= money.(r.amount) %></td></tr>
+          <% end %>
+        </tbody>
+      </table></div>
+    <% else %>
+      <%= zempty("No receipts on this shift", "Receipts recorded on the phone during this shift appear here once it has synced.") %>
+    <% end %>
+  </section>
+
+  <section class="box">
+    <div class="boxh"><h2>Invoices</h2><span><%= pluralize(@invoices.size, "invoice") %></span></div>
+    <% if @invoices.any? %>
+      <div class="zwrap"><table class="zt">
+        <thead><tr><th>Invoice</th><th>Date</th><th>Client</th><th class="r">Total</th><th class="r">Balance</th></tr></thead>
+        <tbody>
+          <% @invoices.each do |i| %>
+            <tr><td><%= link_to i.invoice_number, i, class: "zno" %></td><td><%= i.invoice_date&.strftime("%d %b %Y") %></td>
+                <td><%= i.client&.name %></td>
+                <td class="r money"><span class="cur"><%= i.currency&.name %></span> <%= money.(i.invoice_total) %></td>
+                <td class="r money"><%= money.(i.invoice_total.to_d - i.amount_paid.to_d) %></td></tr>
+          <% end %>
+        </tbody>
+      </table></div>
+    <% else %>
+      <%= zempty("No invoices on this shift", "Invoices raised on the phone during this shift appear here once it has synced.") %>
+    <% end %>
+  </section>
+</div>

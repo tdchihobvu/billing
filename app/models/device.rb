@@ -6,7 +6,7 @@ class Device < ApplicationRecord
 
 
   def active_shift(current_user)
-    Shift.where("device_id = #{self.id} AND username = '#{current_user.username}'").last
+    Shift.where(device_id: id, username: current_user.username).last
   end
 
   def status

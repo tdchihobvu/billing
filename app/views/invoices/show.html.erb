@@ -26,16 +26,20 @@
       <%= link_to print_invoices_path(id: inv, format: :pdf), class: "b", target: "_blank", rel: "noopener" do %><i class="fas fa-print" aria-hidden="true"></i> Print Invoice<% end %>
       <% unless inv.deleted? %>
         <%
-          more = [["Edit", edit_invoice_path(inv)]]
-          more << ["Assign Branches", assign_branches_invoices_path(id: inv)] unless client.branches.empty?
-          more << ["Setoff", setoff_invoice_path(inv)] if balance.positive?
-          more += [["New (duplicate)", duplicate_invoices_path(id: inv)], :divider,
+          can_edit = can?("invoices.edit")
+          more = []
+          more << ["Edit", edit_invoice_path(inv)] if can_edit
+          more << ["Assign Branches", assign_branches_invoices_path(id: inv)] if can_edit && client.branches.any?
+          more << ["Setoff", setoff_invoice_path(inv)] if can_edit && balance.positive?
+          more << ["New (duplicate)", duplicate_invoices_path(id: inv)] if can?("invoices.create")
+          more += [:divider,
                    (["Delivery Note", delivery_note_invoices_path(id: inv, format: :pdf), { target: "_blank", rel: "noopener" }] unless inv.license),
                    ["Print slip (small printer)", receipt_invoices_path(id: inv)]].compact
           more << ["Fiscalise Invoice", fiscalise_invoices_path(id: inv)] if inv.is_proforma?
-          more += [:divider, ["Trash", invoice_path(inv), { button: true, method: :delete, data: { turbo_confirm: "Move #{inv.invoice_number} to Inactive Invoices? It leaves the client's statement." } }]]
+          more += [:divider, ["Trash", invoice_path(inv), { button: true, method: :delete, data: { turbo_confirm: "Move #{inv.invoice_number} to Inactive Invoices? It leaves the client's statement." } }]] if can?("invoices.delete")
         %>
-        <%= zmore_menu(more) %>
+        <% more.shift while more.first == :divider %>
+        <%= zmore_menu(more) if more.any? %>
         <% if balance.positive? %>
           <%= link_to record_receipt_receipts_path(client_id: client.id), class: "b main" do %><i class="fas fa-dollar-sign" aria-hidden="true"></i> Record Receipt<% end %>
         <% end %>

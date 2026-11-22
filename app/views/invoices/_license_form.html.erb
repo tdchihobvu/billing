@@ -51,7 +51,7 @@
       <div class="boxh"><h2>Vehicles</h2><span>For licences that cover buses, kombis and other vehicles</span></div>
       <% picker_src = (license_vehicles_invoices_path(client_id: invoice.client_id, license_id: invoice.license&.id, category_id: invoice.license&.license_category_id) if invoice.client_id) %>
       <%= turbo_frame_tag "license_vehicles", src: picker_src do %>
-        <p class="zhint" style="margin:0"><%= invoice.client_id ? "Loading the client's vehicles..." : "Choose the client to see their vehicles." %></p>
+        <div class="zvehbox"><p class="zvehnote"><%= invoice.client_id ? "Loading the client's vehicles..." : "Choose the client to see their vehicles." %></p></div>
       <% end %>
     </section>
 

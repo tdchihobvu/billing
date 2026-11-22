@@ -3,7 +3,7 @@ class TarrifsController < ApplicationController
 
   # GET /tarrifs
   def index
-    @tarrifs = Tarrif.all
+    @tarrifs = Tarrif.where(tenant_id: tenant.id)
   end
 
   # GET /tarrifs/1
@@ -48,7 +48,7 @@ class TarrifsController < ApplicationController
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_tarrif
-      @tarrif = Tarrif.find(params[:id])
+      @tarrif = Tarrif.where(tenant_id: tenant.id).find(params[:id])
     end
 
     # Only allow a list of trusted parameters through.

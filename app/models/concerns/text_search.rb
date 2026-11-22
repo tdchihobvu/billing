@@ -5,7 +5,8 @@ module TextSearch
   MAX_WORDS = 6
 
   def self.words(term)
-    term.to_s.squish.split(" ").map { |w| w.delete("%_\\") }.reject(&:blank?).first(MAX_WORDS)
+    # %, _ and \ are searched for literally (sanitize_sql_like escapes them below).
+    term.to_s.squish.split(" ").reject(&:blank?).first(MAX_WORDS)
   end
 
   # scope: the relation to filter; columns: SQL column names (already joined), e.g. %w[clients.name invoices.invoice_number]

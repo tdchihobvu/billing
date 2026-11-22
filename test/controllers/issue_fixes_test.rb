@@ -64,11 +64,11 @@ class IssueFixesTest < ActionDispatch::IntegrationTest
     assert_match(/could not be completed/, flash[:alert])
   end
 
-  test "users are grouped by role" do
+  test "users show their role" do
     get user_management_index_url
 
     assert_response :success
-    assert_select "h2", /Superadmin/
+    assert_select ".ztag", /Super admin/
   end
 
   test "admin reset forces a password change" do
@@ -110,7 +110,7 @@ class IssueFixesTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to new_user_password_url
     follow_redirect!
-    assert_select "p.alert", /could not send the reset email/
+    assert_select "[role=alert]", /could not send the reset email/
   end
 
   test "forgot password sends instructions" do
@@ -155,7 +155,8 @@ class IssueFixesApiTest < ActionDispatch::IntegrationTest
 
   test "licence search reports validity" do
     license = licenses(:one)
-    license.update_columns(client_id: @client.id, active: true, paid: true, expiry_date: Date.current + 10)
+    # Paid and approved by Finance and the Manager: only then is a licence valid.
+    license.update_columns(client_id: @client.id, active: true, paid: true, expiry_date: Date.current + 10, approval_status: "approved")
     invoices(:one).update_columns(deleted: false)
     get license_status_api_v1_billing_index_url, params: { search: @client.name }, headers: @headers
 

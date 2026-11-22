@@ -409,7 +409,7 @@ class InvoicesController < ApplicationController
   end
 
   def print_credit_note
-    @credit_note = CreditNote.find(params[:id])
+    @credit_note = CreditNote.where(tenant_id: tenant.id).find(params[:id])
     invoice = @credit_note.invoice
     pdf = Prawn::Document.new 
     case template

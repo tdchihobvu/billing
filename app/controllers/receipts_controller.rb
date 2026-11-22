@@ -8,6 +8,19 @@ class ReceiptsController < ApplicationController
     @shifts = tenant.shifts.active.order('start_time Asc, end_time Asc').includes(:device)
   end
 
+  # One shift: who, where and when, with the invoices and receipts recorded on it.
+  # (The Shifts list linked here, but the page did not exist.)
+  def shift
+    @shift = tenant.shifts.find_by(id: params[:shift_id])
+    return redirect_to(shifts_receipts_path, alert: "That shift could not be found.", status: :see_other) unless @shift
+
+    keys = [@shift.id.to_s, @shift.shift_id.to_s].compact_blank.uniq
+    @receipts = tenant.receipts.active.where(shift_id: keys.filter_map { |k| Integer(k, exception: false) })
+                      .preload(:client, :currency, :payment_form).order(:transaction_date)
+    @invoices = tenant.invoices.active.where(shift_id: keys).preload(:client, :currency).order(:invoice_date)
+    @district = District.find_by(id: @shift.district_id)
+  end
+
   # GET /receipts
   def index
     @currencies = Currency.order(:name)

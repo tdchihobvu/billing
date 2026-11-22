@@ -8,7 +8,10 @@ class PasswordChangesController < ApplicationController
   def update
     current_user.assign_attributes(password_params)
 
-    if current_user.using_default_password?
+    if password_params[:password].blank?
+      current_user.errors.add(:password, "can't be blank: enter a new password")
+      render :edit, status: :unprocessable_entity
+    elsif current_user.using_default_password?
       current_user.errors.add(:password, "cannot be your username followed by !@#")
       render :edit, status: :unprocessable_entity
     elsif current_user.save
@@ -22,6 +25,7 @@ class PasswordChangesController < ApplicationController
   private
 
   def password_params
-    params.require(:user).permit(:password, :password_confirmation)
+    # An empty form gets the normal "can't be blank" messages instead of an error.
+    params.fetch(:user, {}).permit(:password, :password_confirmation)
   end
 end

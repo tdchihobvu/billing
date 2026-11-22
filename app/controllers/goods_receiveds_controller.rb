@@ -3,7 +3,7 @@ class GoodsReceivedsController < ApplicationController
 
   # GET /goods_receiveds
   def index
-    @goods_receiveds = GoodsReceived.all
+    @goods_receiveds = GoodsReceived.where(tenant_id: tenant.id)
   end
 
   # GET /goods_receiveds/1
@@ -58,7 +58,7 @@ class GoodsReceivedsController < ApplicationController
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_goods_received
-      @goods_received = GoodsReceived.find(params[:id])
+      @goods_received = GoodsReceived.where(tenant_id: tenant.id).find(params[:id])
     end
 
     # Only allow a list of trusted parameters through.

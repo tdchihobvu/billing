@@ -23,9 +23,9 @@
     </div>
     <div class="acts">
       <%= link_to record_receipt_receipts_path(client_id: c.id), class: "b" do %><i class="fas fa-dollar-sign" aria-hidden="true"></i> Record Receipt<% end %>
-      <%= zmore_menu([["Edit", edit_client_path(c)], ["Print statement", account_statement_clients_path(id: c, as_at: Date.current, format: :pdf), { target: "_blank", rel: "noopener" }], :divider,
-                      ["Delete", client_path(c), { data: { turbo_method: :delete, turbo_confirm: "Delete #{c.name}? This can't be undone." } }]]) %>
-      <%= link_to (default_module == "licensing" ? license_invoices_path(client_id: c.id) : new_invoice_path), class: "b main" do %><i class="fas fa-plus" aria-hidden="true"></i> New Invoice<% end %>
+      <%= zmore_menu([(["Edit", edit_client_path(c)] if can?("clients.manage")), ["Print statement", account_statement_clients_path(id: c, as_at: Date.current, format: :pdf), { target: "_blank", rel: "noopener" }],
+                      *([:divider, ["Delete", client_path(c), { data: { turbo_method: :delete, turbo_confirm: "Delete #{c.name}? This can't be undone." } }]] if can?("clients.manage"))].compact) %>
+      <% if can?("invoices.create") %><%= link_to (default_module == "licensing" ? license_invoices_path(client_id: c.id) : new_invoice_path), class: "b main" do %><i class="fas fa-plus" aria-hidden="true"></i> New Invoice<% end %><% end %>
     </div>
   </div>
 
@@ -35,7 +35,7 @@
     <div class="box zstat <%= 'owe' if balance.positive? %>"><small>Balance</small><b><span class="cur"><%= cur&.name %></span><%= number_with_precision(balance, precision: 2, delimiter: ",") %></b><em><%= overdue_n.positive? ? "#{pluralize(overdue_n, 'invoice')} overdue" : "nothing overdue" %></em></div>
     <div class="box zstat"><small>Paid this year</small><b><span class="cur"><%= cur&.name %></span><%= number_with_precision(year_paid, precision: 2, delimiter: ",") %></b><em>receipts since 1 January</em></div>
     <div class="box zstat"><small>Licences</small><b><%= active_licences %> active</b><em><%= link_to "View licences", client_path(c, tab: "licenses"), class: "zlink" %></em></div>
-    <div class="box zstat"><small>Branches</small><b><%= branches.size %></b><em><%= link_to "Add/Edit Branches", add_branches_clients_path(id: c), class: "zlink" %></em></div>
+    <div class="box zstat"><small>Branches</small><b><%= branches.size %></b><% if can?("clients.manage") %><em><%= link_to "Add/Edit Branches", add_branches_clients_path(id: c), class: "zlink" %></em><% end %></div>
   </div>
 
   <section class="box">
@@ -48,18 +48,18 @@
     <% case tab %>
     <% when "general" %>
       <div class="zdetails"><%= detail.call([["Client Type", c.client_type&.name], ["Industry", c.industry&.name], ["Client Name", c.name], ["Trading Name", c.trading_name], ["BP Number", c.bp_number], ["VAT Number", c.vat_number], ["Account Number", c.client_account_number], ["Currency", cur&.name]]) %></div>
-      <div class="zfilters" style="padding-top:0"><%= link_to "Edit", edit_client_path(c), class: "b" %></div>
+      <% if can?("clients.manage") %><div class="zfilters" style="padding-top:0"><%= link_to "Edit", edit_client_path(c), class: "b" %></div><% end %>
 
     <% when "contacts" %>
       <div class="zdetails"><%= detail.call([["Address", [c.address_1, c.address_2].compact_blank.join(", ")], ["Location", c.location], ["City", c.city], ["Country", c.country], ["Website", c.website], ["Mobile", c.mobile], ["Phone", c.phone], ["Email", c.email]]) %></div>
-      <div class="zfilters" style="padding-top:0"><%= link_to "Edit", edit_client_path(c), class: "b" %></div>
+      <% if can?("clients.manage") %><div class="zfilters" style="padding-top:0"><%= link_to "Edit", edit_client_path(c), class: "b" %></div><% end %>
 
     <% when "contact_person" %>
       <div class="zdetails"><%= detail.call([["Contact Person", c.cp_name], ["Mobile", c.cp_mobile], ["Email", c.cp_email], ["Active", c.active ? "Yes" : "No"]]) %></div>
-      <div class="zfilters" style="padding-top:0"><%= link_to "Edit", edit_client_path(c), class: "b" %></div>
+      <% if can?("clients.manage") %><div class="zfilters" style="padding-top:0"><%= link_to "Edit", edit_client_path(c), class: "b" %></div><% end %>
 
     <% when "branches" %>
-      <div class="zfilters"><%= link_to add_branches_clients_path(id: c), class: "b" do %><i class="fas fa-edit" aria-hidden="true"></i> Add/Edit Branches<% end %></div>
+      <% if can?("clients.manage") %><div class="zfilters"><%= link_to add_branches_clients_path(id: c), class: "b" do %><i class="fas fa-edit" aria-hidden="true"></i> Add/Edit Branches<% end %></div><% end %>
       <% if branches.any? %>
         <div class="zwrap"><table class="zt">
           <thead><tr><th>#</th><th>Branch Name</th><th>Address</th><th></th></tr></thead>
@@ -180,7 +180,7 @@
     <% when "statement" %>
       <div class="zfilters">
         <span style="margin-right:auto"><b>Account Statement</b> <small class="muted">in <%= cur&.name %></small></span>
-        <%= link_to "Takeon Balance", takeon_balances_clients_path(id: c), class: "b" %>
+        <%= link_to "Takeon Balance", takeon_balances_clients_path(id: c), class: "b" if can?("clients.journals") %>
         <%= link_to reset_statement_clients_path(id: c), class: "b", title: "The statement updates by itself. Use this only if a line looks wrong.", data: { turbo_confirm: "Rebuild the statement from scratch? Invoice and receipt lines are rebuilt; journals are kept." } do %><i class="fas fa-sync-alt" aria-hidden="true"></i> Rebuild<% end %>
         <%= link_to account_statement_clients_path(id: c, as_at: Date.today, format: :pdf), class: "b", target: "_blank", rel: "noopener" do %><i class="fas fa-print" aria-hidden="true"></i> Print<% end %>
         <%= link_to print_by_date_clients_path(id: c), class: "b" do %><i class="fas fa-print" aria-hidden="true"></i> Print As At<% end %>

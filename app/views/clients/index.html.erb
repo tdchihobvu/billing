@@ -4,7 +4,7 @@
 %>
 <div class="zpage">
   <%= render "shared/zhead", title: "Clients", crumb: "Sales", sub: "#{number_with_delimiter(@count)} clients#{' match these filters' if filtered}.",
-             actions: safe_join([link_to("Industries and tariffs", industries_path, class: "b"), link_to(new_client_path, class: "b main") { safe_join([tag.i(class: "fas fa-plus", "aria-hidden": "true"), " New Client"]) }], " ") %>
+             actions: safe_join([(link_to("Industries and tariffs", industries_path, class: "b") if can?("settings.manage")), (link_to(new_client_path, class: "b main") { safe_join([tag.i(class: "fas fa-plus", "aria-hidden": "true"), " New Client"]) } if can?("clients.manage"))].compact, " ") %>
 
   <section class="box" aria-label="Client list">
     <%= form_with url: clients_path, method: :get, class: "zfilters", data: { turbo_action: "advance" } do |f| %>
@@ -47,7 +47,7 @@
     <% elsif filtered %>
       <%= zempty("No clients match these filters", "Try part of the name, the account number or the city.", link_to("Clear all", clients_path, class: "b")) %>
     <% else %>
-      <%= zempty("No clients yet", "Register the first client to start invoicing.", link_to("New Client", new_client_path, class: "b main")) %>
+      <%= zempty("No clients yet", "Register the first client to start invoicing.", (link_to("New Client", new_client_path, class: "b main") if can?("clients.manage"))) %>
     <% end %>
   </section>
 </div>

@@ -31,7 +31,7 @@ Rails.application.routes.draw do
   resources :product_categories
   resources :suppliers
   
-  resources :reports do 
+  resources :reports, only: [:index] do 
     collection do
       get :sales
       get :vat_sales
@@ -44,7 +44,7 @@ Rails.application.routes.draw do
     end
   end
 
-  resources :system_settings do  
+  resources :system_settings, only: [:index] do  
     collection do   
       get :index
     end
@@ -203,7 +203,6 @@ Rails.application.routes.draw do
     collection do  
       get :post_receipt  
       get :account_statement
-      get :print
       get :print_by_date
       get :add_branches
       get :reset_statement
@@ -222,12 +221,11 @@ Rails.application.routes.draw do
     passwords: 'users/passwords'
   }
 
-  resources :welcome do 
+  resources :welcome, only: [:index] do 
     collection do
       get :index
       get :refresh
       get :dashboard
-      post :register_device
     end
   end
 

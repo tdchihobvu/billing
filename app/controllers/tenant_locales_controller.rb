@@ -3,7 +3,7 @@ class TenantLocalesController < ApplicationController
 
   # GET /tenant_locales
   def index
-    @tenant_locales = TenantLocale.all
+    @tenant_locales = TenantLocale.where(tenant_id: tenant.id)
   end
 
   # GET /tenant_locales/1
@@ -48,7 +48,7 @@ class TenantLocalesController < ApplicationController
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_tenant_locale
-      @tenant_locale = TenantLocale.find(params[:id])
+      @tenant_locale = TenantLocale.where(tenant_id: tenant.id).find(params[:id])
     end
 
     # Only allow a list of trusted parameters through.
